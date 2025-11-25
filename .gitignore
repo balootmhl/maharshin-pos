@@ -25,3 +25,5 @@ yarn-error.log
 /.blueprint
 /draft.yaml
 .aider*
+.DS_Store
+**/.DS_Store

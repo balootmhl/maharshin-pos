@@ -1,5 +1,5 @@
 import { NavGroup, NavItem } from '@/types';
-import { BookOpen, Folder, LayoutGrid, ListCheck, Settings2, TerminalSquare, Users } from 'lucide-react';
+import { LayoutGrid, Settings2, Users } from 'lucide-react';
 
 export const navMain: NavGroup[] = [
     {
@@ -30,24 +30,24 @@ export const navMain: NavGroup[] = [
 ];
 
 export const navFooter: NavItem[] = [
-    {
-        title: 'Playground',
-        url: route('playground'),
-        icon: TerminalSquare,
-    },
-    {
-        title: 'To Dos',
-        url: route('todos.index'),
-        icon: ListCheck,
-    },
-    {
-        title: 'Repository',
-        url: 'https://github.com/mrlinnth/laravel12-starter',
-        icon: Folder,
-    },
-    {
-        title: 'Help',
-        url: '#',
-        icon: BookOpen,
-    },
+    // {
+    //     title: 'Playground',
+    //     url: route('playground'),
+    //     icon: TerminalSquare,
+    // },
+    // {
+    //     title: 'To Dos',
+    //     url: route('todos.index'),
+    //     icon: ListCheck,
+    // },
+    // {
+    //     title: 'Repository',
+    //     url: 'https://github.com/mrlinnth/laravel12-starter',
+    //     icon: Folder,
+    // },
+    // {
+    //     title: 'Help',
+    //     url: '#',
+    //     icon: BookOpen,
+    // },
 ];
