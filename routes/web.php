@@ -29,6 +29,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('todos/export', [App\Http\Controllers\TodoController::class, 'export'])->name('todos.export');
     Route::resource('todos', App\Http\Controllers\TodoController::class);
 
+    Route::resource('branches', App\Http\Controllers\BranchController::class);
+
+    Route::resource('categories', App\Http\Controllers\CategoryController::class);
+
+    Route::resource('products', App\Http\Controllers\ProductController::class);
+
+    Route::resource('customers', App\Http\Controllers\CustomerController::class);
+
+    Route::resource('suppliers', App\Http\Controllers\SupplierController::class);
+
+    Route::resource('sales', App\Http\Controllers\SaleController::class);
+
+    Route::resource('purchases', App\Http\Controllers\PurchaseController::class);
+
+    Route::resource('sale-returns', App\Http\Controllers\SaleReturnController::class);
+
+    Route::resource('customer-payments', App\Http\Controllers\CustomerPaymentController::class);
+
+    Route::resource('customer-credit-ledgers', App\Http\Controllers\CustomerCreditLedgerController::class)->only('index');
+
+    Route::resource('branch-stocks', App\Http\Controllers\BranchStockController::class)->only('index');
+
+    Route::resource('stock-movements', App\Http\Controllers\StockMovementController::class)->only('index');
+
+    Route::resource('settings', App\Http\Controllers\SettingController::class)->only('index', 'update');
+
 });
 
 Route::impersonate();

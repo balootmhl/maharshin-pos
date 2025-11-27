@@ -85,12 +85,12 @@ models:
         email: string:100 nullable
         address: text nullable
         credit_limit: decimal:15,2 default:0
-        outstanding_balance: decimal:15,2 default:0
+        current_balance: decimal:15,2 default:0
         is_active: boolean default:true
         timestamps: true
         softdeletes: true
         relationships:
-            hasMany: Sale, CustomerPayment
+            hasMany: Sale, CustomerPayment, CustomerCreditLedger
 
     Supplier:
         code: string:50 unique index
@@ -103,6 +103,28 @@ models:
         softdeletes: true
         relationships:
             hasMany: Purchase
+
+    # ============================================
+    # CUSTOMER CREDIT SYSTEM
+    # ============================================
+    CustomerCreditLedger:
+        customer_id: id foreign:customers
+        branch_id: id foreign:branches
+        transaction_date: date index
+        transaction_type: string:50
+        reference_type: string:100 nullable
+        reference_id: id nullable
+        reference_no: string:100 nullable
+        debit: decimal:15,2 default:0
+        credit: decimal:15,2 default:0
+        balance: decimal:15,2 default:0
+        description: text nullable
+        created_by: id foreign:users nullable
+        created_at: timestamp
+        updated_at: timestamp
+        relationships:
+            belongsTo: Customer, Branch, User:creator
+            morphTo: Reference
 
     # ============================================
     # SALES
@@ -119,13 +141,14 @@ models:
         payment_status: string:50 default:unpaid index
         payment_method: string:50 nullable
         paid_amount: decimal:15,2 default:0
+        credit_amount: decimal:15,2 default:0
         notes: text nullable
         created_by: id foreign:users nullable
         timestamps: true
         softdeletes: true
         relationships:
             belongsTo: Branch, Customer, User:creator
-            hasMany: SaleItem, CustomerPayment, SaleReturn
+            hasMany: SaleItem, SaleReturn
 
     SaleItem:
         sale_id: id foreign:sales
@@ -172,11 +195,11 @@ models:
             belongsTo: Purchase, Product
 
     # ============================================
-    # CUSTOMER PAYMENTS & CREDITS
+    # CUSTOMER PAYMENTS
     # ============================================
     CustomerPayment:
+        payment_no: string:50 unique index
         customer_id: id foreign:customers
-        sale_id: id foreign:sales nullable
         branch_id: id foreign:branches
         payment_date: date index
         amount: decimal:15,2
@@ -185,8 +208,9 @@ models:
         notes: text nullable
         created_by: id foreign:users nullable
         created_at: timestamp
+        updated_at: timestamp
         relationships:
-            belongsTo: Customer, Sale, Branch, User:creator
+            belongsTo: Customer, Branch, User:creator
 
     # ============================================
     # RETURNS
@@ -198,6 +222,7 @@ models:
         return_date: date index
         total_amount: decimal:15,2
         refund_amount: decimal:15,2 default:0
+        refund_method: string:50 nullable
         reason: text nullable
         created_by: id foreign:users nullable
         timestamps: true
@@ -232,78 +257,48 @@ models:
 controllers:
     Branch:
         resource: web
-        export:
-            query: all
-            respond: branches
 
     Category:
         resource: web
-        export:
-            query: all
-            respond: categories
 
     Product:
         resource: web
-        export:
-            query: all
-            respond: products
 
     Customer:
         resource: web
-        export:
-            query: all
-            respond: customers
 
     Supplier:
         resource: web
-        export:
-            query: all
-            respond: suppliers
 
     Sale:
         resource: web
-        export:
-            query: all
-            respond: sales
 
     Purchase:
         resource: web
-        export:
-            query: all
-            respond: purchases
 
     SaleReturn:
         resource: web
-        export:
-            query: all
-            respond: sale_returns
-
-    BranchStock:
-        index:
-            # CHANGED: Removed 'all', just use 'with:...'
-            query: with:product,branch
-            render: stock.index with:stocks
-        update:
-            validate: quantity
-            save: stock
-            dispatch: StockAdjusted
-
-    StockMovement:
-        index:
-            # CHANGED: Removed 'all', just use 'with:...'
-            query: with:product,branch
-            render: stock-movement.index with:movements
 
     CustomerPayment:
         resource: web
-        export:
-            query: all
-            respond: customer_payments
+
+    CustomerCreditLedger:
+        index:
+            query: with:customer,branch
+            render: customer-credit.index with:ledgers
+
+    BranchStock:
+        index:
+            query: with:product,branch
+            render: stock.index with:stocks
+
+    StockMovement:
+        index:
+            query: with:product,branch
+            render: stock-movement.index with:movements
 
     Setting:
         index:
-            # CHANGED: Replaced 'all' with 'order:created_at' to satisfy parser
-            query: order:created_at
             render: setting.index with:settings
         update:
             validate: key, value
