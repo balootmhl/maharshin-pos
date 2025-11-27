@@ -1,0 +1,315 @@
+# draft.yaml for Laravel Blueprint
+# Integrates with existing Laravel 12 starter (Spatie packages, BaseModel, etc.)
+# Run: php artisan blueprint:build
+
+models:
+    # ============================================
+    # BRANCH MANAGEMENT
+    # ============================================
+    Branch:
+        code: string:50 unique
+        name: string
+        address: text nullable
+        phone: string:50 nullable
+        email: string:100 nullable
+        is_active: boolean default:true
+        timestamps: true
+        softdeletes: true
+        relationships:
+            hasMany: User, BranchStock, Sale, Purchase, CustomerPayment, SaleReturn, StockMovement
+
+    # ============================================
+    # PRODUCT & INVENTORY
+    # ============================================
+    Category:
+        code: string:50 unique
+        name: string
+        description: text nullable
+        parent_id: id foreign:categories nullable
+        is_active: boolean default:true
+        timestamps: true
+        softdeletes: true
+        relationships:
+            belongsTo: Category:parent
+            hasMany: Category:children, Product
+
+    Product:
+        code: string:100 unique index
+        barcode: string:100 unique nullable index
+        name: string
+        description: text nullable
+        category_id: id foreign:categories
+        unit: string:50 default:pcs
+        cost_price: decimal:15,2 default:0
+        selling_price: decimal:15,2 default:0
+        tax_rate: decimal:5,2 default:0
+        low_stock_alert: integer default:10
+        is_active: boolean default:true
+        created_by: id foreign:users nullable
+        updated_by: id foreign:users nullable
+        timestamps: true
+        softdeletes: true
+        relationships:
+            belongsTo: Category, User:creator, User:updater
+            hasMany: BranchStock, StockMovement, SaleItem, PurchaseItem, SaleReturnItem
+
+    BranchStock:
+        product_id: id foreign:products
+        branch_id: id foreign:branches
+        quantity: integer default:0
+        updated_at: timestamp
+        relationships:
+            belongsTo: Product, Branch
+
+    StockMovement:
+        product_id: id foreign:products
+        branch_id: id foreign:branches
+        movement_type: string:50
+        quantity: integer
+        reference_type: string:100 nullable
+        reference_id: id nullable
+        notes: text nullable
+        created_by: id foreign:users nullable
+        created_at: timestamp
+        relationships:
+            belongsTo: Product, Branch, User:creator
+            morphTo: Reference
+
+    # ============================================
+    # CUSTOMERS & SUPPLIERS
+    # ============================================
+    Customer:
+        code: string:50 unique index
+        name: string
+        phone: string:50 nullable index
+        email: string:100 nullable
+        address: text nullable
+        credit_limit: decimal:15,2 default:0
+        outstanding_balance: decimal:15,2 default:0
+        is_active: boolean default:true
+        timestamps: true
+        softdeletes: true
+        relationships:
+            hasMany: Sale, CustomerPayment
+
+    Supplier:
+        code: string:50 unique index
+        name: string
+        phone: string:50 nullable
+        email: string:100 nullable
+        address: text nullable
+        is_active: boolean default:true
+        timestamps: true
+        softdeletes: true
+        relationships:
+            hasMany: Purchase
+
+    # ============================================
+    # SALES
+    # ============================================
+    Sale:
+        invoice_no: string:50 unique index
+        branch_id: id foreign:branches
+        customer_id: id foreign:customers nullable
+        sale_date: date index
+        subtotal: decimal:15,2 default:0
+        tax_amount: decimal:15,2 default:0
+        discount_amount: decimal:15,2 default:0
+        total_amount: decimal:15,2 default:0
+        payment_status: string:50 default:unpaid index
+        payment_method: string:50 nullable
+        paid_amount: decimal:15,2 default:0
+        notes: text nullable
+        created_by: id foreign:users nullable
+        timestamps: true
+        softdeletes: true
+        relationships:
+            belongsTo: Branch, Customer, User:creator
+            hasMany: SaleItem, CustomerPayment, SaleReturn
+
+    SaleItem:
+        sale_id: id foreign:sales
+        product_id: id foreign:products
+        quantity: integer
+        unit_price: decimal:15,2
+        tax_rate: decimal:5,2 default:0
+        tax_amount: decimal:15,2 default:0
+        subtotal: decimal:15,2
+        relationships:
+            belongsTo: Sale, Product
+            hasMany: SaleReturnItem
+
+    # ============================================
+    # PURCHASES
+    # ============================================
+    Purchase:
+        purchase_no: string:50 unique index
+        branch_id: id foreign:branches
+        supplier_id: id foreign:suppliers nullable
+        purchase_date: date index
+        subtotal: decimal:15,2 default:0
+        tax_amount: decimal:15,2 default:0
+        total_amount: decimal:15,2 default:0
+        payment_status: string:50 default:unpaid
+        paid_amount: decimal:15,2 default:0
+        notes: text nullable
+        created_by: id foreign:users nullable
+        timestamps: true
+        softdeletes: true
+        relationships:
+            belongsTo: Branch, Supplier, User:creator
+            hasMany: PurchaseItem
+
+    PurchaseItem:
+        purchase_id: id foreign:purchases
+        product_id: id foreign:products
+        quantity: integer
+        unit_cost: decimal:15,2
+        tax_rate: decimal:5,2 default:0
+        tax_amount: decimal:15,2 default:0
+        subtotal: decimal:15,2
+        relationships:
+            belongsTo: Purchase, Product
+
+    # ============================================
+    # CUSTOMER PAYMENTS & CREDITS
+    # ============================================
+    CustomerPayment:
+        customer_id: id foreign:customers
+        sale_id: id foreign:sales nullable
+        branch_id: id foreign:branches
+        payment_date: date index
+        amount: decimal:15,2
+        payment_method: string:50
+        reference_no: string:100 nullable
+        notes: text nullable
+        created_by: id foreign:users nullable
+        created_at: timestamp
+        relationships:
+            belongsTo: Customer, Sale, Branch, User:creator
+
+    # ============================================
+    # RETURNS
+    # ============================================
+    SaleReturn:
+        return_no: string:50 unique index
+        sale_id: id foreign:sales
+        branch_id: id foreign:branches
+        return_date: date index
+        total_amount: decimal:15,2
+        refund_amount: decimal:15,2 default:0
+        reason: text nullable
+        created_by: id foreign:users nullable
+        timestamps: true
+        softdeletes: true
+        relationships:
+            belongsTo: Sale, Branch, User:creator
+            hasMany: SaleReturnItem
+
+    SaleReturnItem:
+        sale_return_id: id foreign:sale_returns
+        sale_item_id: id foreign:sale_items
+        product_id: id foreign:products
+        quantity: integer
+        unit_price: decimal:15,2
+        subtotal: decimal:15,2
+        relationships:
+            belongsTo: SaleReturn, SaleItem, Product
+
+    # ============================================
+    # SETTINGS
+    # ============================================
+    Setting:
+        key: string:100 unique
+        value: text nullable
+        description: string nullable
+        group: string:50 nullable
+        updated_at: timestamp
+
+# ============================================
+# CONTROLLERS
+# ============================================
+controllers:
+    Branch:
+        resource: web
+        export:
+            query: all
+            respond: branches
+
+    Category:
+        resource: web
+        export:
+            query: all
+            respond: categories
+
+    Product:
+        resource: web
+        export:
+            query: all
+            respond: products
+
+    Customer:
+        resource: web
+        export:
+            query: all
+            respond: customers
+
+    Supplier:
+        resource: web
+        export:
+            query: all
+            respond: suppliers
+
+    Sale:
+        resource: web
+        export:
+            query: all
+            respond: sales
+
+    Purchase:
+        resource: web
+        export:
+            query: all
+            respond: purchases
+
+    SaleReturn:
+        resource: web
+        export:
+            query: all
+            respond: sale_returns
+
+    BranchStock:
+        index:
+            # CHANGED: Removed 'all', just use 'with:...'
+            query: with:product,branch
+            render: stock.index with:stocks
+        update:
+            validate: quantity
+            save: stock
+            dispatch: StockAdjusted
+
+    StockMovement:
+        index:
+            # CHANGED: Removed 'all', just use 'with:...'
+            query: with:product,branch
+            render: stock-movement.index with:movements
+
+    CustomerPayment:
+        resource: web
+        export:
+            query: all
+            respond: customer_payments
+
+    Setting:
+        index:
+            # CHANGED: Replaced 'all' with 'order:created_at' to satisfy parser
+            query: order:created_at
+            render: setting.index with:settings
+        update:
+            validate: key, value
+            save: setting
+
+# ============================================
+# SEEDERS
+# ============================================
+seeders: Branch, Category, Setting
