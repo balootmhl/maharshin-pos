@@ -26,10 +26,8 @@ return new class extends Migration
             $table->decimal('tax_rate', 5, 2)->default(0);
             $table->integer('low_stock_alert')->default(10);
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users', 'by');
-            $table->foreignId('updated_by')->nullable()->constrained('users', 'by');
-            $table->foreignId('creator_id');
-            $table->foreignId('updater_id');
+            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();
             $table->softDeletes();
         });

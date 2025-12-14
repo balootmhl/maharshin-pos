@@ -18,8 +18,8 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained();
             $table->foreignId('branch_id')->constrained();
             $table->integer('quantity')->default(0);
-            $table->timestamp('updated_at');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::enableForeignKeyConstraints();

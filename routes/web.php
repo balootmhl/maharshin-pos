@@ -11,7 +11,18 @@ Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        $reportController = new App\Http\Controllers\ReportController;
+        $dailySummary = $reportController->dailySummary();
+
+        // Count low stock items
+        $lowStockCount = App\Models\BranchStock::whereColumn('quantity', '<=',
+            \Illuminate\Support\Facades\DB::raw('(SELECT low_stock_alert FROM products WHERE products.id = branch_stocks.product_id)')
+        )->count();
+
+        return Inertia::render('dashboard', [
+            'dailySummary' => $dailySummary,
+            'lowStockCount' => $lowStockCount,
+        ]);
     })->name('dashboard');
 
     Route::group(['middleware' => ['role:god']], function () {
@@ -54,6 +65,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('stock-movements', App\Http\Controllers\StockMovementController::class)->only('index');
 
     Route::resource('settings', App\Http\Controllers\SettingController::class)->only('index', 'update');
+
+    // Reports
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('sales', [App\Http\Controllers\ReportController::class, 'salesReport'])->name('sales');
+        Route::get('low-stock', [App\Http\Controllers\ReportController::class, 'lowStockReport'])->name('low-stock');
+    });
 
 });
 

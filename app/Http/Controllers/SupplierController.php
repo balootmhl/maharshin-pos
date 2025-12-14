@@ -7,22 +7,23 @@ use App\Http\Requests\SupplierUpdateRequest;
 use App\Models\Supplier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class SupplierController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $suppliers = Supplier::all();
 
-        return view('supplier.index', [
+        return Inertia::render('Supplier/index', [
             'suppliers' => $suppliers,
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
-        return view('supplier.create');
+        return Inertia::render('Supplier/create');
     }
 
     public function store(SupplierStoreRequest $request): RedirectResponse
@@ -34,16 +35,16 @@ class SupplierController extends Controller
         return redirect()->route('suppliers.index');
     }
 
-    public function show(Request $request, Supplier $supplier): View
+    public function show(Request $request, Supplier $supplier): Response
     {
-        return view('supplier.show', [
+        return Inertia::render('Supplier/show', [
             'supplier' => $supplier,
         ]);
     }
 
-    public function edit(Request $request, Supplier $supplier): View
+    public function edit(Request $request, Supplier $supplier): Response
     {
-        return view('supplier.edit', [
+        return Inertia::render('Supplier/edit', [
             'supplier' => $supplier,
         ]);
     }

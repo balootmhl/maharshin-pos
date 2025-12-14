@@ -19,19 +19,15 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained();
             $table->date('transaction_date')->index();
             $table->string('transaction_type', 50);
-            $table->string('reference_type', 100)->nullable();
-            $table->foreignId('reference_id')->nullable();
             $table->string('reference_no', 100)->nullable();
             $table->decimal('debit', 15, 2)->default(0);
             $table->decimal('credit', 15, 2)->default(0);
             $table->decimal('balance', 15, 2)->default(0);
             $table->text('description')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users', 'by');
-            $table->timestamp('created_at');
-            $table->timestamp('updated_at');
-            $table->foreignId('creator_id');
-            $table->morphs('reference');
+            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->nullableMorphs('reference');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::enableForeignKeyConstraints();

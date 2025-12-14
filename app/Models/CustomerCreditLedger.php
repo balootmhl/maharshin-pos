@@ -28,7 +28,6 @@ class CustomerCreditLedger extends BaseModel
         'balance',
         'description',
         'created_by',
-        'creator_id',
     ];
 
     /**
@@ -46,9 +45,6 @@ class CustomerCreditLedger extends BaseModel
         'credit' => 'decimal:2',
         'balance' => 'decimal:2',
         'created_by' => 'integer',
-        'created_at' => 'timestamp',
-        'updated_at' => 'timestamp',
-        'creator_id' => 'integer',
     ];
 
     public function customer(): BelongsTo

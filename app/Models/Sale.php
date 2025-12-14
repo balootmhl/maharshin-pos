@@ -31,7 +31,6 @@ class Sale extends BaseModel
         'credit_amount',
         'notes',
         'created_by',
-        'creator_id',
     ];
 
     /**
@@ -51,7 +50,6 @@ class Sale extends BaseModel
         'paid_amount' => 'decimal:2',
         'credit_amount' => 'decimal:2',
         'created_by' => 'integer',
-        'creator_id' => 'integer',
     ];
 
     public function branch(): BelongsTo

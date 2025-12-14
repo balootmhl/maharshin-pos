@@ -1,0 +1,149 @@
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { FormEventHandler } from 'react';
+
+type SupplierForm = {
+    code: string;
+    name: string;
+    contact_person: string;
+    phone: string;
+    email: string;
+    address: string;
+    is_active: boolean;
+};
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Suppliers',
+        href: route('suppliers.index'),
+    },
+    {
+        title: 'Create',
+        href: '#',
+    },
+];
+
+export default function SupplierCreate() {
+    const { data, setData, post, reset, errors, processing } = useForm<SupplierForm>({
+        code: '',
+        name: '',
+        contact_person: '',
+        phone: '',
+        email: '',
+        address: '',
+        is_active: true,
+    });
+
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+        post(route('suppliers.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                reset();
+            },
+        });
+    };
+
+    return (
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="Create Supplier" />
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
+                <form onSubmit={submit} className="md:max-w-xl">
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-flow-row gap-2">
+                                <Label htmlFor="code">Supplier Code*</Label>
+                                <Input
+                                    id="code"
+                                    value={data.code}
+                                    onChange={(e) => setData('code', e.target.value)}
+                                    required
+                                    placeholder="SUP-001"
+                                    autoFocus={true}
+                                />
+                                <InputError className="mt-2" message={errors.code} />
+                            </div>
+                            <div className="grid grid-flow-row gap-2">
+                                <Label htmlFor="name">Supplier Name*</Label>
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(e) => setData('name', e.target.value)}
+                                    required
+                                    placeholder="ABC Trading Co."
+                                />
+                                <InputError className="mt-2" message={errors.name} />
+                            </div>
+                        </div>
+                        <div className="grid grid-flow-row gap-2">
+                            <Label htmlFor="contact_person">Contact Person</Label>
+                            <Input
+                                id="contact_person"
+                                value={data.contact_person}
+                                onChange={(e) => setData('contact_person', e.target.value)}
+                                placeholder="John Doe"
+                            />
+                            <InputError className="mt-2" message={errors.contact_person} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-flow-row gap-2">
+                                <Label htmlFor="phone">Phone</Label>
+                                <Input
+                                    id="phone"
+                                    value={data.phone}
+                                    onChange={(e) => setData('phone', e.target.value)}
+                                    placeholder="+95 9 123 456 789"
+                                />
+                                <InputError className="mt-2" message={errors.phone} />
+                            </div>
+                            <div className="grid grid-flow-row gap-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={data.email}
+                                    onChange={(e) => setData('email', e.target.value)}
+                                    placeholder="supplier@example.com"
+                                />
+                                <InputError className="mt-2" message={errors.email} />
+                            </div>
+                        </div>
+                        <div className="grid grid-flow-row gap-2">
+                            <Label htmlFor="address">Address</Label>
+                            <Textarea
+                                id="address"
+                                value={data.address}
+                                onChange={(e) => setData('address', e.target.value)}
+                                placeholder="Enter supplier address"
+                                rows={2}
+                            />
+                            <InputError className="mt-2" message={errors.address} />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Switch id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />
+                            <Label htmlFor="is_active">Active</Label>
+                        </div>
+                        <div className="flex justify-end gap-3">
+                            <Button variant="outline" asChild>
+                                <Link href={route('suppliers.index')}>Cancel</Link>
+                            </Button>
+                            <Button variant="secondary" type="button" onClick={() => reset()} disabled={processing}>
+                                Reset
+                            </Button>
+                            <Button type="submit" disabled={processing}>
+                                Save
+                            </Button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </AppLayout>
+    );
+}

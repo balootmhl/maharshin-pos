@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 // Dummy interface
@@ -93,9 +93,12 @@ export default function UserCreate({ roles }: { roles: string[] }) {
                             <Label htmlFor="Role">Role*</Label>
                             <SimpleSelect options={roles} item={data.main_role} setItem={(v) => setData('main_role', v)} />
                         </div>
-                        <div className="flex justify-end gap-4">
-                            <Button variant="secondary" type="reset" disabled={processing}>
-                                Cancel
+                        <div className="flex justify-end gap-3">
+                            <Button variant="outline" asChild>
+                                <Link href={route('users.index')}>Cancel</Link>
+                            </Button>
+                            <Button variant="secondary" type="button" onClick={() => reset()} disabled={processing}>
+                                Reset
                             </Button>
                             <Button type="submit" disabled={processing}>
                                 Save

@@ -22,6 +22,7 @@ return new class extends Migration
             $table->decimal('unit_price', 15, 2);
             $table->decimal('subtotal', 15, 2);
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::enableForeignKeyConstraints();

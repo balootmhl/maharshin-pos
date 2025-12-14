@@ -4,25 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CustomerPaymentStoreRequest;
 use App\Http\Requests\CustomerPaymentUpdateRequest;
+use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\CustomerPayment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CustomerPaymentController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
-        $customerPayments = CustomerPayment::all();
+        $customerPayments = CustomerPayment::with(['customer', 'branch', 'createdBy'])->get();
 
-        return view('customerPayment.index', [
+        return Inertia::render('CustomerPayment/index', [
             'customerPayments' => $customerPayments,
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
-        return view('customerPayment.create');
+        return Inertia::render('CustomerPayment/create', [
+            'customers' => Customer::where('is_active', true)->get(),
+            'branches' => Branch::where('is_active', true)->get(),
+        ]);
     }
 
     public function store(CustomerPaymentStoreRequest $request): RedirectResponse
@@ -31,20 +37,24 @@ class CustomerPaymentController extends Controller
 
         $request->session()->flash('customerPayment.id', $customerPayment->id);
 
-        return redirect()->route('customerPayments.index');
+        return redirect()->route('customer-payments.index');
     }
 
-    public function show(Request $request, CustomerPayment $customerPayment): View
+    public function show(Request $request, CustomerPayment $customerPayment): Response
     {
-        return view('customerPayment.show', [
+        $customerPayment->load(['customer', 'branch', 'createdBy']);
+
+        return Inertia::render('CustomerPayment/show', [
             'customerPayment' => $customerPayment,
         ]);
     }
 
-    public function edit(Request $request, CustomerPayment $customerPayment): View
+    public function edit(Request $request, CustomerPayment $customerPayment): Response
     {
-        return view('customerPayment.edit', [
+        return Inertia::render('CustomerPayment/edit', [
             'customerPayment' => $customerPayment,
+            'customers' => Customer::where('is_active', true)->get(),
+            'branches' => Branch::where('is_active', true)->get(),
         ]);
     }
 
@@ -54,13 +64,13 @@ class CustomerPaymentController extends Controller
 
         $request->session()->flash('customerPayment.id', $customerPayment->id);
 
-        return redirect()->route('customerPayments.index');
+        return redirect()->route('customer-payments.index');
     }
 
     public function destroy(Request $request, CustomerPayment $customerPayment): RedirectResponse
     {
         $customerPayment->delete();
 
-        return redirect()->route('customerPayments.index');
+        return redirect()->route('customer-payments.index');
     }
 }

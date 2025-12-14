@@ -19,8 +19,8 @@ return new class extends Migration
             $table->text('value')->nullable();
             $table->string('description')->nullable();
             $table->string('group', 50)->nullable();
-            $table->timestamp('updated_at');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::enableForeignKeyConstraints();

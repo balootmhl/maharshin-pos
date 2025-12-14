@@ -19,14 +19,11 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained();
             $table->string('movement_type', 50);
             $table->integer('quantity');
-            $table->string('reference_type', 100)->nullable();
-            $table->foreignId('reference_id')->nullable();
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users', 'by');
-            $table->timestamp('created_at');
-            $table->foreignId('creator_id');
-            $table->morphs('reference');
+            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->nullableMorphs('reference');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::enableForeignKeyConstraints();

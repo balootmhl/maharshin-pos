@@ -7,22 +7,27 @@ use App\Http\Requests\CategoryUpdateRequest;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CategoryController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $categories = Category::all();
 
-        return view('category.index', [
+        return Inertia::render('Category/index', [
             'categories' => $categories,
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
-        return view('category.create');
+        $categories = Category::all(); // For parent category dropdown
+
+        return Inertia::render('Category/create', [
+            'categories' => $categories,
+        ]);
     }
 
     public function store(CategoryStoreRequest $request): RedirectResponse
@@ -34,17 +39,20 @@ class CategoryController extends Controller
         return redirect()->route('categories.index');
     }
 
-    public function show(Request $request, Category $category): View
+    public function show(Request $request, Category $category): Response
     {
-        return view('category.show', [
+        return Inertia::render('Category/show', [
             'category' => $category,
         ]);
     }
 
-    public function edit(Request $request, Category $category): View
+    public function edit(Request $request, Category $category): Response
     {
-        return view('category.edit', [
+        $categories = Category::where('id', '!=', $category->id)->get(); // Exclude self
+
+        return Inertia::render('Category/edit', [
             'category' => $category,
+            'categories' => $categories,
         ]);
     }
 
