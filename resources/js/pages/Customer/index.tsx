@@ -1,26 +1,15 @@
 import { CreateBtn } from '@/components/buttons/create-btn';
-import { DataTable, DataTableActions } from '@/components/tables/data-table';
+import { DataTable, DataTableActions, FilterPanelProps } from '@/components/tables/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, Customer } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown } from 'lucide-react';
-
-type Customer = {
-    id: number;
-    code: string;
-    name: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    credit_limit: number;
-    current_balance: number;
-    is_active: boolean;
-    created_at?: string;
-};
+import { ArrowUpDown, X } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -56,6 +45,10 @@ const columns: ColumnDef<Customer>[] = [
         accessorKey: 'code',
         header: 'Code',
         cell: ({ row }) => <div className="font-mono">{row.getValue('code')}</div>,
+        filterFn: (row, id, value) => {
+            const code = row.getValue(id) as string;
+            return code.toLowerCase().includes(value.toLowerCase());
+        },
     },
     {
         accessorKey: 'name',
@@ -90,6 +83,11 @@ const columns: ColumnDef<Customer>[] = [
             const balance = row.getValue('current_balance') as number;
             return <div className={`text-right font-mono ${balance > 0 ? 'text-red-600' : ''}`}>{formatCurrency(balance)} Ks</div>;
         },
+        filterFn: (row, id, value: { hasBalance?: boolean }) => {
+            if (!value.hasBalance) return true;
+            const balance = row.getValue(id) as number;
+            return balance > 0;
+        },
     },
     {
         accessorKey: 'credit_limit',
@@ -102,6 +100,10 @@ const columns: ColumnDef<Customer>[] = [
         cell: ({ row }) => (
             <Badge variant={row.getValue('is_active') ? 'default' : 'secondary'}>{row.getValue('is_active') ? 'Active' : 'Inactive'}</Badge>
         ),
+        filterFn: (row, id, value: boolean[]) => {
+            if (!value || value.length === 0 || value.length === 2) return true;
+            return value.includes(row.getValue(id) as boolean);
+        },
     },
     {
         id: 'actions',
@@ -113,6 +115,78 @@ const columns: ColumnDef<Customer>[] = [
     },
 ];
 
+// Filter Panel Component
+function CustomerFilterPanel({ table, onClearFilters }: FilterPanelProps<Customer>) {
+    // Status filter
+    const statusColumn = table.getColumn('is_active');
+    const statusFilter = (statusColumn?.getFilterValue() as boolean[]) || [];
+
+    const toggleStatus = (isActive: boolean) => {
+        const current = [...statusFilter];
+        const index = current.indexOf(isActive);
+        if (index === -1) {
+            current.push(isActive);
+        } else {
+            current.splice(index, 1);
+        }
+        statusColumn?.setFilterValue(current.length > 0 ? current : undefined);
+    };
+
+    // Balance filter
+    const balanceColumn = table.getColumn('current_balance');
+    const balanceFilter = (balanceColumn?.getFilterValue() as { hasBalance?: boolean }) || {};
+
+    const hasActiveFilters = statusFilter.length > 0 || balanceFilter.hasBalance;
+
+    return (
+        <div className="space-y-4">
+            {/* Clear All Button */}
+            {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
+                    <X className="mr-2 h-4 w-4" />
+                    Clear all filters
+                </Button>
+            )}
+
+            {/* Status Filter */}
+            <div className="space-y-3">
+                <Label className="text-sm font-medium">Status</Label>
+                <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="status-active" checked={statusFilter.includes(true)} onCheckedChange={() => toggleStatus(true)} />
+                        <Label htmlFor="status-active" className="cursor-pointer text-sm font-normal">
+                            Active
+                        </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="status-inactive" checked={statusFilter.includes(false)} onCheckedChange={() => toggleStatus(false)} />
+                        <Label htmlFor="status-inactive" className="cursor-pointer text-sm font-normal">
+                            Inactive
+                        </Label>
+                    </div>
+                </div>
+            </div>
+
+            <Separator />
+
+            {/* Balance Filter */}
+            <div className="space-y-3">
+                <Label className="text-sm font-medium">Balance</Label>
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id="has-balance"
+                        checked={balanceFilter.hasBalance || false}
+                        onCheckedChange={(checked) => balanceColumn?.setFilterValue(checked ? { hasBalance: true } : undefined)}
+                    />
+                    <Label htmlFor="has-balance" className="cursor-pointer text-sm font-normal">
+                        Has outstanding balance
+                    </Label>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function CustomerIndex({ customers }: { customers: Customer[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -121,7 +195,13 @@ export default function CustomerIndex({ customers }: { customers: Customer[] }) 
                 <div className="flex flex-row justify-between">
                     <CreateBtn route={route('customers.create')} />
                 </div>
-                <DataTable data={customers} columns={columns} />
+                <DataTable
+                    data={customers}
+                    columns={columns}
+                    filterPanel={CustomerFilterPanel}
+                    searchColumn="name"
+                    searchPlaceholder="Search customer..."
+                />
             </div>
         </AppLayout>
     );

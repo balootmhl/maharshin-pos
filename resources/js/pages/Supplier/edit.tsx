@@ -5,20 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Supplier } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
-
-type Supplier = {
-    id: number;
-    code: string;
-    name: string;
-    contact_person?: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    is_active: boolean;
-};
 
 type SupplierForm = {
     code: string;
@@ -49,7 +38,7 @@ export default function SupplierEdit({ supplier }: { supplier: Supplier }) {
         phone: supplier.phone || '',
         email: supplier.email || '',
         address: supplier.address || '',
-        is_active: supplier.is_active,
+        is_active: supplier.is_active ?? true,
     });
 
     const submit: FormEventHandler = (e) => {

@@ -8,12 +8,15 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Link } from '@inertiajs/react';
 import {
     ColumnDef,
     ColumnFiltersState,
     SortingState,
+    Table as TanStackTable,
     VisibilityState,
     flexRender,
     getCoreRowModel,
@@ -22,7 +25,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ChevronDown, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, Filter, MoreHorizontal } from 'lucide-react';
 import React from 'react';
 
 type ActionsProp = {
@@ -61,16 +64,33 @@ export function DataTableActions({ routePrefix, routeParam }: ActionsProp) {
     );
 }
 
-type TableProps = {
-    data: unknown[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    columns: ColumnDef<any>[];
+type FilterPanelProps<TData> = {
+    table: TanStackTable<TData>;
+    onClearFilters: () => void;
 };
-export function DataTable({ data, columns }: TableProps) {
+
+type TableProps<TData> = {
+    data: TData[];
+    columns: ColumnDef<TData>[];
+    filterPanel?: React.ComponentType<FilterPanelProps<TData>>;
+    searchColumn?: string;
+    searchPlaceholder?: string;
+    initialColumnVisibility?: VisibilityState;
+};
+
+export function DataTable<TData>({
+    data,
+    columns,
+    filterPanel: FilterPanel,
+    searchColumn = 'name',
+    searchPlaceholder = 'Filter name...',
+    initialColumnVisibility = {},
+}: TableProps<TData>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(initialColumnVisibility);
     const [rowSelection, setRowSelection] = React.useState({});
+    const [filterOpen, setFilterOpen] = React.useState(false);
 
     const table = useReactTable({
         data,
@@ -91,39 +111,69 @@ export function DataTable({ data, columns }: TableProps) {
         },
     });
 
+    const handleClearFilters = () => {
+        setColumnFilters([]);
+    };
+
+    const activeFilterCount = columnFilters.length;
+
     return (
         <div className="w-full">
-            <div className="flex items-center py-4">
+            <div className="flex items-center gap-2 py-4">
                 <Input
-                    placeholder="Filter name..."
-                    value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
-                    onChange={(event) => table.getColumn('name')?.setFilterValue(event.target.value)}
+                    placeholder={searchPlaceholder}
+                    value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ''}
+                    onChange={(event) => table.getColumn(searchColumn)?.setFilterValue(event.target.value)}
                     className="max-w-sm"
                 />
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto">
-                            Columns <ChevronDown className="ml-2 h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {table
-                            .getAllColumns()
-                            .filter((column) => column.getCanHide())
-                            .map((column) => {
-                                return (
-                                    <DropdownMenuCheckboxItem
-                                        key={column.id}
-                                        className="capitalize"
-                                        checked={column.getIsVisible()}
-                                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                                    >
-                                        {column.id}
-                                    </DropdownMenuCheckboxItem>
-                                );
-                            })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="ml-auto flex gap-2">
+                    {FilterPanel && (
+                        <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline">
+                                    <Filter className="mr-2 h-4 w-4" />
+                                    Filter
+                                    {activeFilterCount > 0 && (
+                                        <span className="bg-primary text-primary-foreground ml-2 rounded-full px-2 py-0.5 text-xs">
+                                            {activeFilterCount}
+                                        </span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-80 p-0">
+                                <ScrollArea className="h-[400px]">
+                                    <div className="p-4">
+                                        <FilterPanel table={table} onClearFilters={handleClearFilters} />
+                                    </div>
+                                </ScrollArea>
+                            </PopoverContent>
+                        </Popover>
+                    )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                Columns <ChevronDown className="ml-2 h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {table
+                                .getAllColumns()
+                                .filter((column) => column.getCanHide())
+                                .map((column) => {
+                                    return (
+                                        <DropdownMenuCheckboxItem
+                                            key={column.id}
+                                            className="capitalize"
+                                            checked={column.getIsVisible()}
+                                            onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                                        >
+                                            {column.id}
+                                        </DropdownMenuCheckboxItem>
+                                    );
+                                })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
             <div className="rounded-md border">
                 <Table>
@@ -175,3 +225,6 @@ export function DataTable({ data, columns }: TableProps) {
         </div>
     );
 }
+
+// Re-export the FilterPanelProps type for use in filter panel components
+export type { FilterPanelProps };

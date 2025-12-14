@@ -3,33 +3,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, StockAdjustment } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, Eye, Plus } from 'lucide-react';
-
-type Branch = { id: number; name: string };
-type Product = { id: number; name: string; code: string };
-type User = { id: number; name: string };
-
-type StockAdjustment = {
-    id: number;
-    adjustment_no: string;
-    branch_id: number;
-    branch?: Branch;
-    product_id: number;
-    product?: Product;
-    adjustment_date: string;
-    adjustment_type: 'add' | 'subtract';
-    quantity: number;
-    quantity_before: number;
-    quantity_after: number;
-    reason: string;
-    notes?: string;
-    created_by?: number;
-    createdBy?: User;
-    created_at?: string;
-};
 
 type Reasons = Record<string, string>;
 

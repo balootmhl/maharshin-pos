@@ -6,12 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Branch } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { BarChart3, DollarSign, Receipt, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
-
-type Branch = { id: number; name: string };
 type SaleByDate = { date: string; sales_count: number; total_amount: number; paid_amount: number };
 type SaleByStatus = { payment_status: string; count: number; total: number };
 type TopProduct = { name: string; code: string; qty_sold: number; revenue: number };

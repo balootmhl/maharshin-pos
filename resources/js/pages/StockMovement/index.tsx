@@ -3,32 +3,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, StockMovement } from '@/types';
 import { Head } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown } from 'lucide-react';
-
-type Branch = { id: number; name: string };
-type Product = { id: number; name: string; code: string };
-type User = { id: number; name: string };
-
-type StockMovement = {
-    id: number;
-    branch_id: number;
-    branch?: Branch;
-    product_id: number;
-    product?: Product;
-    movement_type: string;
-    quantity: number;
-    quantity_before: number;
-    quantity_after: number;
-    reference_type?: string;
-    reference_id?: number;
-    notes?: string;
-    created_by?: number;
-    createdBy?: User;
-    created_at?: string;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

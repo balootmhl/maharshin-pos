@@ -22,7 +22,7 @@ class PurchaseController extends Controller
 {
     public function index(Request $request): Response
     {
-        $purchases = Purchase::with(['branch', 'supplier', 'createdBy'])->latest()->get();
+        $purchases = Purchase::with(['branch', 'supplier', 'createdBy', 'purchaseItems.product'])->latest()->get();
 
         return Inertia::render('Purchase/index', [
             'purchases' => $purchases,

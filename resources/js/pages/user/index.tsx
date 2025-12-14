@@ -3,19 +3,10 @@ import { DataTable, DataTableActions } from '@/components/tables/data-table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, User } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, LogInIcon } from 'lucide-react';
-
-// Dummy interface
-// Update your types file and import from it
-type User = {
-    id?: number;
-    name: string;
-    email: string;
-    created_at?: string;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

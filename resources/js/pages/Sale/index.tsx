@@ -1,38 +1,16 @@
 import { CreateBtn } from '@/components/buttons/create-btn';
-import { DataTable, DataTableActions } from '@/components/tables/data-table';
+import { DataTable, DataTableActions, FilterPanelProps } from '@/components/tables/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, Sale } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown } from 'lucide-react';
-
-type Branch = { id: number; name: string };
-type Customer = { id: number; name: string };
-type User = { id: number; name: string };
-
-type Sale = {
-    id: number;
-    invoice_no: string;
-    branch_id: number;
-    branch?: Branch;
-    customer_id?: number;
-    customer?: Customer;
-    sale_date: string;
-    subtotal: number;
-    tax_amount: number;
-    discount_amount: number;
-    total_amount: number;
-    payment_status: string;
-    payment_method?: string;
-    paid_amount: number;
-    credit_amount: number;
-    created_by?: number;
-    createdBy?: User;
-    created_at?: string;
-};
+import { ArrowUpDown, X } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -97,11 +75,24 @@ const columns: ColumnDef<Sale>[] = [
                 {row.getValue('invoice_no')}
             </Link>
         ),
+        filterFn: (row, id, value) => {
+            const invoiceNo = row.getValue(id) as string;
+            return invoiceNo.toLowerCase().includes(value.toLowerCase());
+        },
     },
     {
         accessorKey: 'sale_date',
         header: 'Date',
         cell: ({ row }) => <div>{row.getValue('sale_date')}</div>,
+        filterFn: (row, id, value: { start?: string; end?: string }) => {
+            const dateStr = row.getValue(id) as string;
+            // Normalize date format: convert 2025/11/18 to 2025-11-18 for comparison
+            const normalizedDate = dateStr.replace(/\//g, '-');
+            if (!value.start && !value.end) return true;
+            if (value.start && normalizedDate < value.start) return false;
+            if (value.end && normalizedDate > value.end) return false;
+            return true;
+        },
     },
     {
         accessorKey: 'branch.name',
@@ -109,14 +100,25 @@ const columns: ColumnDef<Sale>[] = [
         cell: ({ row }) => <div>{row.original.branch?.name || '-'}</div>,
     },
     {
+        id: 'customer',
         accessorKey: 'customer.name',
         header: 'Customer',
         cell: ({ row }) => <div>{row.original.customer?.name || 'Walk-in'}</div>,
+        filterFn: (row, id, value) => {
+            const customerName = row.original.customer?.name?.toLowerCase() || 'walk-in';
+            return customerName.includes(value.toLowerCase());
+        },
     },
     {
         accessorKey: 'total_amount',
         header: 'Total',
         cell: ({ row }) => <div className="text-right font-mono">{formatCurrency(row.getValue('total_amount'))} Ks</div>,
+        filterFn: (row, id, value: { min?: number; max?: number }) => {
+            const amount = row.getValue(id) as number;
+            if (value.min !== undefined && amount < value.min) return false;
+            if (value.max !== undefined && amount > value.max) return false;
+            return true;
+        },
     },
     {
         accessorKey: 'payment_status',
@@ -126,6 +128,21 @@ const columns: ColumnDef<Sale>[] = [
                 {(row.getValue('payment_status') as string).charAt(0).toUpperCase() + (row.getValue('payment_status') as string).slice(1)}
             </Badge>
         ),
+        filterFn: (row, id, value: string[]) => {
+            if (!value || value.length === 0) return true;
+            return value.includes(row.getValue(id) as string);
+        },
+    },
+    // Hidden column for product filtering (searches name and code)
+    {
+        id: 'products',
+        accessorFn: (row) =>
+            row.sale_items?.map((item) => `${item.product?.name?.toLowerCase()} ${item.product?.code?.toLowerCase()}`).join(' ') || '',
+        enableHiding: true,
+        filterFn: (row, id, value) => {
+            const productData = row.getValue(id) as string;
+            return productData.includes(value.toLowerCase());
+        },
     },
     {
         id: 'actions',
@@ -137,6 +154,151 @@ const columns: ColumnDef<Sale>[] = [
     },
 ];
 
+// Filter Panel Component
+function SalesFilterPanel({ table, onClearFilters }: FilterPanelProps<Sale>) {
+    // Status filter
+    const statusColumn = table.getColumn('payment_status');
+    const statusFilter = (statusColumn?.getFilterValue() as string[]) || [];
+
+    const toggleStatus = (status: string) => {
+        const current = [...statusFilter];
+        const index = current.indexOf(status);
+        if (index === -1) {
+            current.push(status);
+        } else {
+            current.splice(index, 1);
+        }
+        statusColumn?.setFilterValue(current.length > 0 ? current : undefined);
+    };
+
+    // Customer filter
+    const customerColumn = table.getColumn('customer');
+    const customerFilter = (customerColumn?.getFilterValue() as string) || '';
+
+    // Product filter
+    const productColumn = table.getColumn('products');
+    const productFilter = (productColumn?.getFilterValue() as string) || '';
+
+    // Date range filter
+    const dateColumn = table.getColumn('sale_date');
+    const dateFilter = (dateColumn?.getFilterValue() as { start?: string; end?: string }) || {};
+
+    // Amount range filter
+    const amountColumn = table.getColumn('total_amount');
+    const amountFilter = (amountColumn?.getFilterValue() as { min?: number; max?: number }) || {};
+
+    const hasActiveFilters =
+        statusFilter.length > 0 || customerFilter || productFilter || dateFilter.start || dateFilter.end || amountFilter.min || amountFilter.max;
+
+    return (
+        <div className="space-y-4">
+            {/* Clear All Button */}
+            {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
+                    <X className="mr-2 h-4 w-4" />
+                    Clear all filters
+                </Button>
+            )}
+
+            {/* Status Filter */}
+            <div className="space-y-3">
+                <Label className="text-sm font-medium">Payment Status</Label>
+                <div className="space-y-2">
+                    {['paid', 'partial', 'unpaid'].map((status) => (
+                        <div key={status} className="flex items-center space-x-2">
+                            <Checkbox id={`status-${status}`} checked={statusFilter.includes(status)} onCheckedChange={() => toggleStatus(status)} />
+                            <Label htmlFor={`status-${status}`} className="cursor-pointer text-sm font-normal capitalize">
+                                {status}
+                            </Label>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <Separator />
+
+            {/* Customer Filter */}
+            <div className="space-y-3">
+                <Label className="text-sm font-medium">Customer</Label>
+                <Input
+                    placeholder="Filter by customer name..."
+                    value={customerFilter}
+                    onChange={(e) => customerColumn?.setFilterValue(e.target.value || undefined)}
+                />
+            </div>
+
+            <Separator />
+
+            {/* Product Filter */}
+            <div className="space-y-3">
+                <Label className="text-sm font-medium">Product</Label>
+                <Input
+                    placeholder="Filter by name or code..."
+                    value={productFilter}
+                    onChange={(e) => productColumn?.setFilterValue(e.target.value || undefined)}
+                />
+                <p className="text-muted-foreground text-xs">Search by product name or code</p>
+            </div>
+
+            <Separator />
+
+            {/* Date Range Filter */}
+            <div className="space-y-3">
+                <Label className="text-sm font-medium">Date Range</Label>
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                        <Label className="text-muted-foreground text-xs">From</Label>
+                        <Input
+                            type="date"
+                            value={dateFilter.start || ''}
+                            onChange={(e) => dateColumn?.setFilterValue({ ...dateFilter, start: e.target.value || undefined })}
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-muted-foreground text-xs">To</Label>
+                        <Input
+                            type="date"
+                            value={dateFilter.end || ''}
+                            onChange={(e) => dateColumn?.setFilterValue({ ...dateFilter, end: e.target.value || undefined })}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <Separator />
+
+            {/* Amount Range Filter */}
+            <div className="space-y-3">
+                <Label className="text-sm font-medium">Amount Range</Label>
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                        <Label className="text-muted-foreground text-xs">Min</Label>
+                        <Input
+                            type="number"
+                            placeholder="0"
+                            value={amountFilter.min || ''}
+                            onChange={(e) =>
+                                amountColumn?.setFilterValue({ ...amountFilter, min: e.target.value ? Number(e.target.value) : undefined })
+                            }
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <Label className="text-muted-foreground text-xs">Max</Label>
+                        <Input
+                            type="number"
+                            placeholder="999999"
+                            value={amountFilter.max || ''}
+                            onChange={(e) =>
+                                amountColumn?.setFilterValue({ ...amountFilter, max: e.target.value ? Number(e.target.value) : undefined })
+                            }
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function SaleIndex({ sales }: { sales: Sale[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -145,7 +307,14 @@ export default function SaleIndex({ sales }: { sales: Sale[] }) {
                 <div className="flex flex-row justify-between">
                     <CreateBtn route={route('sales.create')} />
                 </div>
-                <DataTable data={sales} columns={columns} />
+                <DataTable
+                    data={sales}
+                    columns={columns}
+                    filterPanel={SalesFilterPanel}
+                    searchColumn="invoice_no"
+                    searchPlaceholder="Search invoice..."
+                    initialColumnVisibility={{ products: false }}
+                />
             </div>
         </AppLayout>
     );

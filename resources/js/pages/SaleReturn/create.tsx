@@ -11,33 +11,10 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Product, Sale } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { Minus, Plus, Search, Undo2 } from 'lucide-react';
 import { FormEventHandler, useEffect, useMemo, useState } from 'react';
-
-type Branch = { id: number; name: string; code: string };
-type Customer = { id: number; name: string; code: string };
-type Product = { id: number; name: string; code: string };
-type SaleItem = {
-    id: number;
-    product_id: number;
-    product?: Product;
-    quantity: number;
-    unit_price: number;
-    subtotal: number;
-};
-type Sale = {
-    id: number;
-    invoice_no: string;
-    sale_date: string;
-    customer_id?: number;
-    customer?: Customer;
-    branch_id: number;
-    branch?: Branch;
-    total_amount: number;
-    sale_items?: SaleItem[];
-};
 
 type ReturnItem = {
     sale_item_id: number;
@@ -81,7 +58,7 @@ const formatCurrency = (value: number) => {
 
 const refundMethods = ['Cash', 'Credit Adjustment', 'Bank Transfer', 'KBZ Pay', 'Wave Money'];
 
-export default function SaleReturnCreate({ sales, branches }: { sales: Sale[]; branches: Branch[] }) {
+export default function SaleReturnCreate({ sales }: { sales: Sale[] }) {
     const today = new Date().toISOString().split('T')[0];
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -149,7 +126,7 @@ export default function SaleReturnCreate({ sales, branches }: { sales: Sale[]; b
             total_amount: returnTotals.total,
             refund_amount: Math.min(prev.refund_amount || returnTotals.total, returnTotals.total),
         }));
-    }, [returnItems, returnTotals]);
+    }, [returnItems, returnTotals, setData]);
 
     const toggleItemSelection = (saleItemId: number) => {
         setReturnItems((prev) =>

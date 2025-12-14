@@ -2,40 +2,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, SaleReturn } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Edit } from 'lucide-react';
-
-type Branch = { id: number; name: string };
-type Sale = { id: number; invoice_no: string };
-type Customer = { id: number; name: string };
-type User = { id: number; name: string };
-type Product = { id: number; name: string; code: string };
-type SaleReturnItem = {
-    id: number;
-    product_id: number;
-    product?: Product;
-    quantity: number;
-    unit_price: number;
-    total: number;
-};
-
-type SaleReturn = {
-    id: number;
-    return_no: string;
-    sale_id: number;
-    sale?: Sale & { customer?: Customer };
-    branch_id: number;
-    branch?: Branch;
-    return_date: string;
-    total_amount: number;
-    refund_amount: number;
-    refund_method?: string;
-    reason?: string;
-    created_by?: number;
-    createdBy?: User;
-    saleReturnItems?: SaleReturnItem[];
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -78,7 +47,7 @@ export default function SaleReturnShow({ saleReturn }: { saleReturn: SaleReturn 
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {saleReturn.saleReturnItems && saleReturn.saleReturnItems.length > 0 && (
+                        {saleReturn.sale_return_items && saleReturn.sale_return_items.length > 0 && (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -89,7 +58,7 @@ export default function SaleReturnShow({ saleReturn }: { saleReturn: SaleReturn 
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {saleReturn.saleReturnItems.map((item) => (
+                                    {saleReturn.sale_return_items.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
                                                 <div className="font-medium">{item.product?.name}</div>
@@ -97,7 +66,7 @@ export default function SaleReturnShow({ saleReturn }: { saleReturn: SaleReturn 
                                             </TableCell>
                                             <TableCell className="text-right">{item.quantity}</TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(item.unit_price)}</TableCell>
-                                            <TableCell className="text-right font-mono font-medium">{formatCurrency(item.total)}</TableCell>
+                                            <TableCell className="text-right font-mono font-medium">{formatCurrency(item.subtotal)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

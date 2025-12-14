@@ -3,42 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Purchase } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Edit } from 'lucide-react';
-
-type Branch = { id: number; name: string };
-type Supplier = { id: number; name: string };
-type User = { id: number; name: string };
-type Product = { id: number; name: string; code: string };
-type PurchaseItem = {
-    id: number;
-    product_id: number;
-    product?: Product;
-    quantity: number;
-    unit_cost: number;
-    tax_amount: number;
-    total: number;
-};
-
-type Purchase = {
-    id: number;
-    purchase_no: string;
-    branch_id: number;
-    branch?: Branch;
-    supplier_id?: number;
-    supplier?: Supplier;
-    purchase_date: string;
-    subtotal: number;
-    tax_amount: number;
-    total_amount: number;
-    payment_status: string;
-    paid_amount: number;
-    notes?: string;
-    created_by?: number;
-    createdBy?: User;
-    purchaseItems?: PurchaseItem[];
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -99,7 +66,7 @@ export default function PurchaseShow({ purchase }: { purchase: Purchase }) {
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {purchase.purchaseItems && purchase.purchaseItems.length > 0 && (
+                        {purchase.purchase_items && purchase.purchase_items.length > 0 && (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -111,7 +78,7 @@ export default function PurchaseShow({ purchase }: { purchase: Purchase }) {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {purchase.purchaseItems.map((item) => (
+                                    {purchase.purchase_items.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
                                                 <div className="font-medium">{item.product?.name}</div>
@@ -120,7 +87,7 @@ export default function PurchaseShow({ purchase }: { purchase: Purchase }) {
                                             <TableCell className="text-right">{item.quantity}</TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(item.unit_cost)}</TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(item.tax_amount)}</TableCell>
-                                            <TableCell className="text-right font-mono font-medium">{formatCurrency(item.total)}</TableCell>
+                                            <TableCell className="text-right font-mono font-medium">{formatCurrency(item.subtotal)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

@@ -3,31 +3,10 @@ import { DataTable, DataTableActions } from '@/components/tables/data-table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, SaleReturn } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown } from 'lucide-react';
-
-type Branch = { id: number; name: string };
-type Sale = { id: number; invoice_no: string };
-type User = { id: number; name: string };
-
-type SaleReturn = {
-    id: number;
-    return_no: string;
-    sale_id: number;
-    sale?: Sale;
-    branch_id: number;
-    branch?: Branch;
-    return_date: string;
-    total_amount: number;
-    refund_amount: number;
-    refund_method?: string;
-    reason?: string;
-    created_by?: number;
-    createdBy?: User;
-    created_at?: string;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

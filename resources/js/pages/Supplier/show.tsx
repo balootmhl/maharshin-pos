@@ -2,21 +2,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Supplier } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Edit, Mail, MapPin, Phone, User } from 'lucide-react';
-
-type Supplier = {
-    id: number;
-    code: string;
-    name: string;
-    contact_person?: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    is_active: boolean;
-    created_at?: string;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

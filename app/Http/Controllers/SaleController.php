@@ -24,7 +24,7 @@ class SaleController extends Controller
 {
     public function index(Request $request): Response
     {
-        $sales = Sale::with(['branch', 'customer', 'createdBy'])->latest()->get();
+        $sales = Sale::with(['branch', 'customer', 'createdBy', 'saleItems.product'])->latest()->get();
 
         return Inertia::render('Sale/index', [
             'sales' => $sales,
@@ -65,8 +65,9 @@ class SaleController extends Controller
     public function store(SaleStoreRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $sale = null;
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, &$sale) {
             // Generate unique invoice number by finding the max existing number
             $maxInvoiceNo = Sale::withTrashed()
                 ->selectRaw('MAX(CAST(SUBSTRING(invoice_no, 5) AS UNSIGNED)) as max_num')
@@ -152,7 +153,21 @@ class SaleController extends Controller
             }
         });
 
-        return redirect()->route('sales.index')->with('success', 'Sale completed successfully.');
+        // Load customer for the success dialog
+        $sale->load('customer:id,name');
+
+        return redirect()->route('sales.create')->with('completedSale', [
+            'id' => $sale->id,
+            'invoice_no' => $sale->invoice_no,
+            'total_amount' => $sale->total_amount,
+            'paid_amount' => $sale->paid_amount,
+            'credit_amount' => $sale->credit_amount,
+            'payment_status' => $sale->payment_status,
+            'customer' => $sale->customer ? [
+                'id' => $sale->customer->id,
+                'name' => $sale->customer->name,
+            ] : null,
+        ]);
     }
 
     public function show(Request $request, Sale $sale): Response
@@ -192,5 +207,16 @@ class SaleController extends Controller
         $sale->delete();
 
         return redirect()->route('sales.index');
+    }
+
+    public function print(Request $request, Sale $sale)
+    {
+        $sale->load(['branch', 'customer', 'saleItems.product', 'createdBy']);
+        $format = $request->query('format', 'a4');
+
+        return view('print.invoice', [
+            'sale' => $sale,
+            'format' => $format,
+        ]);
     }
 }

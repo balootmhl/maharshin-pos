@@ -6,30 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Category, Product } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
-
-type Category = {
-    id: number;
-    code: string;
-    name: string;
-};
-
-type Product = {
-    id: number;
-    code: string;
-    barcode?: string;
-    name: string;
-    description?: string;
-    category_id: number;
-    unit: string;
-    cost_price: number;
-    selling_price: number;
-    tax_rate: number;
-    low_stock_alert: number;
-    is_active: boolean;
-};
 
 type ProductForm = {
     code: string;
@@ -63,12 +42,12 @@ export default function ProductEdit({ product, categories }: { product: Product;
         name: product.name,
         description: product.description || '',
         category_id: String(product.category_id),
-        unit: product.unit,
+        unit: product.unit || 'pcs',
         cost_price: String(product.cost_price),
         selling_price: String(product.selling_price),
         tax_rate: String(product.tax_rate),
-        low_stock_alert: String(product.low_stock_alert),
-        is_active: product.is_active,
+        low_stock_alert: String(product.low_stock_alert || 0),
+        is_active: product.is_active ?? true,
     });
 
     const submit: FormEventHandler = (e) => {

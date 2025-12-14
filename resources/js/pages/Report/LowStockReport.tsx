@@ -4,12 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Branch } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { AlertTriangle, Package, PackageX } from 'lucide-react';
 import { useState } from 'react';
-
-type Branch = { id: number; name: string };
 type LowStockItem = {
     id: string;
     branch: string;

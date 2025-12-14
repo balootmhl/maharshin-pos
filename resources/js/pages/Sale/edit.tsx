@@ -1,14 +1,9 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Sale } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Construction } from 'lucide-react';
-
-type Sale = {
-    id: number;
-    invoice_no: string;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

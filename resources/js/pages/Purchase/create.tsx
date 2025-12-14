@@ -10,25 +10,10 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Branch, Product, Supplier } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { Minus, Package, Plus, Search, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useEffect, useMemo, useRef, useState } from 'react';
-
-type Category = { id: number; name: string };
-type Branch = { id: number; name: string; code: string };
-type Supplier = { id: number; name: string; code: string };
-type Product = {
-    id: number;
-    name: string;
-    code: string;
-    barcode?: string;
-    cost_price: number;
-    tax_rate: number;
-    category_id?: number;
-    category?: Category;
-    unit?: string;
-};
 
 type CartItem = {
     product_id: number;

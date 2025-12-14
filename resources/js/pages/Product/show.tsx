@@ -2,31 +2,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Product } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Barcode, Edit, Package, Tag } from 'lucide-react';
-
-type Category = {
-    id: number;
-    name: string;
-};
-
-type Product = {
-    id: number;
-    code: string;
-    barcode?: string;
-    name: string;
-    description?: string;
-    category_id: number;
-    category?: Category;
-    unit: string;
-    cost_price: number;
-    selling_price: number;
-    tax_rate: number;
-    low_stock_alert: number;
-    is_active: boolean;
-    created_at?: string;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

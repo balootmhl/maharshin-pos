@@ -5,24 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Branch, Customer, CustomerPayment } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
-
-type Branch = { id: number; name: string };
-type Customer = { id: number; name: string; code: string };
-
-type CustomerPayment = {
-    id: number;
-    payment_no: string;
-    customer_id: number;
-    branch_id: number;
-    payment_date: string;
-    amount: number;
-    payment_method: string;
-    reference_no?: string;
-    notes?: string;
-};
 
 type PaymentForm = {
     customer_id: string;

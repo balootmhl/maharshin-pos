@@ -1,29 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, CustomerPayment } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { Banknote, Edit } from 'lucide-react';
-
-type Branch = { id: number; name: string };
-type Customer = { id: number; name: string };
-type User = { id: number; name: string };
-
-type CustomerPayment = {
-    id: number;
-    payment_no: string;
-    customer_id: number;
-    customer?: Customer;
-    branch_id: number;
-    branch?: Branch;
-    payment_date: string;
-    amount: number;
-    payment_method: string;
-    reference_no?: string;
-    notes?: string;
-    created_by?: number;
-    createdBy?: User;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

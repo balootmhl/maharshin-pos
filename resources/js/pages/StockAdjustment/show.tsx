@@ -2,33 +2,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, StockAdjustment } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Calendar, MapPin, Package, User } from 'lucide-react';
 
-type Branch = { id: number; name: string };
-type Product = { id: number; name: string; code: string; unit?: string };
-type UserType = { id: number; name: string };
 type Reasons = Record<string, string>;
-
-type StockAdjustment = {
-    id: number;
-    adjustment_no: string;
-    branch_id: number;
-    branch?: Branch;
-    product_id: number;
-    product?: Product;
-    adjustment_date: string;
-    adjustment_type: 'add' | 'subtract';
-    quantity: number;
-    quantity_before: number;
-    quantity_after: number;
-    reason: string;
-    notes?: string;
-    created_by?: number;
-    created_by_user?: UserType;
-    created_at?: string;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -143,12 +121,12 @@ export default function StockAdjustmentShow({ stockAdjustment, reasons }: { stoc
                         )}
 
                         {/* Created By */}
-                        {stockAdjustment.created_by_user && (
+                        {stockAdjustment.createdBy && (
                             <div className="flex items-start gap-3 border-t pt-4">
                                 <User className="text-muted-foreground mt-1 h-5 w-5" />
                                 <div>
                                     <p className="text-muted-foreground text-sm">Created By</p>
-                                    <p className="font-medium">{stockAdjustment.created_by_user.name}</p>
+                                    <p className="font-medium">{stockAdjustment.createdBy?.name}</p>
                                     <p className="text-muted-foreground text-xs">{stockAdjustment.created_at}</p>
                                 </div>
                             </div>

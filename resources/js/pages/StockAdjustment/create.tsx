@@ -5,13 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Branch, Product } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
-type Branch = { id: number; name: string; code: string };
-type Category = { id: number; name: string };
-type Product = { id: number; name: string; code: string; category?: Category; unit?: string; stock: number };
 type Reasons = Record<string, string>;
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -56,10 +53,11 @@ export default function StockAdjustmentCreate({ branches, products, reasons }: {
     const calculateNewBalance = () => {
         if (!selectedProduct || !data.quantity) return null;
         const qty = parseInt(data.quantity) || 0;
+        const currentStock = selectedProduct.stock || 0;
         if (data.adjustment_type === 'add') {
-            return selectedProduct.stock + qty;
+            return currentStock + qty;
         } else {
-            return selectedProduct.stock - qty;
+            return currentStock - qty;
         }
     };
 

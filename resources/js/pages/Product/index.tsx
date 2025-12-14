@@ -4,32 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, Product } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown } from 'lucide-react';
-
-type Category = {
-    id: number;
-    name: string;
-};
-
-type Product = {
-    id: number;
-    code: string;
-    barcode?: string;
-    name: string;
-    description?: string;
-    category_id: number;
-    category?: Category;
-    unit: string;
-    cost_price: number;
-    selling_price: number;
-    tax_rate: number;
-    low_stock_alert: number;
-    is_active: boolean;
-    created_at?: string;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

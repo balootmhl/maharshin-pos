@@ -3,11 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Branch, Customer } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { CreditCard, Download, Edit, FileText, Mail, MapPin, Phone, Plus } from 'lucide-react';
-
-type Branch = { id: number; name: string };
 
 type CreditLedgerEntry = {
     id: number;
@@ -19,19 +17,6 @@ type CreditLedgerEntry = {
     credit: number;
     balance: number;
     description?: string;
-};
-
-type Customer = {
-    id: number;
-    code: string;
-    name: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    credit_limit: number;
-    current_balance: number;
-    is_active: boolean;
-    created_at?: string;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [

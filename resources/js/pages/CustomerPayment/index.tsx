@@ -3,31 +3,10 @@ import { DataTable, DataTableActions } from '@/components/tables/data-table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, CustomerPayment } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown } from 'lucide-react';
-
-type Branch = { id: number; name: string };
-type Customer = { id: number; name: string };
-type User = { id: number; name: string };
-
-type CustomerPayment = {
-    id: number;
-    payment_no: string;
-    customer_id: number;
-    customer?: Customer;
-    branch_id: number;
-    branch?: Branch;
-    payment_date: string;
-    amount: number;
-    payment_method: string;
-    reference_no?: string;
-    notes?: string;
-    created_by?: number;
-    createdBy?: User;
-    created_at?: string;
-};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

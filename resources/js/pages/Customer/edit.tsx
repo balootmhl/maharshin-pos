@@ -5,21 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Customer } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
-
-type Customer = {
-    id: number;
-    code: string;
-    name: string;
-    phone?: string;
-    email?: string;
-    address?: string;
-    credit_limit: number;
-    current_balance: number;
-    is_active: boolean;
-};
 
 type CustomerForm = {
     code: string;
@@ -52,7 +40,7 @@ export default function CustomerEdit({ customer }: { customer: Customer }) {
         address: customer.address || '',
         credit_limit: String(customer.credit_limit),
         current_balance: String(customer.current_balance),
-        is_active: customer.is_active,
+        is_active: customer.is_active ?? true,
     });
 
     const submit: FormEventHandler = (e) => {
