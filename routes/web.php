@@ -65,6 +65,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('stock-movements', App\Http\Controllers\StockMovementController::class)->only('index');
 
+    Route::resource('stock-adjustments', App\Http\Controllers\StockAdjustmentController::class)->only(['index', 'create', 'store', 'show']);
+
+    Route::get('stock-history', [App\Http\Controllers\StockHistoryController::class, 'index'])->name('stock-history.index');
+
     Route::resource('settings', App\Http\Controllers\SettingController::class)->only('index', 'update');
 
     // Reports

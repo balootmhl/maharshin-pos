@@ -4,10 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Spatie\Activitylog\LogOptions;
 
-class StockMovement extends BaseModel
+class StockAdjustment extends BaseModel
 {
     use HasFactory;
 
@@ -17,14 +16,15 @@ class StockMovement extends BaseModel
      * @var array
      */
     protected $fillable = [
-        'product_id',
+        'adjustment_no',
         'branch_id',
-        'movement_type',
+        'product_id',
+        'adjustment_date',
+        'adjustment_type',
         'quantity',
         'quantity_before',
         'quantity_after',
-        'reference_type',
-        'reference_id',
+        'reason',
         'notes',
         'created_by',
     ];
@@ -36,10 +36,23 @@ class StockMovement extends BaseModel
      */
     protected $casts = [
         'id' => 'integer',
-        'product_id' => 'integer',
         'branch_id' => 'integer',
-        'reference_id' => 'integer',
+        'product_id' => 'integer',
+        'adjustment_date' => 'date',
         'created_by' => 'integer',
+    ];
+
+    /**
+     * Adjustment reason options
+     */
+    public const REASONS = [
+        'damaged' => 'Damaged Goods',
+        'expired' => 'Expired Products',
+        'count_error' => 'Count Error/Correction',
+        'theft' => 'Theft/Loss',
+        'found' => 'Found Stock',
+        'initial' => 'Initial Stock Count',
+        'other' => 'Other',
     ];
 
     /**
@@ -50,13 +63,8 @@ class StockMovement extends BaseModel
         return LogOptions::defaults()
             ->logAll()
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn (string $eventName) => "Stock movement {$eventName}: {$this->movement_type} ({$this->quantity})")
+            ->setDescriptionForEvent(fn (string $eventName) => "Stock adjustment {$eventName}: {$this->adjustment_no}")
             ->useLogName('stock');
-    }
-
-    public function product(): BelongsTo
-    {
-        return $this->belongsTo(Product::class);
     }
 
     public function branch(): BelongsTo
@@ -64,18 +72,21 @@ class StockMovement extends BaseModel
         return $this->belongsTo(Branch::class);
     }
 
-    public function creator(): BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Product::class);
     }
 
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function reference(): MorphTo
+    /**
+     * Get the reason label
+     */
+    public function getReasonLabelAttribute(): string
     {
-        return $this->morphTo();
+        return self::REASONS[$this->reason] ?? $this->reason;
     }
 }

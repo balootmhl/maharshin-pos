@@ -63,6 +63,14 @@ export const navMain: NavGroup[] = [
                 title: 'Stock Movements',
                 url: route('stock-movements.index'),
             },
+            {
+                title: 'Stock Adjustments',
+                url: route('stock-adjustments.index'),
+            },
+            {
+                title: 'Stock History',
+                url: route('stock-history.index'),
+            },
         ],
     },
     {

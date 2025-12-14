@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\LogOptions;
 
 class BranchStock extends BaseModel
 {
@@ -31,6 +32,18 @@ class BranchStock extends BaseModel
         'branch_id' => 'integer',
         'updated_at' => 'timestamp',
     ];
+
+    /**
+     * Activity log options
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['quantity'])
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(fn (string $eventName) => "Branch stock {$eventName}")
+            ->useLogName('stock');
+    }
 
     public function product(): BelongsTo
     {
