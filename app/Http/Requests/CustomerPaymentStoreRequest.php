@@ -20,18 +20,13 @@ class CustomerPaymentStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_no' => ['required', 'string', 'max:50', 'unique:customer_payments,payment_no'],
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'payment_date' => ['required', 'date'],
-            'amount' => ['required', 'numeric', 'between:-9999999999999.99,9999999999999.99'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['required', 'string', 'max:50'],
             'reference_no' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
-            'created_by' => ['nullable'],
-            'created_at' => ['required'],
-            'updated_at' => ['required'],
-            'creator_id' => ['required', 'integer', 'exists:Users,id'],
         ];
     }
 }

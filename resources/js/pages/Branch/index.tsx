@@ -1,6 +1,6 @@
 import { CreateBtn } from '@/components/buttons/create-btn';
-import { ExportBtn } from '@/components/buttons/export-btn';
 import { DataTable, DataTableActions } from '@/components/tables/data-table';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
@@ -9,18 +9,20 @@ import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown } from 'lucide-react';
 
-// Dummy interface
-// Update your types file and import from it
 type Branch = {
-    id?: number;
+    id: number;
+    code: string;
     name: string;
+    phone?: string;
+    email?: string;
+    is_active: boolean;
     created_at?: string;
-}
+};
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Branch',
-        href: route('Branches.index'),
+        title: 'Branches',
+        href: route('branches.index'),
     },
 ];
 
@@ -41,6 +43,11 @@ const columns: ColumnDef<Branch>[] = [
         enableHiding: false,
     },
     {
+        accessorKey: 'code',
+        header: 'Code',
+        cell: ({ row }) => <div className="font-mono text-xs">{row.getValue('code')}</div>,
+    },
+    {
         accessorKey: 'name',
         header: ({ column }) => {
             return (
@@ -52,9 +59,9 @@ const columns: ColumnDef<Branch>[] = [
         },
         cell: ({ row }) => (
             <Link
-                className="text-link"
-                href={route('Branches.show', {
-                    Branch: row.original.id,
+                className="text-link font-medium"
+                href={route('branches.show', {
+                    branch: row.original.id,
                 })}
             >
                 {row.getValue('name')}
@@ -62,31 +69,38 @@ const columns: ColumnDef<Branch>[] = [
         ),
     },
     {
-        accessorKey: 'created_at',
-        header: 'Created At',
-        cell: ({ row }) => <div className="">{row.getValue('created_at')}</div>,
+        accessorKey: 'phone',
+        header: 'Phone',
+        cell: ({ row }) => <div>{row.getValue('phone') || '-'}</div>,
+    },
+    {
+        accessorKey: 'is_active',
+        header: 'Status',
+        cell: ({ row }) => (
+            <Badge variant={row.getValue('is_active') ? 'default' : 'secondary'}>{row.getValue('is_active') ? 'Active' : 'Inactive'}</Badge>
+        ),
     },
     {
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => {
-            const param = { Branch: row.original.id };
+            const param = { branch: row.original.id };
 
-            return <DataTableActions routePrefix="Branches" routeParam={param} />;
+            return <DataTableActions routePrefix="branches" routeParam={param} />;
         },
     },
 ];
 
-export default function BranchIndex({ Branches }: { Branches: Branch[] }) {
+export default function BranchIndex({ branches }: { branches: Branch[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Branch" />
+            <Head title="Branches" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex flex-row justify-between">
-                    <CreateBtn route={route('Branches.create')} />
-                    <ExportBtn route={route('Branches.export')} />
+                    <CreateBtn route={route('branches.create')} />
+                    {/* <ExportBtn route={route('branches.export')} /> */}
                 </div>
-                <DataTable data={Branches} columns={columns} />
+                <DataTable data={branches} columns={columns} />
             </div>
         </AppLayout>
     );

@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CustomerStoreRequest;
 use App\Http\Requests\CustomerUpdateRequest;
 use App\Models\Customer;
+use App\Models\CustomerCreditLedger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CustomerController extends Controller
 {
@@ -37,8 +39,16 @@ class CustomerController extends Controller
 
     public function show(Request $request, Customer $customer): Response
     {
+        // Load credit ledger entries for this customer
+        $creditLedger = CustomerCreditLedger::with(['branch'])
+            ->where('customer_id', $customer->id)
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
         return Inertia::render('Customer/show', [
             'customer' => $customer,
+            'creditLedger' => $creditLedger,
         ]);
     }
 
@@ -63,5 +73,91 @@ class CustomerController extends Controller
         $customer->delete();
 
         return redirect()->route('customers.index');
+    }
+
+    /**
+     * Export customer credit ledger to CSV or Excel
+     */
+    public function exportCreditLedger(Request $request, Customer $customer): StreamedResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $format = $request->query('format', 'csv');
+
+        $ledger = CustomerCreditLedger::with(['branch'])
+            ->where('customer_id', $customer->id)
+            ->orderBy('transaction_date', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($format === 'excel') {
+            return $this->exportCreditLedgerExcel($customer, $ledger);
+        }
+
+        return $this->exportCreditLedgerCsv($customer, $ledger);
+    }
+
+    /**
+     * Export credit ledger to CSV format
+     */
+    private function exportCreditLedgerCsv(Customer $customer, $ledger): StreamedResponse
+    {
+        $customerSlug = str(strtolower($customer->name.'_'.$customer->code))->snake();
+        $fileName = "credit_ledger_{$customerSlug}_".now()->format('Y-m-d_His').'.csv';
+
+        return response()->streamDownload(function () use ($customer, $ledger) {
+            $handle = fopen('php://output', 'w');
+
+            // Header
+            fputcsv($handle, ['Credit Ledger for: '.$customer->name.' ('.$customer->code.')']);
+            fputcsv($handle, ['Exported on: '.now()->format('Y-m-d H:i:s')]);
+            fputcsv($handle, []);
+
+            // Column headers
+            fputcsv($handle, [
+                'Date',
+                'Type',
+                'Reference',
+                'Branch',
+                'Debit',
+                'Credit',
+                'Balance',
+                'Description',
+            ]);
+
+            // Data rows
+            foreach ($ledger as $entry) {
+                fputcsv($handle, [
+                    $entry->transaction_date,
+                    ucfirst($entry->transaction_type),
+                    $entry->reference_no ?? '-',
+                    $entry->branch?->name ?? '-',
+                    number_format((float) ($entry->debit ?? 0), 2),
+                    number_format((float) ($entry->credit ?? 0), 2),
+                    number_format((float) ($entry->balance ?? 0), 2),
+                    $entry->description ?? '-',
+                ]);
+            }
+
+            // Summary
+            fputcsv($handle, []);
+            fputcsv($handle, ['Current Balance:', '', '', '', '', '', number_format((float) ($customer->current_balance ?? 0), 2).' Ks']);
+
+            fclose($handle);
+        }, $fileName, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    /**
+     * Export credit ledger to Excel format
+     */
+    private function exportCreditLedgerExcel(Customer $customer, $ledger): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $customerSlug = str(strtolower($customer->name.'_'.$customer->code))->snake();
+        $fileName = "credit_ledger_{$customerSlug}_".now()->format('Y-m-d_His').'.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\CustomerCreditLedgerExport($customer, $ledger),
+            $fileName
+        );
     }
 }

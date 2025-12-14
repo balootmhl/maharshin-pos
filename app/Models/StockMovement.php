@@ -20,6 +20,8 @@ class StockMovement extends BaseModel
         'branch_id',
         'movement_type',
         'quantity',
+        'quantity_before',
+        'quantity_after',
         'reference_type',
         'reference_id',
         'notes',

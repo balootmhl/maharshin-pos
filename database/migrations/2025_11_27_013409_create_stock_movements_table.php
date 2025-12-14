@@ -19,6 +19,8 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained();
             $table->string('movement_type', 50);
             $table->integer('quantity');
+            $table->integer('quantity_before')->default(0);
+            $table->integer('quantity_after')->default(0);
             $table->text('notes')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users');
             $table->nullableMorphs('reference');

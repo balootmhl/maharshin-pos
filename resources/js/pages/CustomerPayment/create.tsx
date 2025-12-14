@@ -35,7 +35,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const paymentMethods = ['Cash', 'Bank Transfer', 'Mobile Banking', 'Check', 'Other'];
 
-export default function CustomerPaymentCreate({ customers, branches }: { customers: Customer[]; branches: Branch[] }) {
+export default function CustomerPaymentCreate({ customers = [], branches = [] }: { customers: Customer[]; branches: Branch[] }) {
     const today = new Date().toISOString().split('T')[0];
 
     const { data, setData, post, reset, errors, processing } = useForm<PaymentForm>({
