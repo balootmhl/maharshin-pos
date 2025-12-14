@@ -46,6 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('products', App\Http\Controllers\ProductController::class);
 
+    Route::get('customers/{customer}/credit-ledger/export', [App\Http\Controllers\CustomerController::class, 'exportCreditLedger'])->name('customers.credit-ledger.export');
     Route::resource('customers', App\Http\Controllers\CustomerController::class);
 
     Route::resource('suppliers', App\Http\Controllers\SupplierController::class);

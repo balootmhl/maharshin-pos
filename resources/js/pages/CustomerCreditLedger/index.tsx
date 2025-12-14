@@ -18,12 +18,13 @@ type CustomerCreditLedger = {
     customer?: Customer;
     branch_id: number;
     branch?: Branch;
+    transaction_date: string;
     transaction_type: string;
-    amount: number;
-    balance_after: number;
-    reference_type?: string;
-    reference_id?: number;
-    notes?: string;
+    reference_no?: string;
+    debit: number;
+    credit: number;
+    balance: number;
+    description?: string;
     created_by?: number;
     createdBy?: User;
     created_at?: string;
@@ -40,7 +41,10 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const formatCurrency = (value: number) => {
+const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined || isNaN(value)) {
+        return '0';
+    }
     return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
@@ -77,7 +81,7 @@ const columns: ColumnDef<CustomerCreditLedger>[] = [
         enableHiding: false,
     },
     {
-        accessorKey: 'created_at',
+        accessorKey: 'transaction_date',
         header: ({ column }) => {
             return (
                 <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
@@ -86,7 +90,7 @@ const columns: ColumnDef<CustomerCreditLedger>[] = [
                 </Button>
             );
         },
-        cell: ({ row }) => <div className="text-sm">{row.getValue('created_at')}</div>,
+        cell: ({ row }) => <div className="text-sm">{row.getValue('transaction_date')}</div>,
     },
     {
         accessorKey: 'customer.name',
@@ -113,32 +117,34 @@ const columns: ColumnDef<CustomerCreditLedger>[] = [
         ),
     },
     {
-        accessorKey: 'amount',
+        accessorKey: 'debit',
         header: 'Amount',
         cell: ({ row }) => {
-            const amount = row.getValue('amount') as number;
+            const debit = Number(row.original.debit) || 0;
+            const credit = Number(row.original.credit) || 0;
             const type = row.original.transaction_type;
-            const isCredit = type === 'credit';
+            const isDebit = type === 'credit'; // credit sale = customer owes us (debit)
+            const amount = isDebit ? debit : credit;
             return (
-                <div className={`text-right font-mono font-medium ${isCredit ? 'text-red-600' : 'text-green-600'}`}>
-                    {isCredit ? '+' : '-'}
-                    {formatCurrency(Math.abs(amount))} Ks
+                <div className={`text-right font-mono font-medium ${isDebit ? 'text-red-600' : 'text-green-600'}`}>
+                    {isDebit ? '-' : '+'}
+                    {formatCurrency(amount)} Ks
                 </div>
             );
         },
     },
     {
-        accessorKey: 'balance_after',
+        accessorKey: 'balance',
         header: 'Balance',
         cell: ({ row }) => {
-            const balance = row.getValue('balance_after') as number;
+            const balance = Number(row.original.balance) || 0;
             return <div className={`text-right font-mono font-medium ${balance > 0 ? 'text-red-600' : ''}`}>{formatCurrency(balance)} Ks</div>;
         },
     },
     {
-        accessorKey: 'notes',
+        accessorKey: 'description',
         header: 'Notes',
-        cell: ({ row }) => <div className="text-muted-foreground max-w-xs truncate text-sm">{row.getValue('notes') || '-'}</div>,
+        cell: ({ row }) => <div className="text-muted-foreground max-w-xs truncate text-sm">{row.getValue('description') || '-'}</div>,
     },
 ];
 

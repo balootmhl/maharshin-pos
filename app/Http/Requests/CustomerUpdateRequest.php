@@ -20,7 +20,7 @@ class CustomerUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:50', 'unique:customers,code'],
+            'code' => ['required', 'string', 'max:50', 'unique:customers,code,'.$this->route('customer')->id],
             'name' => ['required', 'string'],
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:100'],

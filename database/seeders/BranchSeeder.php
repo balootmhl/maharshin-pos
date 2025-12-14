@@ -12,32 +12,39 @@ class BranchSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create specific branches for testing
-        Branch::create([
-            'code' => 'HQ',
-            'name' => 'Headquarters',
-            'address' => '123 Main Street, Yangon',
-            'phone' => '+95 9 123 456 789',
-            'email' => 'hq@maharshin.com',
-            'is_active' => true,
-        ]);
+        $branches = [
+            [
+                'code' => 'BR-YGN',
+                'name' => 'Yangon Main Showroom',
+                'address' => 'No. 123, Bayintnaung Road, Hlaing Township, Yangon',
+                'phone' => '+95 9 750 123 456',
+                'email' => 'yangon@maharshin.com',
+            ],
+            [
+                'code' => 'BR-MDY',
+                'name' => 'Mandalay Branch',
+                'address' => 'No. 45, 78th Street, Chan Aye Thar Zan Township, Mandalay',
+                'phone' => '+95 9 750 234 567',
+                'email' => 'mandalay@maharshin.com',
+            ],
+            [
+                'code' => 'BR-NPT',
+                'name' => 'Nay Pyi Taw Branch',
+                'address' => 'Dekkhina Thiri Township, Nay Pyi Taw',
+                'phone' => '+95 9 750 345 678',
+                'email' => 'naypyitaw@maharshin.com',
+            ],
+            [
+                'code' => 'BR-PTN',
+                'name' => 'Pathein Service Center',
+                'address' => 'Shwe Myintmo Road, Pathein, Ayeyarwady',
+                'phone' => '+95 9 750 456 789',
+                'email' => 'pathein@maharshin.com',
+            ],
+        ];
 
-        Branch::create([
-            'code' => 'MDY',
-            'name' => 'Mandalay Branch',
-            'address' => '456 78th Street, Mandalay',
-            'phone' => '+95 9 987 654 321',
-            'email' => 'mandalay@maharshin.com',
-            'is_active' => true,
-        ]);
-
-        Branch::create([
-            'code' => 'NPT',
-            'name' => 'Naypyidaw Branch',
-            'address' => '789 Capital Road, Naypyidaw',
-            'phone' => '+95 9 555 666 777',
-            'email' => 'naypyidaw@maharshin.com',
-            'is_active' => true,
-        ]);
+        foreach ($branches as $branch) {
+            Branch::create(array_merge($branch, ['is_active' => true]));
+        }
     }
 }
