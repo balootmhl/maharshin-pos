@@ -7,22 +7,23 @@ use App\Http\Requests\BranchUpdateRequest;
 use App\Models\Branch;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class BranchController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $branches = Branch::all();
 
-        return view('branch.index', [
+        return Inertia::render('Branch/index', [
             'branches' => $branches,
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
-        return view('branch.create');
+        return Inertia::render('Branch/create');
     }
 
     public function store(BranchStoreRequest $request): RedirectResponse
@@ -34,16 +35,16 @@ class BranchController extends Controller
         return redirect()->route('branches.index');
     }
 
-    public function show(Request $request, Branch $branch): View
+    public function show(Request $request, Branch $branch): Response
     {
-        return view('branch.show', [
+        return Inertia::render('Branch/show', [
             'branch' => $branch,
         ]);
     }
 
-    public function edit(Request $request, Branch $branch): View
+    public function edit(Request $request, Branch $branch): Response
     {
-        return view('branch.edit', [
+        return Inertia::render('Branch/edit', [
             'branch' => $branch,
         ]);
     }

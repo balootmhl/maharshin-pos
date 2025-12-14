@@ -26,7 +26,6 @@ class SaleReturn extends BaseModel
         'refund_method',
         'reason',
         'created_by',
-        'creator_id',
     ];
 
     /**
@@ -42,7 +41,6 @@ class SaleReturn extends BaseModel
         'total_amount' => 'decimal:2',
         'refund_amount' => 'decimal:2',
         'created_by' => 'integer',
-        'creator_id' => 'integer',
     ];
 
     public function sale(): BelongsTo

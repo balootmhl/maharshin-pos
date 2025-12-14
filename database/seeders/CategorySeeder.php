@@ -12,6 +12,19 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        Category::factory()->count(5)->create();
+        $categories = [
+            ['code' => 'BEV', 'name' => 'Beverages', 'description' => 'Drinks and beverages'],
+            ['code' => 'SNK', 'name' => 'Snacks', 'description' => 'Chips, cookies, and snacks'],
+            ['code' => 'DRY', 'name' => 'Dairy Products', 'description' => 'Milk, cheese, and dairy items'],
+            ['code' => 'FRZ', 'name' => 'Frozen Foods', 'description' => 'Frozen meals and ice cream'],
+            ['code' => 'GRC', 'name' => 'Groceries', 'description' => 'Daily grocery items'],
+            ['code' => 'HPC', 'name' => 'Health & Personal Care', 'description' => 'Personal care products'],
+            ['code' => 'HHD', 'name' => 'Household', 'description' => 'Household cleaning items'],
+            ['code' => 'STA', 'name' => 'Stationery', 'description' => 'Office and school supplies'],
+        ];
+
+        foreach ($categories as $category) {
+            Category::create(array_merge($category, ['is_active' => true]));
+        }
     }
 }

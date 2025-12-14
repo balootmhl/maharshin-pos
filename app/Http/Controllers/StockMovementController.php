@@ -4,16 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class StockMovementController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
-        $stockMovements = StockMovement::with(product,branch)->get();
+        $stockMovements = StockMovement::with(['product', 'branch', 'createdBy'])->latest()->get();
 
-        return view('stock-movement.index', [
-            'movements' => $movements,
+        return Inertia::render('StockMovement/index', [
+            'stockMovements' => $stockMovements,
         ]);
     }
 }

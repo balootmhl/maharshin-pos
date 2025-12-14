@@ -24,7 +24,6 @@ class CustomerPayment extends BaseModel
         'reference_no',
         'notes',
         'created_by',
-        'creator_id',
     ];
 
     /**
@@ -39,9 +38,6 @@ class CustomerPayment extends BaseModel
         'payment_date' => 'date',
         'amount' => 'decimal:2',
         'created_by' => 'integer',
-        'created_at' => 'timestamp',
-        'updated_at' => 'timestamp',
-        'creator_id' => 'integer',
     ];
 
     public function customer(): BelongsTo

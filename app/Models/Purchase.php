@@ -28,7 +28,6 @@ class Purchase extends BaseModel
         'paid_amount',
         'notes',
         'created_by',
-        'creator_id',
     ];
 
     /**
@@ -46,7 +45,6 @@ class Purchase extends BaseModel
         'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'created_by' => 'integer',
-        'creator_id' => 'integer',
     ];
 
     public function branch(): BelongsTo

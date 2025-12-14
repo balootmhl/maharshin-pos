@@ -23,11 +23,9 @@ return new class extends Migration
             $table->string('payment_method', 50);
             $table->string('reference_no', 100)->nullable();
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users', 'by');
-            $table->timestamp('created_at');
-            $table->timestamp('updated_at');
-            $table->foreignId('creator_id');
+            $table->foreignId('created_by')->nullable()->constrained('users');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::enableForeignKeyConstraints();

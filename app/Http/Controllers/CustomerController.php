@@ -7,22 +7,23 @@ use App\Http\Requests\CustomerUpdateRequest;
 use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CustomerController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
         $customers = Customer::all();
 
-        return view('customer.index', [
+        return Inertia::render('Customer/index', [
             'customers' => $customers,
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
-        return view('customer.create');
+        return Inertia::render('Customer/create');
     }
 
     public function store(CustomerStoreRequest $request): RedirectResponse
@@ -34,16 +35,16 @@ class CustomerController extends Controller
         return redirect()->route('customers.index');
     }
 
-    public function show(Request $request, Customer $customer): View
+    public function show(Request $request, Customer $customer): Response
     {
-        return view('customer.show', [
+        return Inertia::render('Customer/show', [
             'customer' => $customer,
         ]);
     }
 
-    public function edit(Request $request, Customer $customer): View
+    public function edit(Request $request, Customer $customer): Response
     {
-        return view('customer.edit', [
+        return Inertia::render('Customer/edit', [
             'customer' => $customer,
         ]);
     }

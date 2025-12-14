@@ -4,25 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductStoreRequest;
 use App\Http\Requests\ProductUpdateRequest;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): Response
     {
-        $products = Product::all();
+        $products = Product::with('category')->get();
 
-        return view('product.index', [
+        return Inertia::render('Product/index', [
             'products' => $products,
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): Response
     {
-        return view('product.create');
+        $categories = Category::where('is_active', true)->get();
+
+        return Inertia::render('Product/create', [
+            'categories' => $categories,
+        ]);
     }
 
     public function store(ProductStoreRequest $request): RedirectResponse
@@ -34,17 +40,22 @@ class ProductController extends Controller
         return redirect()->route('products.index');
     }
 
-    public function show(Request $request, Product $product): View
+    public function show(Request $request, Product $product): Response
     {
-        return view('product.show', [
+        $product->load('category');
+
+        return Inertia::render('Product/show', [
             'product' => $product,
         ]);
     }
 
-    public function edit(Request $request, Product $product): View
+    public function edit(Request $request, Product $product): Response
     {
-        return view('product.edit', [
+        $categories = Category::where('is_active', true)->get();
+
+        return Inertia::render('Product/edit', [
             'product' => $product,
+            'categories' => $categories,
         ]);
     }
 

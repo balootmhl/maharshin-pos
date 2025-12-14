@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Todo;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
@@ -17,25 +16,37 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        // create super admin role and user
+        // Create roles and users first
         $this->createSuperAdmin();
-
-        // create manager role and user
         $this->createManager();
-
-        // create test user
         $user = $this->createTestUser();
 
-        // seed dummy data
+        // Seed dummy data for todos
         Todo::factory()
             ->count(5)
             ->for($user, 'creator')
             ->create();
 
+        // Seed POS data in the correct order
         $this->call([
-            // TodoSeeder::class,
+            // 1. Core reference data
+            BranchSeeder::class,
+            CategorySeeder::class,
+            SupplierSeeder::class,
+            CustomerSeeder::class,
+
+            // 2. Products
+            ProductSeeder::class,
+
+            // 3. Stock initialization
+            BranchStockSeeder::class,
+
+            // 4. Settings
+            SettingSeeder::class,
+
+            // 5. Sample transactions
+            PurchaseSeeder::class,
+            SaleSeeder::class,
         ]);
     }
 
@@ -52,11 +63,9 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
         ]);
         $user->assignRole(config('project.super_admin'));
-
     }
 
     // manager role and CRUD permissions
-    // assign user to manager role for indirect CRUD permissions
     protected function createManager(): void
     {
         $roleName = 'manager';

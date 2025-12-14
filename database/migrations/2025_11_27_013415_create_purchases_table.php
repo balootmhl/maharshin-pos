@@ -25,8 +25,7 @@ return new class extends Migration
             $table->string('payment_status', 50)->default('unpaid');
             $table->decimal('paid_amount', 15, 2)->default(0);
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users', 'by');
-            $table->foreignId('creator_id');
+            $table->foreignId('created_by')->nullable()->constrained('users');
             $table->timestamps();
             $table->softDeletes();
         });

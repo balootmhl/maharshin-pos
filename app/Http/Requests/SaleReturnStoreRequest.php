@@ -20,16 +20,27 @@ class SaleReturnStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'return_no' => ['required', 'string', 'max:50', 'unique:sale_returns,return_no'],
             'sale_id' => ['required', 'integer', 'exists:sales,id'],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'return_date' => ['required', 'date'],
-            'total_amount' => ['required', 'numeric', 'between:-9999999999999.99,9999999999999.99'],
-            'refund_amount' => ['required', 'numeric', 'between:-9999999999999.99,9999999999999.99'],
+            'total_amount' => ['required', 'numeric', 'min:0'],
+            'refund_amount' => ['required', 'numeric', 'min:0'],
             'refund_method' => ['nullable', 'string', 'max:50'],
             'reason' => ['nullable', 'string'],
-            'created_by' => ['nullable'],
-            'creator_id' => ['required', 'integer', 'exists:Users,id'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.sale_item_id' => ['required', 'integer', 'exists:sale_items,id'],
+            'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.subtotal' => ['required', 'numeric', 'min:0'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'items.required' => 'Please select at least one item to return.',
+            'items.min' => 'Please select at least one item to return.',
         ];
     }
 }

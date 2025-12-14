@@ -30,8 +30,6 @@ class Product extends BaseModel
         'is_active',
         'created_by',
         'updated_by',
-        'creator_id',
-        'updater_id',
     ];
 
     /**
@@ -48,8 +46,6 @@ class Product extends BaseModel
         'is_active' => 'boolean',
         'created_by' => 'integer',
         'updated_by' => 'integer',
-        'creator_id' => 'integer',
-        'updater_id' => 'integer',
     ];
 
     public function category(): BelongsTo

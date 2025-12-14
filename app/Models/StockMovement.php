@@ -24,7 +24,6 @@ class StockMovement extends BaseModel
         'reference_id',
         'notes',
         'created_by',
-        'creator_id',
     ];
 
     /**
@@ -38,8 +37,6 @@ class StockMovement extends BaseModel
         'branch_id' => 'integer',
         'reference_id' => 'integer',
         'created_by' => 'integer',
-        'created_at' => 'timestamp',
-        'creator_id' => 'integer',
     ];
 
     public function product(): BelongsTo
