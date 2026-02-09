@@ -27,3 +27,4 @@ yarn-error.log
 .aider*
 .DS_Store
 **/.DS_Store
+/public_html
