@@ -3,17 +3,20 @@ import { SaleSuccessDialog } from '@/components/sale-success-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Category, Customer, Product } from '@/types';
+import { type BreadcrumbItem, Branch, Customer, Product } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, Minus, Package, Pause, Play, Plus, Search, ShoppingCart, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Minus, Package, Pause, Play, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 
 type CartItem = {
     product_id: number;
@@ -83,12 +86,10 @@ export default function SaleCreate({
     branches,
     customers,
     products,
-    categories,
 }: {
     branches: Branch[];
     customers: Customer[];
     products: Product[];
-    categories: Category[];
     invoiceNo: string;
 }) {
     // Get flash data for completed sale
@@ -109,10 +110,14 @@ export default function SaleCreate({
     const today = new Date().toISOString().split('T')[0];
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(0);
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [heldSales, setHeldSales] = useState<HeldSale[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const barcodeInputRef = useRef<HTMLInputElement>(null);
+    const discountInputRef = useRef<HTMLInputElement>(null);
+    const paidAmountInputRef = useRef<HTMLInputElement>(null);
 
     const { data, setData, post, errors, processing, reset } = useForm<SaleForm>({
         branch_id: branches[0]?.id?.toString() || '',
@@ -156,7 +161,7 @@ export default function SaleCreate({
             tax_amount: cartTotals.taxAmount,
             total_amount: cartTotals.total,
         }));
-    }, [cart, cartTotals]);
+    }, [cart, cartTotals, setData]);
 
     // Update credit amount when paid amount changes
     useEffect(() => {
@@ -167,21 +172,32 @@ export default function SaleCreate({
             credit_amount: credit,
             payment_status: status,
         }));
-    }, [data.paid_amount, cartTotals.total]);
+    }, [data.paid_amount, cartTotals.total, setData]);
+
+    // Extract unique categories from products
+    const categories = useMemo(() => {
+        const uniqueCategories = new Map<number, { id: number; name: string }>();
+        products.forEach((p) => {
+            if (p.category) {
+                uniqueCategories.set(p.category.id, { id: p.category.id, name: p.category.name });
+            }
+        });
+        return Array.from(uniqueCategories.values()).sort((a, b) => a.name.localeCompare(b.name));
+    }, [products]);
 
     // Filter products based on search and category
     const filteredProducts = useMemo(() => {
-        let filtered = products;
+        let result = products;
 
-        // Filter by category
+        // Filter by category first
         if (selectedCategory !== null) {
-            filtered = filtered.filter((p) => p.category_id === selectedCategory);
+            result = result.filter((p) => p.category_id === selectedCategory);
         }
 
-        // Filter by search
+        // Then filter by search query
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(
+            result = result.filter(
                 (p) =>
                     p.name.toLowerCase().includes(query) ||
                     p.code.toLowerCase().includes(query) ||
@@ -190,7 +206,7 @@ export default function SaleCreate({
             );
         }
 
-        return filtered;
+        return result;
     }, [products, searchQuery, selectedCategory]);
 
     const addToCart = useCallback((product: Product) => {
@@ -242,17 +258,37 @@ export default function SaleCreate({
         );
     };
 
+    const setQuantity = (productId: number, quantity: number) => {
+        if (quantity <= 0) {
+            removeFromCart(productId);
+            return;
+        }
+        setCart((prev) =>
+            prev.map((item) => {
+                if (item.product_id === productId) {
+                    return {
+                        ...item,
+                        quantity: quantity,
+                        tax_amount: quantity * item.unit_price * (item.tax_rate / 100),
+                        subtotal: quantity * item.unit_price,
+                    };
+                }
+                return item;
+            }),
+        );
+    };
+
     const removeFromCart = (productId: number) => {
         setCart((prev) => prev.filter((item) => item.product_id !== productId));
     };
 
-    const clearCart = () => {
+    const clearCart = useCallback(() => {
         setCart([]);
         setData((prev) => ({ ...prev, paid_amount: 0, discount_amount: 0 }));
-    };
+    }, [setData]);
 
     // Hold/Recall Sale functionality
-    const holdSale = () => {
+    const holdSale = useCallback(() => {
         if (cart.length === 0) return;
         const heldSale: HeldSale = {
             id: Date.now().toString(),
@@ -262,7 +298,7 @@ export default function SaleCreate({
         };
         setHeldSales((prev) => [...prev, heldSale]);
         clearCart();
-    };
+    }, [cart, cartTotals.total, clearCart]);
 
     const recallSale = (id: string) => {
         const sale = heldSales.find((s) => s.id === id);
@@ -317,7 +353,7 @@ export default function SaleCreate({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [cart.length, processing]);
+    }, [cart.length, processing, holdSale]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -354,29 +390,132 @@ export default function SaleCreate({
                 <form onSubmit={submit} className="flex h-[calc(100vh-120px)] gap-4 p-4">
                     {/* Left: Product Selection */}
                     <div className="flex w-3/5 flex-col gap-4">
-                        {/* Search and Barcode */}
+                        {/* Keyboard-First Product Search */}
                         <div className="flex gap-4">
-                            <div className="relative flex-1">
-                                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                                <Input
-                                    ref={searchInputRef}
-                                    placeholder="Search products (F1)..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-9"
-                                    autoFocus
-                                />
-                            </div>
-                            <Input ref={barcodeInputRef} placeholder="Scan barcode (F2)..." onKeyDown={handleBarcodeInput} className="w-48" />
+                            <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                                <PopoverAnchor asChild>
+                                    <div className="relative flex-1">
+                                        <Input
+                                            ref={searchInputRef}
+                                            placeholder="Search products (F1)... ↑↓ to navigate, Enter to add"
+                                            value={searchQuery}
+                                            onChange={(e) => {
+                                                setSearchQuery(e.target.value);
+                                                setSearchOpen(e.target.value.length > 0);
+                                                setSelectedIndex(0); // Reset selection when typing
+                                            }}
+                                            onFocus={() => setSearchOpen(searchQuery.length > 0)}
+                                            onKeyDown={(e) => {
+                                                const maxIndex = Math.min(filteredProducts.length, 10) - 1;
+                                                
+                                                if (e.key === 'ArrowDown' && searchOpen) {
+                                                    e.preventDefault();
+                                                    setSelectedIndex((prev) => Math.min(prev + 1, maxIndex));
+                                                }
+                                                if (e.key === 'ArrowUp' && searchOpen) {
+                                                    e.preventDefault();
+                                                    setSelectedIndex((prev) => Math.max(prev - 1, 0));
+                                                }
+                                                if (e.key === 'Enter' && filteredProducts.length > 0) {
+                                                    e.preventDefault();
+                                                    const selectedProduct = filteredProducts[selectedIndex];
+                                                    if (selectedProduct) {
+                                                        addToCart(selectedProduct);
+                                                        setSearchQuery('');
+                                                        setSearchOpen(false);
+                                                        setSelectedIndex(0);
+                                                        setTimeout(() => searchInputRef.current?.focus(), 0);
+                                                    }
+                                                }
+                                                if (e.key === 'Escape') {
+                                                    setSearchOpen(false);
+                                                    setSelectedIndex(0);
+                                                }
+                                            }}
+                                            autoFocus
+                                            tabIndex={1}
+                                            className="h-10"
+                                        />
+                                    </div>
+                                </PopoverAnchor>
+                                <PopoverContent
+                                    className="w-[var(--radix-popover-trigger-width)] p-0"
+                                    align="start"
+                                    onOpenAutoFocus={(e) => e.preventDefault()}
+                                    onInteractOutside={(e) => {
+                                        // Don't close if clicking inside the search input
+                                        if ((e.target as HTMLElement).closest('input')) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                >
+                                    <Command shouldFilter={false}>
+                                        <CommandList className="max-h-[300px]">
+                                            <CommandEmpty>No products found. Try a different search.</CommandEmpty>
+                                            <CommandGroup>
+                                                {filteredProducts.slice(0, 10).map((product, index) => (
+                                                    <CommandItem
+                                                        key={product.id}
+                                                        value={product.id.toString()}
+                                                        onSelect={() => {
+                                                            addToCart(product);
+                                                            setSearchQuery('');
+                                                            setSearchOpen(false);
+                                                            setSelectedIndex(0);
+                                                            // Keep focus in search for quick sequential entry
+                                                            setTimeout(() => searchInputRef.current?.focus(), 0);
+                                                        }}
+                                                        className={`flex items-center justify-between gap-2 cursor-pointer ${
+                                                            index === selectedIndex ? 'bg-accent text-accent-foreground' : ''
+                                                        }`}
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">{product.name}</span>
+                                                            <span className="text-muted-foreground text-xs font-mono">
+                                                                {product.code}
+                                                                {product.barcode && ` • ${product.barcode}`}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-primary font-mono font-bold">
+                                                                {formatCurrency(Number(product.selling_price))}
+                                                            </span>
+                                                            {(product.stock ?? 0) <= 10 ? (
+                                                                <Badge variant="destructive" className="text-xs">
+                                                                    <AlertTriangle className="mr-1 h-3 w-3" />
+                                                                    {product.stock ?? 0}
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge variant="secondary" className="text-xs">
+                                                                    <Package className="mr-1 h-3 w-3" />
+                                                                    {product.stock ?? 0}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <Input
+                                ref={barcodeInputRef}
+                                placeholder="Scan barcode (F2)..."
+                                onKeyDown={handleBarcodeInput}
+                                className="w-48"
+                                tabIndex={2}
+                            />
                         </div>
 
-                        {/* Category Filter Tabs */}
+                        {/* Category Filter - Clickable but skipped in Tab navigation */}
                         <div className="flex flex-wrap gap-2">
                             <Button
                                 type="button"
                                 variant={selectedCategory === null ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => setSelectedCategory(null)}
+                                tabIndex={-1}
                             >
                                 All
                             </Button>
@@ -387,13 +526,14 @@ export default function SaleCreate({
                                     variant={selectedCategory === cat.id ? 'default' : 'outline'}
                                     size="sm"
                                     onClick={() => setSelectedCategory(cat.id)}
+                                    tabIndex={-1}
                                 >
                                     {cat.name}
                                 </Button>
                             ))}
                         </div>
 
-                        {/* Product Grid */}
+                        {/* Product Grid - Visual catalog (clickable but keyboard-optional) */}
                         <ScrollArea className="bg-card flex-1 rounded-lg border">
                             <div className="grid grid-cols-4 gap-2 p-3">
                                 {filteredProducts.map((product) => (
@@ -401,10 +541,11 @@ export default function SaleCreate({
                                         key={product.id}
                                         type="button"
                                         onClick={() => addToCart(product)}
+                                        tabIndex={-1}
                                         className="bg-background hover:bg-accent hover:text-accent-foreground flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors"
                                     >
-                                        <span className="line-clamp-2 text-sm font-medium">{product.name}</span>
-                                        <span className="text-muted-foreground font-mono text-xs">{product.code}</span>
+                                        <span className="line-clamp-2 text-sm font-medium">{product.code}</span>
+                                        <span className="text-muted-foreground font-mono text-xs">{product.name}</span>
                                         <div className="flex w-full items-center justify-between">
                                             <span className="text-primary font-mono font-bold">{formatCurrency(Number(product.selling_price))}</span>
                                             {/* Stock Display */}
@@ -439,7 +580,7 @@ export default function SaleCreate({
                                 <div className="space-y-2">
                                     <Label>Branch</Label>
                                     <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
-                                        <SelectTrigger>
+                                        <SelectTrigger tabIndex={3}>
                                             <SelectValue placeholder="Select branch" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -455,7 +596,7 @@ export default function SaleCreate({
                                 <div className="space-y-2">
                                     <Label>Customer</Label>
                                     <Select value={data.customer_id} onValueChange={(v) => setData('customer_id', v)}>
-                                        <SelectTrigger>
+                                        <SelectTrigger tabIndex={4}>
                                             <SelectValue placeholder="Walk-in customer" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -510,11 +651,11 @@ export default function SaleCreate({
                                 <div className="flex gap-1">
                                     {cart.length > 0 && (
                                         <>
-                                            <Button type="button" variant="outline" size="sm" onClick={holdSale}>
+                                            <Button type="button" variant="outline" size="sm" onClick={holdSale} tabIndex={-1}>
                                                 <Pause className="mr-1 h-4 w-4" />
                                                 Hold (F8)
                                             </Button>
-                                            <Button type="button" variant="ghost" size="sm" onClick={clearCart}>
+                                            <Button type="button" variant="ghost" size="sm" onClick={clearCart} tabIndex={-1}>
                                                 <X className="mr-1 h-4 w-4" />
                                                 Clear
                                             </Button>
@@ -555,16 +696,28 @@ export default function SaleCreate({
                                                                     size="icon"
                                                                     className="h-7 w-7"
                                                                     onClick={() => updateQuantity(item.product_id, -1)}
+                                                                    tabIndex={-1}
                                                                 >
                                                                     <Minus className="h-3 w-3" />
-                                                                </Button>
-                                                                <span className="w-8 text-center font-mono">{item.quantity}</span>
-                                                                <Button
+                                                            </Button>
+                                                            <input
+                                                                type="number"
+                                                                min="1"
+                                                                value={item.quantity}
+                                                                onChange={(e) => {
+                                                                    const val = parseInt(e.target.value) || 0;
+                                                                    setQuantity(item.product_id, val);
+                                                                }}
+                                                                className="h-7 w-14 text-center font-mono border rounded [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                                tabIndex={5}
+                                                            />
+                                                            <Button
                                                                     type="button"
                                                                     variant="outline"
                                                                     size="icon"
                                                                     className="h-7 w-7"
                                                                     onClick={() => updateQuantity(item.product_id, 1)}
+                                                                    tabIndex={-1}
                                                                 >
                                                                     <Plus className="h-3 w-3" />
                                                                 </Button>
@@ -607,6 +760,7 @@ export default function SaleCreate({
                                 <div className="flex items-center justify-between text-sm">
                                     <span>Discount</span>
                                     <Input
+                                        ref={discountInputRef}
                                         type="text"
                                         inputMode="numeric"
                                         value={data.discount_amount || ''}
@@ -614,7 +768,14 @@ export default function SaleCreate({
                                             const val = e.target.value.replace(/[^0-9]/g, '');
                                             setData('discount_amount', val === '' ? 0 : parseInt(val, 10));
                                         }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                paidAmountInputRef.current?.focus();
+                                            }
+                                        }}
                                         className="h-8 w-28 text-right font-mono"
+                                        tabIndex={6}
                                     />
                                 </div>
                                 <Separator />
@@ -627,7 +788,7 @@ export default function SaleCreate({
                                     <div className="space-y-1">
                                         <Label className="text-xs">Payment Method</Label>
                                         <Select value={data.payment_method} onValueChange={(v) => setData('payment_method', v)}>
-                                            <SelectTrigger className="h-9">
+                                            <SelectTrigger className="h-9" tabIndex={7}>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -642,6 +803,7 @@ export default function SaleCreate({
                                     <div className="space-y-1">
                                         <Label className="text-xs">Paid Amount</Label>
                                         <Input
+                                            ref={paidAmountInputRef}
                                             type="text"
                                             inputMode="numeric"
                                             value={data.paid_amount || ''}
@@ -649,7 +811,20 @@ export default function SaleCreate({
                                                 const val = e.target.value.replace(/[^0-9]/g, '');
                                                 setData('paid_amount', val === '' ? 0 : parseInt(val, 10));
                                             }}
+                                            onKeyDown={(e) => {
+                                                // E key sets exact amount
+                                                if (e.key === 'e' || e.key === 'E') {
+                                                    e.preventDefault();
+                                                    setData('paid_amount', cartTotals.total);
+                                                }
+                                                // Enter moves to complete button
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    document.getElementById('complete-sale-btn')?.focus();
+                                                }
+                                            }}
                                             className="h-9 font-mono"
+                                            tabIndex={8}
                                         />
                                     </div>
                                 </div>
@@ -661,6 +836,7 @@ export default function SaleCreate({
                                         size="sm"
                                         onClick={() => setData('paid_amount', data.paid_amount + 1000)}
                                         className="flex-1"
+                                        tabIndex={-1}
                                     >
                                         +1,000
                                     </Button>
@@ -670,6 +846,7 @@ export default function SaleCreate({
                                         size="sm"
                                         onClick={() => setData('paid_amount', data.paid_amount + 5000)}
                                         className="flex-1"
+                                        tabIndex={-1}
                                     >
                                         +5,000
                                     </Button>
@@ -679,6 +856,7 @@ export default function SaleCreate({
                                         size="sm"
                                         onClick={() => setData('paid_amount', data.paid_amount + 10000)}
                                         className="flex-1"
+                                        tabIndex={-1}
                                     >
                                         +10,000
                                     </Button>
@@ -688,10 +866,11 @@ export default function SaleCreate({
                                         size="sm"
                                         onClick={() => setData('paid_amount', cartTotals.total)}
                                         className="flex-1"
+                                        tabIndex={-1}
                                     >
-                                        Exact
+                                        Exact (E)
                                     </Button>
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => setData('paid_amount', 0)} className="flex-1">
+                                    <Button type="button" variant="ghost" size="sm" onClick={() => setData('paid_amount', 0)} className="flex-1" tabIndex={-1}>
                                         Clear
                                     </Button>
                                 </div>
@@ -720,11 +899,12 @@ export default function SaleCreate({
                                     type="submit"
                                     className="h-12 w-full text-lg"
                                     disabled={processing || cart.length === 0}
+                                    tabIndex={9}
                                 >
                                     {processing ? 'Processing...' : `Complete Sale (F12) - ${formatCurrency(cartTotals.total)} Ks`}
                                 </Button>
                                 {/* Keyboard Shortcuts Help */}
-                                <div className="text-muted-foreground text-center text-xs">F1: Search • F2: Barcode • F8: Hold • F12: Complete</div>
+                                <div className="text-muted-foreground text-center text-xs">F1: Search • F2: Barcode • F8: Hold • E: Exact • Enter/F12: Complete</div>
                             </CardContent>
                         </Card>
                     </div>
