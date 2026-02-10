@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BranchScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Activitylog\LogOptions;
@@ -9,6 +10,11 @@ use Spatie\Activitylog\LogOptions;
 class BranchStock extends BaseModel
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new BranchScope);
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -18,6 +24,7 @@ class BranchStock extends BaseModel
     protected $fillable = [
         'product_id',
         'branch_id',
+        'group_id',
         'quantity',
     ];
 
@@ -30,6 +37,7 @@ class BranchStock extends BaseModel
         'id' => 'integer',
         'product_id' => 'integer',
         'branch_id' => 'integer',
+        'group_id' => 'integer',
         'updated_at' => 'timestamp',
     ];
 
@@ -53,5 +61,10 @@ class BranchStock extends BaseModel
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
     }
 }

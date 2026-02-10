@@ -54,6 +54,8 @@ export interface User {
     email: string;
     avatar?: string;
     email_verified_at: string | null;
+    branch_id?: number;
+    branch?: Branch;
     created_at: string;
     updated_at: string;
     is_super_admin: boolean;
@@ -113,6 +115,27 @@ export interface Supplier {
     updated_at?: string;
 }
 
+export interface Group {
+    id: number;
+    name: string;
+    code?: string;
+    branch_id: number;
+    branch?: Branch;
+    description?: string;
+    is_active?: boolean;
+}
+
+export interface BranchStock {
+    id: number;
+    product_id: number;
+    branch_id: number;
+    group_id?: number;
+    quantity: number;
+    reserved_quantity?: number;
+    branch?: Branch;
+    group?: Group;
+}
+
 export interface Product {
     id: number;
     name: string;
@@ -128,6 +151,7 @@ export interface Product {
     stock?: number;
     low_stock_alert?: number;
     is_active?: boolean;
+    branch_stocks?: BranchStock[];
     created_at?: string;
     updated_at?: string;
 }

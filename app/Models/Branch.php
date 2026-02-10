@@ -68,4 +68,9 @@ class Branch extends BaseModel
     {
         return $this->hasMany(StockMovement::class);
     }
+
+    public function groups(): HasMany
+    {
+        return $this->hasMany(Group::class);
+    }
 }

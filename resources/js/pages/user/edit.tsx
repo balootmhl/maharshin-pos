@@ -3,18 +3,17 @@ import SimpleSelect from '@/components/inputs/simple-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
+import { type BreadcrumbItem, Branch, User } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
-// Dummy interface
-// Update your types file and import from it
-type User = {
-    id?: number;
+type UserForm = {
     name: string;
     email: string;
     main_role: string;
+    branch_id: string;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -28,11 +27,12 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function UserEdit({ user, roles }: { user: User; roles: string[] }) {
-    const { data, setData, patch, reset, errors, processing } = useForm<User>({
+export default function UserEdit({ user, roles, branches }: { user: User; roles: string[]; branches: Branch[] }) {
+    const { data, setData, patch, reset, errors, processing } = useForm<UserForm>({
         name: user.name,
         email: user.email,
-        main_role: user.main_role,
+        main_role: user.main_role ?? '',
+        branch_id: user.branch_id?.toString() ?? '',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -47,7 +47,7 @@ export default function UserEdit({ user, roles }: { user: User; roles: string[] 
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create - User" />
+            <Head title="Edit - User" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <form onSubmit={submit} className="md:max-w-xl">
                     <div className="space-y-6">
@@ -75,9 +75,28 @@ export default function UserEdit({ user, roles }: { user: User; roles: string[] 
                             />
                             <InputError className="mt-2" message={errors.email} />
                         </div>
-                        <div className="grid grid-flow-row gap-2">
-                            <Label htmlFor="Role">Role*</Label>
-                            <SimpleSelect options={roles} item={data.main_role} setItem={(v) => setData('main_role', v)} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-flow-row gap-2">
+                                <Label htmlFor="Role">Role*</Label>
+                                <SimpleSelect options={roles} item={data.main_role} setItem={(v) => setData('main_role', v)} />
+                                <InputError className="mt-2" message={errors.main_role} />
+                            </div>
+                            <div className="grid grid-flow-row gap-2">
+                                <Label htmlFor="branch_id">Branch</Label>
+                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select branch (optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {branches.map((branch) => (
+                                            <SelectItem key={branch.id} value={branch.id.toString()}>
+                                                {branch.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError className="mt-2" message={errors.branch_id} />
+                            </div>
                         </div>
                         <div className="flex justify-end gap-3">
                             <Button variant="outline" asChild>

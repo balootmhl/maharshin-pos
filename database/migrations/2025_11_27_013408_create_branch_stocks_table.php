@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')->constrained();
             $table->foreignId('branch_id')->constrained();
+            $table->foreignId('group_id')->nullable()->constrained()->nullOnDelete();
             $table->integer('quantity')->default(0);
             $table->timestamps();
             $table->softDeletes();

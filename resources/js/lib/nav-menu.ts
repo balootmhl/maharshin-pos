@@ -56,6 +56,10 @@ export const navMain: NavGroup[] = [
                 url: route('categories.index'),
             },
             {
+                title: 'Groups',
+                url: route('groups.index'),
+            },
+            {
                 title: 'Stock Levels',
                 url: route('branch-stocks.index'),
             },

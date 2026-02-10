@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SaleReturn extends BaseModel
+class Group extends BaseModel
 {
     use HasFactory, SoftDeletes;
 
@@ -23,15 +23,11 @@ class SaleReturn extends BaseModel
      * @var array
      */
     protected $fillable = [
-        'return_no',
-        'sale_id',
+        'code',
+        'name',
         'branch_id',
-        'return_date',
-        'total_amount',
-        'refund_amount',
-        'refund_method',
-        'reason',
-        'created_by',
+        'description',
+        'is_active',
     ];
 
     /**
@@ -41,36 +37,17 @@ class SaleReturn extends BaseModel
      */
     protected $casts = [
         'id' => 'integer',
-        'sale_id' => 'integer',
         'branch_id' => 'integer',
-        'return_date' => 'date',
-        'total_amount' => 'decimal:2',
-        'refund_amount' => 'decimal:2',
-        'created_by' => 'integer',
+        'is_active' => 'boolean',
     ];
-
-    public function sale(): BelongsTo
-    {
-        return $this->belongsTo(Sale::class);
-    }
 
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
-    public function creator(): BelongsTo
+    public function branchStocks(): HasMany
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function createdBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function saleReturnItems(): HasMany
-    {
-        return $this->hasMany(SaleReturnItem::class);
+        return $this->hasMany(BranchStock::class);
     }
 }

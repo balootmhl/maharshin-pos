@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerCreditLedgerController;
 use App\Http\Controllers\CustomerPaymentController;
+use App\Http\Controllers\GroupController;
 use App\Http\Controllers\PlaygroundController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseController;
@@ -64,6 +65,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('branches', BranchController::class);
 
     Route::resource('categories', CategoryController::class);
+
+    Route::resource('groups', GroupController::class);
 
     Route::resource('products', ProductController::class);
 

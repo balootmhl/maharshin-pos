@@ -49,12 +49,14 @@ const columns: ColumnDef<BranchStock>[] = [
         enableHiding: false,
     },
     {
+        id: 'product_code',
         accessorKey: 'product.code',
         header: 'Code',
         cell: ({ row }) => <div className="font-mono text-xs">{row.original.product?.code}</div>,
     },
     {
-        accessorKey: 'product.name',
+        id: 'product_name',
+        accessorFn: (row) => row.product?.name ?? '',
         header: ({ column }) => {
             return (
                 <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
@@ -66,6 +68,7 @@ const columns: ColumnDef<BranchStock>[] = [
         cell: ({ row }) => <div className="font-medium">{row.original.product?.name}</div>,
     },
     {
+        id: 'branch_name',
         accessorKey: 'branch.name',
         header: 'Branch',
         cell: ({ row }) => <div>{row.original.branch?.name}</div>,
@@ -101,7 +104,12 @@ export default function BranchStockIndex({ branchStocks }: { branchStocks: Branc
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Stock Levels" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <DataTable data={branchStocks} columns={columns} />
+                <DataTable
+                    data={branchStocks}
+                    columns={columns}
+                    searchColumn="product_name"
+                    searchPlaceholder="Filter by product name..."
+                />
             </div>
         </AppLayout>
     );

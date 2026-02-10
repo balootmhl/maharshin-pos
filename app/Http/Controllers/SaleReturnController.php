@@ -49,12 +49,16 @@ class SaleReturnController extends Controller
         $validated = $request->validated();
 
         DB::transaction(function () use ($validated) {
-            // Generate unique return number by finding the max existing number
-            $maxReturnNo = SaleReturn::withTrashed()
-                ->selectRaw('MAX(CAST(SUBSTRING(return_no, 5) AS UNSIGNED)) as max_num')
-                ->value('max_num');
-            $nextNumber = ($maxReturnNo ?? 0) + 1;
-            $returnNo = 'RET-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            // Generate return number - date-based format: RET-YYYYMMDD-XXXX
+            $today = now()->format('Ymd');
+            $prefix = "RET-{$today}-";
+            $maxSeq = SaleReturn::withoutGlobalScopes()
+                ->withTrashed()
+                ->where('return_no', 'like', $prefix . '%')
+                ->selectRaw('MAX(CAST(SUBSTRING(return_no, -4) AS UNSIGNED)) as max_seq')
+                ->value('max_seq');
+            $nextSeq = ($maxSeq ?? 0) + 1;
+            $returnNo = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
             $sale = Sale::find($validated['sale_id']);
 
@@ -82,8 +86,8 @@ class SaleReturnController extends Controller
                     'subtotal' => $item['subtotal'],
                 ]);
 
-                // Update branch stock (add back the returned items)
-                $branchStock = BranchStock::firstOrCreate(
+                // Update branch stock (add back the returned items) - bypass scope
+                $branchStock = BranchStock::withoutGlobalScopes()->firstOrCreate(
                     ['branch_id' => $validated['branch_id'], 'product_id' => $item['product_id']],
                     ['quantity' => 0]
                 );

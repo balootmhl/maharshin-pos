@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserFormRequest;
+use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class UserController extends Controller
 {
     public function index(Request $request): Response
     {
-        $users = User::all();
+        $users = User::with('branch')->get();
 
         return Inertia::render('user/index', [
             'users' => $users,
@@ -29,14 +30,19 @@ class UserController extends Controller
             $roles = Role::get()->pluck('name');
         }
 
-        return Inertia::render('user/create', ['roles' => $roles]);
+        $branches = Branch::where('is_active', true)->get(['id', 'name', 'code']);
+
+        return Inertia::render('user/create', [
+            'roles' => $roles,
+            'branches' => $branches,
+        ]);
     }
 
     public function store(UserFormRequest $request): RedirectResponse
     {
-        $user = User::create($request->safe()->except(['role']));
+        $user = User::create($request->safe()->except(['main_role']));
 
-        $user->assignRole($request->input('role'));
+        $user->assignRole($request->input('main_role'));
 
         $request->session()->flash('user.id', $user->id);
 
@@ -45,6 +51,8 @@ class UserController extends Controller
 
     public function show(Request $request, User $user): Response
     {
+        $user->load('branch');
+
         return Inertia::render('user/show', [
             'user' => $user,
         ]);
@@ -58,15 +66,23 @@ class UserController extends Controller
             $roles = Role::get()->pluck('name');
         }
 
+        $branches = Branch::where('is_active', true)->get(['id', 'name', 'code']);
+
         return Inertia::render('user/edit', [
-            'user' => $user,
+            'user' => $user->load('branch'),
             'roles' => $roles,
+            'branches' => $branches,
         ]);
     }
 
     public function update(UserFormRequest $request, User $user): RedirectResponse
     {
-        $user->update($request->validated());
+        $user->update($request->safe()->except(['main_role']));
+
+        // Sync the role if provided
+        if ($request->filled('main_role')) {
+            $user->syncRoles([$request->input('main_role')]);
+        }
 
         $request->session()->flash('user.id', $user->id);
 

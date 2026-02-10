@@ -63,6 +63,11 @@ const columns: ColumnDef<User>[] = [
         cell: ({ row }) => <div className="">{row.getValue('main_role')}</div>,
     },
     {
+        accessorKey: 'branch.name',
+        header: 'Branch',
+        cell: ({ row }) => <div className="">{row.original.branch?.name || '-'}</div>,
+    },
+    {
         accessorKey: 'impersonate',
         header: 'Impersonate',
         cell: ({ row }) =>

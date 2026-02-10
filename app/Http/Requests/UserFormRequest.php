@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class UserFormRequest extends FormRequest
@@ -21,11 +22,24 @@ class UserFormRequest extends FormRequest
      */
     public function rules(): array
     {
+        $userId = $this->route('user')?->id;
+
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'required', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['nullable', Password::defaults()],
+            'email' => [
+                'required',
+                'lowercase',
+                'email',
+                'max:255',
+                $userId
+                    ? Rule::unique(User::class)->ignore($userId)
+                    : Rule::unique(User::class),
+            ],
+            'password' => $userId
+                ? ['nullable', Password::defaults()]
+                : ['required', Password::defaults()],
             'main_role' => ['required', 'string'],
+            'branch_id' => ['nullable', 'exists:branches,id'],
         ];
     }
 }

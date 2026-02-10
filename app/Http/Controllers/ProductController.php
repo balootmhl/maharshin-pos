@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProductStoreRequest;
 use App\Http\Requests\ProductUpdateRequest;
+use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
@@ -15,10 +16,12 @@ class ProductController extends Controller
 {
     public function index(Request $request): Response
     {
-        $products = Product::with('category')->get();
+        $products = Product::with(['category', 'branchStocks.branch', 'branchStocks.group'])->get();
+        $branches = Branch::where('is_active', true)->get(['id', 'name', 'code']);
 
         return Inertia::render('Product/index', [
             'products' => $products,
+            'branches' => $branches,
         ]);
     }
 

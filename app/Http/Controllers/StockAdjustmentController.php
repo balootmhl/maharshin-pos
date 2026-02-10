@@ -38,7 +38,8 @@ class StockAdjustmentController extends Controller
             ->where('is_active', true)
             ->get(['id', 'name', 'code', 'category_id', 'unit'])
             ->map(function ($product) use ($defaultBranch) {
-                $stock = $defaultBranch ? BranchStock::where('branch_id', $defaultBranch->id)
+                $stock = $defaultBranch ? BranchStock::withoutGlobalScopes()
+                    ->where('branch_id', $defaultBranch->id)
                     ->where('product_id', $product->id)
                     ->value('quantity') ?? 0 : 0;
                 $product->stock = $stock;
@@ -58,15 +59,19 @@ class StockAdjustmentController extends Controller
         $validated = $request->validated();
 
         DB::transaction(function () use ($validated) {
-            // Generate unique adjustment number
-            $maxAdjustmentNo = StockAdjustment::withTrashed()
-                ->selectRaw('MAX(CAST(SUBSTRING(adjustment_no, 5) AS UNSIGNED)) as max_num')
-                ->value('max_num');
-            $nextNumber = ($maxAdjustmentNo ?? 0) + 1;
-            $adjustmentNo = 'ADJ-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            // Generate adjustment number - date-based format: ADJ-YYYYMMDD-XXXX
+            $today = now()->format('Ymd');
+            $prefix = "ADJ-{$today}-";
+            $maxSeq = StockAdjustment::withoutGlobalScopes()
+                ->withTrashed()
+                ->where('adjustment_no', 'like', $prefix . '%')
+                ->selectRaw('MAX(CAST(SUBSTRING(adjustment_no, -4) AS UNSIGNED)) as max_seq')
+                ->value('max_seq');
+            $nextSeq = ($maxSeq ?? 0) + 1;
+            $adjustmentNo = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
-            // Get or create branch stock
-            $branchStock = BranchStock::firstOrCreate(
+            // Get or create branch stock - bypass scope
+            $branchStock = BranchStock::withoutGlobalScopes()->firstOrCreate(
                 ['branch_id' => $validated['branch_id'], 'product_id' => $validated['product_id']],
                 ['quantity' => 0]
             );

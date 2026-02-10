@@ -31,10 +31,15 @@ class PurchaseController extends Controller
 
     public function create(Request $request): Response
     {
-        // Generate purchase number
-        $lastPurchase = Purchase::latest()->first();
-        $nextNumber = $lastPurchase ? (int) preg_replace('/[^0-9]/', '', $lastPurchase->purchase_no) + 1 : 1;
-        $purchaseNo = 'PO-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        // Generate purchase number - date-based format: PO-YYYYMMDD-XXXX
+        $today = now()->format('Ymd');
+        $prefix = "PO-{$today}-";
+        $maxSeq = Purchase::withoutGlobalScopes()
+            ->where('purchase_no', 'like', $prefix . '%')
+            ->selectRaw('MAX(CAST(SUBSTRING(purchase_no, -4) AS UNSIGNED)) as max_seq')
+            ->value('max_seq');
+        $nextSeq = ($maxSeq ?? 0) + 1;
+        $purchaseNo = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
         return Inertia::render('Purchase/create', [
             'branches' => Branch::where('is_active', true)->get(['id', 'name', 'code']),
@@ -51,12 +56,16 @@ class PurchaseController extends Controller
         $validated = $request->validated();
 
         DB::transaction(function () use ($validated) {
-            // Generate unique purchase number by finding the max existing number
-            $maxPurchaseNo = Purchase::withTrashed()
-                ->selectRaw('MAX(CAST(SUBSTRING(purchase_no, 4) AS UNSIGNED)) as max_num')
-                ->value('max_num');
-            $nextNumber = ($maxPurchaseNo ?? 0) + 1;
-            $purchaseNo = 'PO-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            // Generate purchase number - date-based format: PO-YYYYMMDD-XXXX
+            $today = now()->format('Ymd');
+            $prefix = "PO-{$today}-";
+            $maxSeq = Purchase::withoutGlobalScopes()
+                ->withTrashed()
+                ->where('purchase_no', 'like', $prefix . '%')
+                ->selectRaw('MAX(CAST(SUBSTRING(purchase_no, -4) AS UNSIGNED)) as max_seq')
+                ->value('max_seq');
+            $nextSeq = ($maxSeq ?? 0) + 1;
+            $purchaseNo = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
             // Create the purchase
             $purchase = Purchase::create([
@@ -85,8 +94,8 @@ class PurchaseController extends Controller
                     'subtotal' => $item['subtotal'],
                 ]);
 
-                // Update branch stock
-                $branchStock = BranchStock::firstOrCreate(
+                // Update branch stock - bypass scope to find/create across branches
+                $branchStock = BranchStock::withoutGlobalScopes()->firstOrCreate(
                     ['branch_id' => $validated['branch_id'], 'product_id' => $item['product_id']],
                     ['quantity' => 0]
                 );

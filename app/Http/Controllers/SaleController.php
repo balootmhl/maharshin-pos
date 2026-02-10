@@ -33,10 +33,15 @@ class SaleController extends Controller
 
     public function create(Request $request): Response
     {
-        // Generate invoice number
-        $lastSale = Sale::latest()->first();
-        $nextNumber = $lastSale ? (int) preg_replace('/[^0-9]/', '', $lastSale->invoice_no) + 1 : 1;
-        $invoiceNo = 'INV-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        // Generate invoice number - date-based format: INV-YYYYMMDD-XXXX
+        $today = now()->format('Ymd');
+        $prefix = "INV-{$today}-";
+        $maxSeq = Sale::withoutGlobalScopes()
+            ->where('invoice_no', 'like', $prefix . '%')
+            ->selectRaw('MAX(CAST(SUBSTRING(invoice_no, -4) AS UNSIGNED)) as max_seq')
+            ->value('max_seq');
+        $nextSeq = ($maxSeq ?? 0) + 1;
+        $invoiceNo = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
         $defaultBranch = Branch::where('is_active', true)->first();
 
@@ -45,7 +50,8 @@ class SaleController extends Controller
             ->where('is_active', true)
             ->get(['id', 'name', 'code', 'barcode', 'selling_price', 'cost_price', 'tax_rate', 'category_id', 'unit'])
             ->map(function ($product) use ($defaultBranch) {
-                $stock = $defaultBranch ? BranchStock::where('branch_id', $defaultBranch->id)
+                $stock = $defaultBranch ? BranchStock::withoutGlobalScopes()
+                    ->where('branch_id', $defaultBranch->id)
                     ->where('product_id', $product->id)
                     ->value('quantity') ?? 0 : 0;
                 $product->stock = $stock;
@@ -65,15 +71,19 @@ class SaleController extends Controller
     public function store(SaleStoreRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-        $sale = null;
 
-        DB::transaction(function () use ($validated, &$sale) {
-            // Generate unique invoice number by finding the max existing number
-            $maxInvoiceNo = Sale::withTrashed()
-                ->selectRaw('MAX(CAST(SUBSTRING(invoice_no, 5) AS UNSIGNED)) as max_num')
-                ->value('max_num');
-            $nextNumber = ($maxInvoiceNo ?? 0) + 1;
-            $invoiceNo = 'INV-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+        /** @var Sale $sale */
+        $sale = DB::transaction(function () use ($validated) {
+            // Generate invoice number - date-based format: INV-YYYYMMDD-XXXX
+            $today = now()->format('Ymd');
+            $prefix = "INV-{$today}-";
+            $maxSeq = Sale::withoutGlobalScopes()
+                ->withTrashed()
+                ->where('invoice_no', 'like', $prefix . '%')
+                ->selectRaw('MAX(CAST(SUBSTRING(invoice_no, -4) AS UNSIGNED)) as max_seq')
+                ->value('max_seq');
+            $nextSeq = ($maxSeq ?? 0) + 1;
+            $invoiceNo = $prefix . str_pad($nextSeq, 4, '0', STR_PAD_LEFT);
 
             // Create the sale
             $sale = Sale::create([
@@ -106,7 +116,7 @@ class SaleController extends Controller
                 ]);
 
                 // Update branch stock
-                $branchStock = BranchStock::firstOrCreate(
+                $branchStock = BranchStock::withoutGlobalScopes()->firstOrCreate(
                     ['branch_id' => $validated['branch_id'], 'product_id' => $item['product_id']],
                     ['quantity' => 0]
                 );
@@ -132,7 +142,6 @@ class SaleController extends Controller
             // Update customer balance if credit sale
             if ($validated['customer_id'] && $validated['credit_amount'] > 0) {
                 $customer = Customer::find($validated['customer_id']);
-                $oldBalance = $customer->current_balance;
                 $customer->increment('current_balance', $validated['credit_amount']);
 
                 // Record credit ledger entry
@@ -151,6 +160,8 @@ class SaleController extends Controller
                     'created_by' => Auth::id(),
                 ]);
             }
+
+            return $sale;
         });
 
         // Load customer for the success dialog

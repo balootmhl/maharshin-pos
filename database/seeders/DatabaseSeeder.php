@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             // 1. Core reference data
             BranchSeeder::class,
+            GroupSeeder::class,
             CategorySeeder::class,
             SupplierSeeder::class,
             CustomerSeeder::class,
@@ -48,6 +49,22 @@ class DatabaseSeeder extends Seeder
             PurchaseSeeder::class,
             SaleSeeder::class,
         ]);
+
+        // Assign first branch to non-admin users
+        $this->assignBranchesToUsers();
+    }
+
+    /**
+     * Assign first branch to manager and test users (not super admin).
+     */
+    protected function assignBranchesToUsers(): void
+    {
+        $firstBranch = \App\Models\Branch::first();
+        if ($firstBranch) {
+            User::whereDoesntHave('roles', function ($q) {
+                $q->where('name', config('project.super_admin'));
+            })->update(['branch_id' => $firstBranch->id]);
+        }
     }
 
     // super admin user with super admin role and all permissions
