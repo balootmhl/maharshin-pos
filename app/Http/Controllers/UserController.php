@@ -46,7 +46,7 @@ class UserController extends Controller
 
         $request->session()->flash('user.id', $user->id);
 
-        return redirect()->route('users.index');
+        return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
 
     public function show(Request $request, User $user): Response
@@ -86,13 +86,13 @@ class UserController extends Controller
 
         $request->session()->flash('user.id', $user->id);
 
-        return redirect()->route('users.index');
+        return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
         $user->delete();
 
-        return redirect()->route('users.index');
+        return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
 }

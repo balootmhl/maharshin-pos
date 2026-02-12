@@ -36,7 +36,7 @@ class CategoryController extends Controller
 
         $request->session()->flash('category.id', $category->id);
 
-        return redirect()->route('categories.index');
+        return redirect()->route('categories.index')->with('success', 'Category created successfully.');
     }
 
     public function show(Request $request, Category $category): Response
@@ -62,13 +62,13 @@ class CategoryController extends Controller
 
         $request->session()->flash('category.id', $category->id);
 
-        return redirect()->route('categories.index');
+        return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
     }
 
     public function destroy(Request $request, Category $category): RedirectResponse
     {
         $category->delete();
 
-        return redirect()->route('categories.index');
+        return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }
 }

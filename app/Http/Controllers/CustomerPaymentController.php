@@ -107,13 +107,13 @@ class CustomerPaymentController extends Controller
 
         $request->session()->flash('customerPayment.id', $customerPayment->id);
 
-        return redirect()->route('customer-payments.index');
+        return redirect()->route('customer-payments.index')->with('success', 'Payment updated successfully.');
     }
 
     public function destroy(Request $request, CustomerPayment $customerPayment): RedirectResponse
     {
         $customerPayment->delete();
 
-        return redirect()->route('customer-payments.index');
+        return redirect()->route('customer-payments.index')->with('success', 'Payment deleted successfully.');
     }
 }

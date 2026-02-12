@@ -47,7 +47,7 @@ class GroupController extends Controller
 
         $request->session()->flash('group.id', $group->id);
 
-        return redirect()->route('groups.index');
+        return redirect()->route('groups.index')->with('success', 'Group created successfully.');
     }
 
     public function show(Request $request, Group $group): Response
@@ -75,13 +75,13 @@ class GroupController extends Controller
 
         $request->session()->flash('group.id', $group->id);
 
-        return redirect()->route('groups.index');
+        return redirect()->route('groups.index')->with('success', 'Group updated successfully.');
     }
 
     public function destroy(Request $request, Group $group): RedirectResponse
     {
         $group->delete();
 
-        return redirect()->route('groups.index');
+        return redirect()->route('groups.index')->with('success', 'Group deleted successfully.');
     }
 }

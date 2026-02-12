@@ -47,7 +47,7 @@ class TodoController extends Controller
         }
         $request->session()->flash('todo.id', $todo->id);
 
-        return redirect()->route('todos.index');
+        return redirect()->route('todos.index')->with('success', 'Todo created successfully.');
     }
 
     public function show(Request $request, Todo $todo): Response
@@ -76,14 +76,14 @@ class TodoController extends Controller
 
         $request->session()->flash('todo.id', $todo->id);
 
-        return redirect()->route('todos.index');
+        return redirect()->route('todos.index')->with('success', 'Todo updated successfully.');
     }
 
     public function destroy(Request $request, Todo $todo): RedirectResponse
     {
         $todo->delete();
 
-        return redirect()->route('todos.index');
+        return redirect()->route('todos.index')->with('success', 'Todo deleted successfully.');
     }
 
     public function export()

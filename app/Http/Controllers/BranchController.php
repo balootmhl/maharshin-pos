@@ -32,7 +32,7 @@ class BranchController extends Controller
 
         $request->session()->flash('branch.id', $branch->id);
 
-        return redirect()->route('branches.index');
+        return redirect()->route('branches.index')->with('success', 'Branch created successfully.');
     }
 
     public function show(Request $request, Branch $branch): Response
@@ -55,13 +55,13 @@ class BranchController extends Controller
 
         $request->session()->flash('branch.id', $branch->id);
 
-        return redirect()->route('branches.index');
+        return redirect()->route('branches.index')->with('success', 'Branch updated successfully.');
     }
 
     public function destroy(Request $request, Branch $branch): RedirectResponse
     {
         $branch->delete();
 
-        return redirect()->route('branches.index');
+        return redirect()->route('branches.index')->with('success', 'Branch deleted successfully.');
     }
 }

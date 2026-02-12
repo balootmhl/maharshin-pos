@@ -32,7 +32,7 @@ class SupplierController extends Controller
 
         $request->session()->flash('supplier.id', $supplier->id);
 
-        return redirect()->route('suppliers.index');
+        return redirect()->route('suppliers.index')->with('success', 'Supplier created successfully.');
     }
 
     public function show(Request $request, Supplier $supplier): Response
@@ -55,13 +55,13 @@ class SupplierController extends Controller
 
         $request->session()->flash('supplier.id', $supplier->id);
 
-        return redirect()->route('suppliers.index');
+        return redirect()->route('suppliers.index')->with('success', 'Supplier updated successfully.');
     }
 
     public function destroy(Request $request, Supplier $supplier): RedirectResponse
     {
         $supplier->delete();
 
-        return redirect()->route('suppliers.index');
+        return redirect()->route('suppliers.index')->with('success', 'Supplier deleted successfully.');
     }
 }

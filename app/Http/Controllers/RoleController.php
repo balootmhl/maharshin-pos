@@ -31,7 +31,7 @@ class RoleController extends Controller
 
         $request->session()->flash('role.id', $role->id);
 
-        return redirect()->route('roles.index');
+        return redirect()->route('roles.index')->with('success', 'Role created successfully.');
     }
 
     public function show(Request $request, Role $role): Response
@@ -54,13 +54,13 @@ class RoleController extends Controller
 
         $request->session()->flash('role.id', $role->id);
 
-        return redirect()->route('roles.index');
+        return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
     }
 
     public function destroy(Request $request, Role $role): RedirectResponse
     {
         $role->delete();
 
-        return redirect()->route('roles.index');
+        return redirect()->route('roles.index')->with('success', 'Role deleted successfully.');
     }
 }
