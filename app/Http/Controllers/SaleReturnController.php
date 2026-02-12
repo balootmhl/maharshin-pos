@@ -162,13 +162,13 @@ class SaleReturnController extends Controller
     {
         $saleReturn->update($request->validated());
 
-        return redirect()->route('sale-returns.index');
+        return redirect()->route('sale-returns.index')->with('success', 'Return updated successfully.');
     }
 
     public function destroy(Request $request, SaleReturn $saleReturn): RedirectResponse
     {
         $saleReturn->delete();
 
-        return redirect()->route('sale-returns.index');
+        return redirect()->route('sale-returns.index')->with('success', 'Return deleted successfully.');
     }
 }
