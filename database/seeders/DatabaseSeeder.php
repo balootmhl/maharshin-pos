@@ -31,23 +31,14 @@ class DatabaseSeeder extends Seeder
         $this->call([
             // 1. Core reference data
             BranchSeeder::class,
-            GroupSeeder::class,
-            CategorySeeder::class,
             SupplierSeeder::class,
             CustomerSeeder::class,
 
-            // 2. Products
-            ProductSeeder::class,
+            // 2. Products, Categories, Groups & Stock (from old system export)
+            ProductImportSeeder::class,
 
-            // 3. Stock initialization
-            BranchStockSeeder::class,
-
-            // 4. Settings
+            // 3. Settings
             SettingSeeder::class,
-
-            // 5. Sample transactions
-            PurchaseSeeder::class,
-            SaleSeeder::class,
         ]);
 
         // Assign first branch to non-admin users

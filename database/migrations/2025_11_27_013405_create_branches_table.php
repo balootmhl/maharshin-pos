@@ -22,6 +22,11 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
+        // Add foreign key constraint now that branches table exists
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('branch_id')->references('id')->on('branches')->nullOnDelete();
+        });
     }
 
     /**
@@ -29,6 +34,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['branch_id']);
+        });
         Schema::dropIfExists('branches');
     }
 };
