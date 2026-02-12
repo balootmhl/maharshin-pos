@@ -132,7 +132,7 @@ export default function ProductEdit({ product, categories }: { product: Product;
                                 <InputError className="mt-2" message={errors.unit} />
                             </div>
                             <div className="grid grid-flow-row gap-2">
-                                <Label htmlFor="cost_price">Cost Price*</Label>
+                                <Label htmlFor="cost_price">Default Cost Price*</Label>
                                 <Input
                                     id="cost_price"
                                     type="number"
@@ -144,7 +144,7 @@ export default function ProductEdit({ product, categories }: { product: Product;
                                 <InputError className="mt-2" message={errors.cost_price} />
                             </div>
                             <div className="grid grid-flow-row gap-2">
-                                <Label htmlFor="selling_price">Selling Price*</Label>
+                                <Label htmlFor="selling_price">Default Selling Price*</Label>
                                 <Input
                                     id="selling_price"
                                     type="number"

@@ -56,8 +56,20 @@ class StockAdjustmentController extends Controller
 
     public function store(StockAdjustmentStoreRequest $request): RedirectResponse
     {
-        $validated = $request->validated();
+        $this->createAdjustment($request->validated());
 
+        return redirect()->route('stock-adjustments.index')->with('success', 'Stock adjustment recorded successfully.');
+    }
+
+    public function quickStore(StockAdjustmentStoreRequest $request): RedirectResponse
+    {
+        $this->createAdjustment($request->validated());
+
+        return redirect()->back()->with('success', 'Stock adjustment recorded successfully.');
+    }
+
+    private function createAdjustment(array $validated): void
+    {
         DB::transaction(function () use ($validated) {
             // Generate adjustment number - date-based format: ADJ-YYYYMMDD-XXXX
             $today = now()->format('Ymd');
@@ -118,8 +130,6 @@ class StockAdjustmentController extends Controller
                 'created_by' => Auth::id(),
             ]);
         });
-
-        return redirect()->route('stock-adjustments.index')->with('success', 'Stock adjustment recorded successfully.');
     }
 
     public function show(Request $request, StockAdjustment $stockAdjustment): Response

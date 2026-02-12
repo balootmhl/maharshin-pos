@@ -19,6 +19,8 @@ return new class extends Migration
             $table->foreignId('branch_id')->constrained();
             $table->foreignId('group_id')->nullable()->constrained()->nullOnDelete();
             $table->integer('quantity')->default(0);
+            $table->decimal('cost_price', 15, 2)->nullable();
+            $table->decimal('selling_price', 15, 2)->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

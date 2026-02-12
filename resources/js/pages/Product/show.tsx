@@ -68,11 +68,11 @@ export default function ProductShow({ product }: { product: Product }) {
                         <div className="grid grid-cols-2 gap-4 border-t pt-4">
                             <div>
                                 <p className="text-muted-foreground text-sm">Cost Price</p>
-                                <p className="font-mono text-lg font-bold">{formatCurrency(product.cost_price)} Ks</p>
+                                <p className="font-mono text-lg font-bold">{formatCurrency(Number(product.cost_price))} Ks</p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground text-sm">Selling Price</p>
-                                <p className="font-mono text-lg font-bold">{formatCurrency(product.selling_price)} Ks</p>
+                                <p className="font-mono text-lg font-bold">{formatCurrency(Number(product.selling_price))} Ks</p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground text-sm">Tax Rate</p>

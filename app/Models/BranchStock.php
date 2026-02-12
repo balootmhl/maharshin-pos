@@ -26,6 +26,8 @@ class BranchStock extends BaseModel
         'branch_id',
         'group_id',
         'quantity',
+        'cost_price',
+        'selling_price',
     ];
 
     /**
@@ -38,6 +40,8 @@ class BranchStock extends BaseModel
         'product_id' => 'integer',
         'branch_id' => 'integer',
         'group_id' => 'integer',
+        'cost_price' => 'decimal:2',
+        'selling_price' => 'decimal:2',
         'updated_at' => 'timestamp',
     ];
 

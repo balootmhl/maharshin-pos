@@ -32,6 +32,12 @@ export interface SharedData {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    flash: {
+        success: string | null;
+        error: string | null;
+        warning: string | null;
+        info: string | null;
+    };
     [key: string]: unknown;
 }
 
@@ -130,27 +136,27 @@ export interface BranchStock {
     product_id: number;
     branch_id: number;
     group_id?: number;
-    quantity: number;
-    reserved_quantity?: number;
-    branch?: Branch;
     group?: Group;
+    quantity: number;
+    cost_price?: string | null;
+    selling_price?: string | null;
 }
 
 export interface Product {
     id: number;
-    name: string;
     code: string;
     barcode?: string;
+    name: string;
     description?: string;
-    category_id?: number;
+    category_id: number;
     category?: Category;
-    selling_price: number;
-    cost_price: number;
-    tax_rate: number;
-    unit?: string;
-    stock?: number;
-    low_stock_alert?: number;
-    is_active?: boolean;
+    unit: string;
+    cost_price: string;
+    selling_price: string;
+    tax_rate: string;
+    low_stock_alert: number;
+    is_active: boolean;
+    stock?: number; // kept for backward compatibility if needed, but preferred to use branch_stocks
     branch_stocks?: BranchStock[];
     created_at?: string;
     updated_at?: string;

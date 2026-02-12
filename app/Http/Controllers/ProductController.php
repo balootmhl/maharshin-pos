@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -36,11 +37,18 @@ class ProductController extends Controller
 
     public function store(ProductStoreRequest $request): RedirectResponse
     {
-        $product = Product::create($request->validated());
+        $data = $request->validated();
+        $userId = Auth::id();
+
+        $data['created_by'] = $userId;
+        $data['updated_by'] = $userId;
+
+        /** @var Product $product */
+        $product = Product::create($data);
 
         $request->session()->flash('product.id', $product->id);
 
-        return redirect()->route('products.index');
+        return redirect()->route('products.index')->with('success', 'Product created successfully.');
     }
 
     public function show(Request $request, Product $product): Response
@@ -64,17 +72,20 @@ class ProductController extends Controller
 
     public function update(ProductUpdateRequest $request, Product $product): RedirectResponse
     {
-        $product->update($request->validated());
+        $data = $request->validated();
+        $data['updated_by'] = Auth::id();
+
+        $product->update($data);
 
         $request->session()->flash('product.id', $product->id);
 
-        return redirect()->route('products.index');
+        return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }
 
     public function destroy(Request $request, Product $product): RedirectResponse
     {
         $product->delete();
 
-        return redirect()->route('products.index');
+        return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
     }
 }

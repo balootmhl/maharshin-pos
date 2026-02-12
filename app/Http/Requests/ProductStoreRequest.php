@@ -31,10 +31,6 @@ class ProductStoreRequest extends FormRequest
             'tax_rate' => ['required', 'numeric', 'between:-999.99,999.99'],
             'low_stock_alert' => ['required', 'integer'],
             'is_active' => ['required'],
-            'created_by' => ['nullable'],
-            'updated_by' => ['nullable'],
-            'creator_id' => ['required', 'integer', 'exists:Users,id'],
-            'updater_id' => ['required', 'integer', 'exists:Users,id'],
         ];
     }
 }

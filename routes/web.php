@@ -9,6 +9,7 @@ use App\Http\Controllers\CustomerPaymentController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\PlaygroundController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductPricingController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
@@ -37,9 +38,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $dailySummary = $reportController->dailySummary();
 
         // Count low stock items
-        $lowStockCount = BranchStock::whereColumn('quantity', '<=',
-            DB::raw('(SELECT low_stock_alert FROM products WHERE products.id = branch_stocks.product_id)')
-        )->count();
+        $lowStockCount = BranchStock::whereRaw('quantity <= (SELECT low_stock_alert FROM products WHERE products.id = branch_stocks.product_id)')
+            ->count();
 
         return Inertia::render('dashboard', [
             'dailySummary' => $dailySummary,
@@ -68,6 +68,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('groups', GroupController::class);
 
+    Route::get('products/pricing', [ProductPricingController::class, 'index'])->name('products.pricing');
+    Route::post('products/pricing', [ProductPricingController::class, 'update'])->name('products.pricing.update');
+
     Route::resource('products', ProductController::class);
 
     Route::get('customers/{customer}/credit-ledger/export', [CustomerController::class, 'exportCreditLedger'])->name('customers.credit-ledger.export');
@@ -90,6 +93,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('stock-movements', StockMovementController::class)->only('index');
 
+    Route::post('stock-adjustments/quick', [StockAdjustmentController::class, 'quickStore'])->name('stock-adjustments.quick');
     Route::resource('stock-adjustments', StockAdjustmentController::class)->only(['index', 'create', 'store', 'show']);
 
     Route::get('stock-history', [StockHistoryController::class, 'index'])->name('stock-history.index');

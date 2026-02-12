@@ -93,6 +93,8 @@ class ProductImportSeeder extends Seeder
                     [
                         'group_id' => $groupId,
                         'quantity' => $item['quantity'] ?? 0,
+                        'cost_price' => $item['buy_price'],
+                        'selling_price' => $item['sale_price'],
                     ]
                 );
 

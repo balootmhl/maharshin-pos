@@ -20,8 +20,8 @@ class ProductUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:100', 'unique:products,code'],
-            'barcode' => ['nullable', 'string', 'max:100', 'unique:products,barcode'],
+            'code' => ['required', 'string', 'max:100', 'unique:products,code,' . $this->route('product')->id],
+            'barcode' => ['nullable', 'string', 'max:100', 'unique:products,barcode,' . $this->route('product')->id],
             'name' => ['required', 'string'],
             'description' => ['nullable', 'string'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
@@ -31,10 +31,6 @@ class ProductUpdateRequest extends FormRequest
             'tax_rate' => ['required', 'numeric', 'between:-999.99,999.99'],
             'low_stock_alert' => ['required', 'integer'],
             'is_active' => ['required'],
-            'created_by' => ['nullable'],
-            'updated_by' => ['nullable'],
-            'creator_id' => ['required', 'integer', 'exists:Users,id'],
-            'updater_id' => ['required', 'integer', 'exists:Users,id'],
         ];
     }
 }
