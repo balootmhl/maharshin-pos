@@ -1,4 +1,6 @@
 import InputError from '@/components/input-error';
+import { useProductSearch } from '@/hooks/use-product-search';
+import { PurchaseSuccessDialog } from '@/components/purchase-success-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +14,9 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Product, Supplier } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
-import { Minus, Package, Plus, Trash2, X } from 'lucide-react';
+import { type BreadcrumbItem, Branch, Category, Product, Supplier } from '@/types';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { Loader2, Minus, Package, Plus, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type CartItem = {
@@ -47,6 +49,18 @@ type PurchaseForm = {
     }[];
 };
 
+type CompletedPurchase = {
+    id: number;
+    purchase_no: string;
+    total_amount: number;
+    paid_amount: number;
+    payment_status: string;
+    supplier?: {
+        id: number;
+        name: string;
+    };
+};
+
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Purchases', href: route('purchases.index') },
     { title: 'New Purchase', href: '#' },
@@ -62,14 +76,28 @@ const formatCurrency = (value: number) => {
 export default function PurchaseCreate({
     branches,
     suppliers,
-    products,
+    categories,
     purchaseNo,
 }: {
     branches: Branch[];
     suppliers: Supplier[];
-    products: Product[];
+    categories: Category[];
     purchaseNo: string;
 }) {
+    const { flash } = usePage<{ flash: { completedPurchase?: CompletedPurchase } }>().props;
+
+    // Success dialog state
+    const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+    const [completedPurchase, setCompletedPurchase] = useState<CompletedPurchase | null>(null);
+
+    // Open dialog when flash data contains completed purchase
+    useEffect(() => {
+        if (flash?.completedPurchase) {
+            setCompletedPurchase(flash.completedPurchase);
+            setSuccessDialogOpen(true);
+        }
+    }, [flash?.completedPurchase]);
+
     const today = new Date().toISOString().split('T')[0];
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -79,6 +107,12 @@ export default function PurchaseCreate({
     const searchInputRef = useRef<HTMLInputElement>(null);
     const barcodeInputRef = useRef<HTMLInputElement>(null);
     const paidAmountInputRef = useRef<HTMLInputElement>(null);
+
+    // Server-side product search
+    const { products: searchResults, isLoading: isSearching, search: searchProducts, searchByCategory, lookupBarcode } = useProductSearch({
+        branchId: branches[0]?.id?.toString() || '',
+        context: 'purchase',
+    });
 
     const { data, setData, post, errors, processing, reset } = useForm<PurchaseForm>({
         branch_id: branches[0]?.id?.toString() || '',
@@ -92,6 +126,28 @@ export default function PurchaseCreate({
         notes: '',
         items: [],
     });
+
+    // Helper to get product details based on selected branch
+    const getProductDetails = useCallback((product: Product) => {
+        const branchId = parseInt(data.branch_id);
+        // If no branch selected or no branch stocks loaded, fallback to default
+        if (!branchId || !product.branch_stocks) {
+             return {
+                stock: product.stock ?? 0,
+                cost: Number(product.cost_price),
+             };
+        }
+        const stock = product.branch_stocks.find(bs => bs.branch_id === branchId);
+        return {
+            stock: stock?.quantity ?? 0,
+            cost: stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price),
+        };
+    }, [data.branch_id]);
+
+    // Clear cart when branch changes to avoid price/stock mismatches
+    useEffect(() => {
+        setCart([]);
+    }, [data.branch_id]);
 
     // Calculate totals when cart changes
     const cartTotals = useMemo(() => {
@@ -127,40 +183,7 @@ export default function PurchaseCreate({
         setData((prev) => ({ ...prev, payment_status: status }));
     }, [data.paid_amount, cartTotals.total, setData]);
 
-    // Extract unique categories from products
-    const categories = useMemo(() => {
-        const uniqueCategories = new Map<number, { id: number; name: string }>();
-        products.forEach((p) => {
-            if (p.category) {
-                uniqueCategories.set(p.category.id, { id: p.category.id, name: p.category.name });
-            }
-        });
-        return Array.from(uniqueCategories.values()).sort((a, b) => a.name.localeCompare(b.name));
-    }, [products]);
 
-    // Filter products based on search and category
-    const filteredProducts = useMemo(() => {
-        let result = products;
-
-        // Filter by category first
-        if (selectedCategory !== null) {
-            result = result.filter((p) => p.category_id === selectedCategory);
-        }
-
-        // Then filter by search query
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(
-                (p) =>
-                    p.name.toLowerCase().includes(query) ||
-                    p.code.toLowerCase().includes(query) ||
-                    p.barcode?.toLowerCase().includes(query) ||
-                    p.category?.name.toLowerCase().includes(query),
-            );
-        }
-
-        return result;
-    }, [products, searchQuery, selectedCategory]);
 
     const addToCart = useCallback((product: Product) => {
         setCart((prev) => {
@@ -177,20 +200,21 @@ export default function PurchaseCreate({
                         : item,
                 );
             }
+            const details = getProductDetails(product);
             const newItem: CartItem = {
                 product_id: product.id,
                 product,
                 quantity: 1,
-                unit_cost: Number(product.cost_price),
+                unit_cost: details.cost,
                 tax_rate: Number(product.tax_rate),
-                tax_amount: Number(product.cost_price) * (Number(product.tax_rate) / 100),
-                subtotal: Number(product.cost_price),
+                tax_amount: details.cost * (Number(product.tax_rate) / 100),
+                subtotal: details.cost,
             };
             return [...prev, newItem];
         });
         setSearchQuery('');
         searchInputRef.current?.focus();
-    }, []);
+    }, [getProductDetails]);
 
     const updateQuantity = (productId: number, delta: number) => {
         setCart((prev) =>
@@ -256,10 +280,11 @@ export default function PurchaseCreate({
         setData((prev) => ({ ...prev, paid_amount: 0 }));
     }, [setData]);
 
-    const handleBarcodeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleBarcodeInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             const barcode = (e.target as HTMLInputElement).value.trim();
-            const product = products.find((p) => p.barcode === barcode || p.code === barcode);
+            if (!barcode) return;
+            const product = await lookupBarcode(barcode);
             if (product) {
                 addToCart(product);
                 (e.target as HTMLInputElement).value = '';
@@ -302,14 +327,25 @@ export default function PurchaseCreate({
         e.preventDefault();
         post(route('purchases.store'), {
             preserveScroll: true,
-            onSuccess: () => {
-                reset();
-                setCart([]);
-            },
         });
     };
 
+    // Handle print action from success dialog
+    const handlePrint = (format: 'a4' | 'thermal') => {
+        if (!completedPurchase) return;
+        window.open(route('purchases.show', { purchase: completedPurchase.id }) + `?format=${format}`, '_blank');
+    };
+
+    // Handle new purchase action from success dialog
+    const handleNewPurchase = () => {
+        reset();
+        setCart([]);
+        setCompletedPurchase(null);
+        searchInputRef.current?.focus();
+    };
+
     return (
+        <>
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Purchase" />
             <form onSubmit={submit} className="flex h-[calc(100vh-120px)] gap-4 p-4">
@@ -325,13 +361,15 @@ export default function PurchaseCreate({
                                         placeholder="Search products (F1)... ↑↓ to navigate, Enter to add"
                                         value={searchQuery}
                                         onChange={(e) => {
-                                            setSearchQuery(e.target.value);
-                                            setSearchOpen(e.target.value.length > 0);
+                                            const val = e.target.value;
+                                            setSearchQuery(val);
+                                            setSearchOpen(val.length > 0);
                                             setSelectedIndex(0);
+                                            searchProducts(val);
                                         }}
                                         onFocus={() => setSearchOpen(searchQuery.length > 0)}
                                         onKeyDown={(e) => {
-                                            const maxIndex = Math.min(filteredProducts.length, 10) - 1;
+                                            const maxIndex = Math.min(searchResults.length, 10) - 1;
 
                                             if (e.key === 'ArrowDown' && searchOpen) {
                                                 e.preventDefault();
@@ -341,9 +379,9 @@ export default function PurchaseCreate({
                                                 e.preventDefault();
                                                 setSelectedIndex((prev) => Math.max(prev - 1, 0));
                                             }
-                                            if (e.key === 'Enter' && filteredProducts.length > 0) {
+                                            if (e.key === 'Enter' && searchResults.length > 0) {
                                                 e.preventDefault();
-                                                const selectedProduct = filteredProducts[selectedIndex];
+                                                const selectedProduct = searchResults[selectedIndex];
                                                 if (selectedProduct) {
                                                     addToCart(selectedProduct);
                                                     setSearchQuery('');
@@ -377,7 +415,7 @@ export default function PurchaseCreate({
                                     <CommandList className="max-h-[300px]">
                                         <CommandEmpty>No products found. Try a different search.</CommandEmpty>
                                         <CommandGroup>
-                                            {filteredProducts.slice(0, 10).map((product, index) => (
+                                            {searchResults.slice(0, 10).map((product, index) => (
                                                 <CommandItem
                                                     key={product.id}
                                                     value={product.id.toString()}
@@ -401,11 +439,11 @@ export default function PurchaseCreate({
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-primary font-mono font-bold">
-                                                            {formatCurrency(Number(product.cost_price))}
+                                                            {formatCurrency(getProductDetails(product).cost)}
                                                         </span>
                                                         <Badge variant="secondary" className="text-xs">
                                                             <Package className="mr-1 h-3 w-3" />
-                                                            {product.stock ?? 0}
+                                                            {getProductDetails(product).stock}
                                                         </Badge>
                                                     </div>
                                                 </CommandItem>
@@ -430,7 +468,7 @@ export default function PurchaseCreate({
                             type="button"
                             variant={selectedCategory === null ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => setSelectedCategory(null)}
+                            onClick={() => { setSelectedCategory(null); searchByCategory(null); }}
                             tabIndex={-1}
                         >
                             All
@@ -441,7 +479,7 @@ export default function PurchaseCreate({
                                 type="button"
                                 variant={selectedCategory === cat.id ? 'default' : 'outline'}
                                 size="sm"
-                                onClick={() => setSelectedCategory(cat.id)}
+                                onClick={() => { setSelectedCategory(cat.id); searchByCategory(cat.id); }}
                                 tabIndex={-1}
                             >
                                 {cat.name}
@@ -452,7 +490,12 @@ export default function PurchaseCreate({
                     {/* Product Grid */}
                     <ScrollArea className="bg-card flex-1 rounded-lg border">
                         <div className="grid grid-cols-4 gap-2 p-3">
-                            {filteredProducts.map((product) => (
+                            {isSearching && (
+                                <div className="col-span-4 flex items-center justify-center py-8">
+                                    <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                                </div>
+                            )}
+                            {!isSearching && searchResults.map((product) => (
                                 <button
                                     key={product.id}
                                     type="button"
@@ -463,16 +506,20 @@ export default function PurchaseCreate({
                                     <span className="line-clamp-2 text-sm font-medium">{product.code}</span>
                                     <span className="text-muted-foreground font-mono text-xs">{product.name}</span>
                                     <div className="flex w-full items-center justify-between">
-                                        <span className="text-primary font-mono font-bold">{formatCurrency(Number(product.cost_price))}</span>
-                                        <Badge variant="secondary" className="text-xs">
-                                            <Package className="mr-1 h-3 w-3" />
-                                            {product.stock ?? 0}
-                                        </Badge>
+                                        <span className="text-primary font-mono font-bold">{formatCurrency(getProductDetails(product).cost)}</span>
+                                        <div className="flex items-center gap-1">
+                                            <Badge variant="secondary" className="text-xs">
+                                                <Package className="mr-1 h-3 w-3" />
+                                                {getProductDetails(product).stock}
+                                            </Badge>
+                                        </div>
                                     </div>
                                 </button>
                             ))}
-                            {filteredProducts.length === 0 && (
-                                <div className="text-muted-foreground col-span-4 py-8 text-center">No products found</div>
+                            {!isSearching && searchResults.length === 0 && (
+                                <div className="text-muted-foreground col-span-4 py-8 text-center">
+                                    {selectedCategory !== null ? 'No products in this category' : 'Search or select a category to browse products'}
+                                </div>
                             )}
                         </div>
                     </ScrollArea>
@@ -742,5 +789,15 @@ export default function PurchaseCreate({
                 </div>
             </form>
         </AppLayout>
+
+            {/* Success Dialog */}
+            <PurchaseSuccessDialog
+                open={successDialogOpen}
+                onOpenChange={setSuccessDialogOpen}
+                purchase={completedPurchase}
+                onNewPurchase={handleNewPurchase}
+                onPrint={handlePrint}
+            />
+        </>
     );
 }

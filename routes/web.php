@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ProductSearchController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchStockController;
 use App\Http\Controllers\CategoryController;
@@ -105,6 +106,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('sales', [ReportController::class, 'salesReport'])->name('sales');
         Route::get('low-stock', [ReportController::class, 'lowStockReport'])->name('low-stock');
     });
+
+    // Product Search API (JSON endpoints for POS & Purchase)
+    Route::get('api/products/search', [ProductSearchController::class, 'search'])->name('api.products.search');
+    Route::get('api/products/barcode-lookup', [ProductSearchController::class, 'barcodeLookup'])->name('api.products.barcode-lookup');
 
 });
 

@@ -1,4 +1,5 @@
 import InputError from '@/components/input-error';
+import { useProductSearch } from '@/hooks/use-product-search';
 import { SaleSuccessDialog } from '@/components/sale-success-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,9 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Customer, Product } from '@/types';
+import { type BreadcrumbItem, Branch, Category, Customer, Product } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, Minus, Package, Pause, Play, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Loader2, Minus, Package, Pause, Play, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 
@@ -85,11 +86,11 @@ type CompletedSale = {
 export default function SaleCreate({
     branches,
     customers,
-    products,
+    categories,
 }: {
     branches: Branch[];
     customers: Customer[];
-    products: Product[];
+    categories: Category[];
     invoiceNo: string;
 }) {
     // Get flash data for completed sale
@@ -119,6 +120,12 @@ export default function SaleCreate({
     const discountInputRef = useRef<HTMLInputElement>(null);
     const paidAmountInputRef = useRef<HTMLInputElement>(null);
 
+    // Server-side product search
+    const { products: searchResults, isLoading: isSearching, search: searchProducts, searchByCategory, lookupBarcode } = useProductSearch({
+        branchId: branches[0]?.id?.toString() || '',
+        context: 'sale',
+    });
+
     const { data, setData, post, errors, processing, reset } = useForm<SaleForm>({
         branch_id: branches[0]?.id?.toString() || '',
         customer_id: 'walk-in',
@@ -134,6 +141,30 @@ export default function SaleCreate({
         notes: '',
         items: [],
     });
+
+    // Helper to get product details based on selected branch
+    const getProductDetails = useCallback((product: Product) => {
+        const branchId = parseInt(data.branch_id);
+        // If no branch selected or no branch stocks loaded, fallback to default
+        if (!branchId || !product.branch_stocks) {
+             return {
+                stock: product.stock ?? 0,
+                price: Number(product.selling_price),
+                cost: Number(product.cost_price),
+             };
+        }
+        const stock = product.branch_stocks.find(bs => bs.branch_id === branchId);
+        return {
+            stock: stock?.quantity ?? 0,
+            price: stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price),
+            cost: stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price),
+        };
+    }, [data.branch_id]);
+
+    // Clear cart when branch changes to avoid price/stock mismatches
+    useEffect(() => {
+        setCart([]);
+    }, [data.branch_id]);
 
     // Calculate totals when cart changes
     const cartTotals = useMemo(() => {
@@ -174,40 +205,6 @@ export default function SaleCreate({
         }));
     }, [data.paid_amount, cartTotals.total, setData]);
 
-    // Extract unique categories from products
-    const categories = useMemo(() => {
-        const uniqueCategories = new Map<number, { id: number; name: string }>();
-        products.forEach((p) => {
-            if (p.category) {
-                uniqueCategories.set(p.category.id, { id: p.category.id, name: p.category.name });
-            }
-        });
-        return Array.from(uniqueCategories.values()).sort((a, b) => a.name.localeCompare(b.name));
-    }, [products]);
-
-    // Filter products based on search and category
-    const filteredProducts = useMemo(() => {
-        let result = products;
-
-        // Filter by category first
-        if (selectedCategory !== null) {
-            result = result.filter((p) => p.category_id === selectedCategory);
-        }
-
-        // Then filter by search query
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(
-                (p) =>
-                    p.name.toLowerCase().includes(query) ||
-                    p.code.toLowerCase().includes(query) ||
-                    p.barcode?.toLowerCase().includes(query) ||
-                    p.category?.name.toLowerCase().includes(query),
-            );
-        }
-
-        return result;
-    }, [products, searchQuery, selectedCategory]);
 
     const addToCart = useCallback((product: Product) => {
         setCart((prev) => {
@@ -224,20 +221,21 @@ export default function SaleCreate({
                         : item,
                 );
             }
+            const details = getProductDetails(product);
             const newItem: CartItem = {
                 product_id: product.id,
                 product,
                 quantity: 1,
-                unit_price: Number(product.selling_price),
+                unit_price: details.price,
                 tax_rate: Number(product.tax_rate),
-                tax_amount: Number(product.selling_price) * (Number(product.tax_rate) / 100),
-                subtotal: Number(product.selling_price),
+                tax_amount: details.price * (Number(product.tax_rate) / 100),
+                subtotal: details.price,
             };
             return [...prev, newItem];
         });
         setSearchQuery('');
         searchInputRef.current?.focus();
-    }, []);
+    }, [getProductDetails]);
 
     const updateQuantity = (productId: number, delta: number) => {
         setCart((prev) =>
@@ -308,10 +306,11 @@ export default function SaleCreate({
         }
     };
 
-    const handleBarcodeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleBarcodeInput = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             const barcode = (e.target as HTMLInputElement).value.trim();
-            const product = products.find((p) => p.barcode === barcode || p.code === barcode);
+            if (!barcode) return;
+            const product = await lookupBarcode(barcode);
             if (product) {
                 addToCart(product);
                 (e.target as HTMLInputElement).value = '';
@@ -400,13 +399,15 @@ export default function SaleCreate({
                                             placeholder="Search products (F1)... ↑↓ to navigate, Enter to add"
                                             value={searchQuery}
                                             onChange={(e) => {
-                                                setSearchQuery(e.target.value);
-                                                setSearchOpen(e.target.value.length > 0);
-                                                setSelectedIndex(0); // Reset selection when typing
+                                                const val = e.target.value;
+                                                setSearchQuery(val);
+                                                setSearchOpen(val.length > 0);
+                                                setSelectedIndex(0);
+                                                searchProducts(val);
                                             }}
                                             onFocus={() => setSearchOpen(searchQuery.length > 0)}
                                             onKeyDown={(e) => {
-                                                const maxIndex = Math.min(filteredProducts.length, 10) - 1;
+                                                const maxIndex = Math.min(searchResults.length, 10) - 1;
                                                 
                                                 if (e.key === 'ArrowDown' && searchOpen) {
                                                     e.preventDefault();
@@ -416,9 +417,9 @@ export default function SaleCreate({
                                                     e.preventDefault();
                                                     setSelectedIndex((prev) => Math.max(prev - 1, 0));
                                                 }
-                                                if (e.key === 'Enter' && filteredProducts.length > 0) {
+                                                if (e.key === 'Enter' && searchResults.length > 0) {
                                                     e.preventDefault();
-                                                    const selectedProduct = filteredProducts[selectedIndex];
+                                                    const selectedProduct = searchResults[selectedIndex];
                                                     if (selectedProduct) {
                                                         addToCart(selectedProduct);
                                                         setSearchQuery('');
@@ -453,11 +454,12 @@ export default function SaleCreate({
                                         <CommandList className="max-h-[300px]">
                                             <CommandEmpty>No products found. Try a different search.</CommandEmpty>
                                             <CommandGroup>
-                                                {filteredProducts.slice(0, 10).map((product, index) => (
+                                                {searchResults.slice(0, 10).map((product, index) => (
                                                     <CommandItem
                                                         key={product.id}
                                                         value={product.id.toString()}
                                                         onSelect={() => {
+                                                            if (getProductDetails(product).stock <= 0) return;
                                                             addToCart(product);
                                                             setSearchQuery('');
                                                             setSearchOpen(false);
@@ -465,9 +467,10 @@ export default function SaleCreate({
                                                             // Keep focus in search for quick sequential entry
                                                             setTimeout(() => searchInputRef.current?.focus(), 0);
                                                         }}
-                                                        className={`flex items-center justify-between gap-2 cursor-pointer ${
-                                                            index === selectedIndex ? 'bg-accent text-accent-foreground' : ''
-                                                        }`}
+                                                        disabled={getProductDetails(product).stock <= 0}
+                                                        className={`flex items-center justify-between gap-2 ${
+                                                            getProductDetails(product).stock <= 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                                        } ${index === selectedIndex ? 'bg-accent text-accent-foreground' : ''}`}
                                                     >
                                                         <div className="flex flex-col">
                                                             <span className="font-medium">{product.name}</span>
@@ -478,17 +481,17 @@ export default function SaleCreate({
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-primary font-mono font-bold">
-                                                                {formatCurrency(Number(product.selling_price))}
+                                                                {formatCurrency(getProductDetails(product).price)}
                                                             </span>
-                                                            {(product.stock ?? 0) <= 10 ? (
+                                                            {getProductDetails(product).stock <= 10 ? (
                                                                 <Badge variant="destructive" className="text-xs">
                                                                     <AlertTriangle className="mr-1 h-3 w-3" />
-                                                                    {product.stock ?? 0}
+                                                                    {getProductDetails(product).stock}
                                                                 </Badge>
                                                             ) : (
                                                                 <Badge variant="secondary" className="text-xs">
                                                                     <Package className="mr-1 h-3 w-3" />
-                                                                    {product.stock ?? 0}
+                                                                    {getProductDetails(product).stock}
                                                                 </Badge>
                                                             )}
                                                         </div>
@@ -514,7 +517,7 @@ export default function SaleCreate({
                                 type="button"
                                 variant={selectedCategory === null ? 'default' : 'outline'}
                                 size="sm"
-                                onClick={() => setSelectedCategory(null)}
+                                onClick={() => { setSelectedCategory(null); searchByCategory(null); }}
                                 tabIndex={-1}
                             >
                                 All
@@ -525,7 +528,7 @@ export default function SaleCreate({
                                     type="button"
                                     variant={selectedCategory === cat.id ? 'default' : 'outline'}
                                     size="sm"
-                                    onClick={() => setSelectedCategory(cat.id)}
+                                    onClick={() => { setSelectedCategory(cat.id); searchByCategory(cat.id); }}
                                     tabIndex={-1}
                                 >
                                     {cat.name}
@@ -536,37 +539,48 @@ export default function SaleCreate({
                         {/* Product Grid - Visual catalog (clickable but keyboard-optional) */}
                         <ScrollArea className="bg-card flex-1 rounded-lg border">
                             <div className="grid grid-cols-4 gap-2 p-3">
-                                {filteredProducts.map((product) => (
+                                {isSearching && (
+                                    <div className="col-span-4 flex items-center justify-center py-8">
+                                        <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                                    </div>
+                                )}
+                                {!isSearching && searchResults.map((product) => (
                                     <button
                                         key={product.id}
                                         type="button"
                                         onClick={() => addToCart(product)}
+                                        disabled={getProductDetails(product).stock <= 0}
                                         tabIndex={-1}
-                                        className="bg-background hover:bg-accent hover:text-accent-foreground flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors"
+                                        className={`bg-background flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors ${
+                                            getProductDetails(product).stock <= 0
+                                                ? 'opacity-50 cursor-not-allowed'
+                                                : 'hover:bg-accent hover:text-accent-foreground'
+                                        }`}
                                     >
                                         <span className="line-clamp-2 text-sm font-medium">{product.code}</span>
                                         <span className="text-muted-foreground font-mono text-xs">{product.name}</span>
                                         <div className="flex w-full items-center justify-between">
-                                            <span className="text-primary font-mono font-bold">{formatCurrency(Number(product.selling_price))}</span>
-                                            {/* Stock Display */}
+                                            <span className="text-primary font-mono font-bold">{formatCurrency(getProductDetails(product).price)}</span>
                                             <div className="flex items-center gap-1">
-                                                {(product.stock ?? 0) <= 10 ? (
+                                                {getProductDetails(product).stock <= 10 ? (
                                                     <Badge variant="destructive" className="text-xs">
                                                         <AlertTriangle className="mr-1 h-3 w-3" />
-                                                        {product.stock ?? 0}
+                                                        {getProductDetails(product).stock}
                                                     </Badge>
                                                 ) : (
                                                     <Badge variant="secondary" className="text-xs">
                                                         <Package className="mr-1 h-3 w-3" />
-                                                        {product.stock ?? 0}
+                                                        {getProductDetails(product).stock}
                                                     </Badge>
                                                 )}
                                             </div>
                                         </div>
                                     </button>
                                 ))}
-                                {filteredProducts.length === 0 && (
-                                    <div className="text-muted-foreground col-span-4 py-8 text-center">No products found</div>
+                                {!isSearching && searchResults.length === 0 && (
+                                    <div className="text-muted-foreground col-span-4 py-8 text-center">
+                                        {selectedCategory !== null ? 'No products in this category' : 'Search or select a category to browse products'}
+                                    </div>
                                 )}
                             </div>
                         </ScrollArea>

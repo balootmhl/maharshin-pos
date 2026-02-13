@@ -20,11 +20,32 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class SaleController extends Controller
 {
     public function index(Request $request): Response
     {
-        $sales = Sale::with(['branch', 'customer', 'createdBy', 'saleItems.product'])->latest()->get();
+        $sales = QueryBuilder::for(Sale::class)
+            ->with(['branch', 'customer', 'createdBy', 'saleItems.product'])
+            ->allowedFilters([
+                'invoice_no',
+                'payment_status',
+                AllowedFilter::callback('customer.name', function ($query, $value) {
+                    $query->whereHas('customer', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::scope('sale_date_start'),
+                AllowedFilter::scope('sale_date_end'),
+                AllowedFilter::scope('total_amount_min'),
+                AllowedFilter::scope('total_amount_max'),
+            ])
+            ->allowedSorts(['invoice_no', 'sale_date', 'total_amount', 'created_at'])
+            ->defaultSort('-created_at')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
 
         return Inertia::render('Sale/index', [
             'sales' => $sales,
@@ -45,24 +66,9 @@ class SaleController extends Controller
 
         $defaultBranch = Branch::where('is_active', true)->first();
 
-        // Get products with stock for the default branch
-        $products = Product::with('category:id,name')
-            ->where('is_active', true)
-            ->get(['id', 'name', 'code', 'barcode', 'selling_price', 'cost_price', 'tax_rate', 'category_id', 'unit'])
-            ->map(function ($product) use ($defaultBranch) {
-                $stock = $defaultBranch ? BranchStock::withoutGlobalScopes()
-                    ->where('branch_id', $defaultBranch->id)
-                    ->where('product_id', $product->id)
-                    ->value('quantity') ?? 0 : 0;
-                $product->stock = $stock;
-
-                return $product;
-            });
-
         return Inertia::render('Sale/create', [
             'branches' => Branch::where('is_active', true)->get(['id', 'name', 'code']),
             'customers' => Customer::where('is_active', true)->get(['id', 'name', 'code', 'credit_limit', 'current_balance']),
-            'products' => $products,
             'categories' => Category::where('is_active', true)->get(['id', 'name']),
             'invoiceNo' => $invoiceNo,
         ]);
@@ -178,7 +184,7 @@ class SaleController extends Controller
                 'id' => $sale->customer->id,
                 'name' => $sale->customer->name,
             ] : null,
-        ]);
+        ])->with('success', 'Sale created successfully.');
     }
 
     public function show(Request $request, Sale $sale): Response
@@ -190,34 +196,173 @@ class SaleController extends Controller
         ]);
     }
 
-    public function edit(Request $request, Sale $sale): Response
+    public function edit(Request $request, Sale $sale): Response|RedirectResponse
     {
-        $sale->load('saleItems.product');
+        if ($sale->created_at->diffInDays(now()) > 3) {
+            return redirect()->route('sales.index')->with('error', 'Sale cannot be edited after 3 days.');
+        }
+
+        $sale->load(['saleItems.product.branch_stocks', 'customer', 'branch']);
 
         return Inertia::render('Sale/edit', [
             'sale' => $sale,
             'branches' => Branch::where('is_active', true)->get(['id', 'name', 'code']),
             'customers' => Customer::where('is_active', true)->get(['id', 'name', 'code', 'credit_limit', 'current_balance']),
-            'products' => Product::with('category:id,name')
-                ->where('is_active', true)
-                ->get(['id', 'name', 'code', 'barcode', 'selling_price', 'cost_price', 'tax_rate', 'category_id', 'unit']),
+            'categories' => Category::where('is_active', true)->get(['id', 'name']),
         ]);
     }
 
     public function update(SaleUpdateRequest $request, Sale $sale): RedirectResponse
     {
-        $sale->update($request->validated());
+        if ($sale->created_at->diffInDays(now()) > 3) {
+            return redirect()->route('sales.index')->with('error', 'Sale cannot be edited after 3 days.');
+        }
 
-        $request->session()->flash('sale.id', $sale->id);
+        $validated = $request->validated();
 
-        return redirect()->route('sales.index');
+        DB::transaction(function () use ($validated, $sale) {
+            // 1. REVERSAL PHASE
+            // Restore stock for original items
+            foreach ($sale->saleItems as $item) {
+                // Restore branch stock
+                $branchStock = BranchStock::withoutGlobalScopes()->where([
+                    'branch_id' => $sale->branch_id,
+                    'product_id' => $item->product_id,
+                ])->first();
+
+                if ($branchStock) {
+                    $oldStock = $branchStock->quantity;
+                    $branchStock->increment('quantity', $item->quantity);
+
+                    // Record restorative stock movement
+                    StockMovement::create([
+                        'branch_id' => $sale->branch_id,
+                        'product_id' => $item->product_id,
+                        'movement_type' => 'sale_correction',
+                        'quantity' => $item->quantity, // Positive to restore
+                        'quantity_before' => $oldStock,
+                        'quantity_after' => $branchStock->fresh()->quantity,
+                        'reference_type' => Sale::class,
+                        'reference_id' => $sale->id,
+                        'notes' => "Correction for Sale: {$sale->invoice_no}",
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
+
+            // Revert customer balance if it was a credit sale
+            if ($sale->customer_id && $sale->credit_amount > 0) {
+                $customer = Customer::find($sale->customer_id);
+                if ($customer) {
+                    $customer->decrement('current_balance', (float) $sale->credit_amount);
+
+                    // Record credit ledger correction
+                    CustomerCreditLedger::create([
+                        'customer_id' => $sale->customer_id,
+                        'branch_id' => $sale->branch_id,
+                        'transaction_date' => now(), // Correction happens now
+                        'transaction_type' => 'correction',
+                        'reference_type' => Sale::class,
+                        'reference_id' => $sale->id,
+                        'reference_no' => $sale->invoice_no,
+                        'debit' => 0,
+                        'credit' => $sale->credit_amount, // Credit to reduce balance
+                        'balance' => $customer->fresh()->current_balance,
+                        'description' => "Correction for Sale: {$sale->invoice_no}",
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
+
+            // Delete original items
+            $sale->saleItems()->delete();
+
+
+            // 2. UPDATE PHASE
+            // Update sale details
+            $sale->update([
+                'branch_id' => $validated['branch_id'],
+                'customer_id' => $validated['customer_id'] ?? null,
+                'sale_date' => $validated['sale_date'],
+                'subtotal' => $validated['subtotal'],
+                'tax_amount' => $validated['tax_amount'],
+                'discount_amount' => $validated['discount_amount'],
+                'total_amount' => $validated['total_amount'],
+                'payment_status' => $validated['payment_status'],
+                'payment_method' => $validated['payment_method'] ?? null,
+                'paid_amount' => $validated['paid_amount'],
+                'credit_amount' => $validated['credit_amount'],
+                'notes' => $validated['notes'] ?? null,
+                // created_by preserved
+            ]);
+
+            // Create new sale items and update stock
+            foreach ($validated['items'] as $item) {
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'tax_rate' => $item['tax_rate'],
+                    'tax_amount' => $item['tax_amount'],
+                    'subtotal' => $item['subtotal'],
+                ]);
+
+                // Update branch stock (deduct)
+                $branchStock = BranchStock::withoutGlobalScopes()->firstOrCreate(
+                    ['branch_id' => $validated['branch_id'], 'product_id' => $item['product_id']],
+                    ['quantity' => 0]
+                );
+
+                $oldQuantity = $branchStock->quantity;
+                $branchStock->decrement('quantity', $item['quantity']);
+
+                // Record stock movement
+                StockMovement::create([
+                    'branch_id' => $validated['branch_id'],
+                    'product_id' => $item['product_id'],
+                    'movement_type' => 'sale',
+                    'quantity' => -$item['quantity'],
+                    'quantity_before' => $oldQuantity,
+                    'quantity_after' => $branchStock->fresh()->quantity,
+                    'reference_type' => Sale::class,
+                    'reference_id' => $sale->id,
+                    'notes' => "Sale Updated: {$sale->invoice_no}",
+                    'created_by' => Auth::id(),
+                ]);
+            }
+
+            // Update customer balance if new credit sale
+            if ($validated['customer_id'] && $validated['credit_amount'] > 0) {
+                $customer = Customer::find($validated['customer_id']);
+                $customer->increment('current_balance', $validated['credit_amount']);
+
+                // Record credit ledger entry
+                CustomerCreditLedger::create([
+                    'customer_id' => $validated['customer_id'],
+                    'branch_id' => $validated['branch_id'],
+                    'transaction_date' => $validated['sale_date'],
+                    'transaction_type' => 'credit',
+                    'reference_type' => Sale::class,
+                    'reference_id' => $sale->id,
+                    'reference_no' => $sale->invoice_no,
+                    'debit' => $validated['credit_amount'],
+                    'credit' => 0,
+                    'balance' => $customer->fresh()->current_balance,
+                    'description' => "Credit sale updated: {$sale->invoice_no}",
+                    'created_by' => Auth::id(),
+                ]);
+            }
+        });
+
+        return redirect()->route('sales.index')->with('success', 'Sale updated successfully.');
     }
 
     public function destroy(Request $request, Sale $sale): RedirectResponse
     {
         $sale->delete();
 
-        return redirect()->route('sales.index');
+        return redirect()->route('sales.index')->with('success', 'Sale deleted successfully.');
     }
 
     public function print(Request $request, Sale $sale)
