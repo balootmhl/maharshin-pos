@@ -9,11 +9,21 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class RoleController extends Controller
 {
     public function index(Request $request): Response
     {
-        $roles = Role::all();
+        $roles = QueryBuilder::for(Role::class)
+            ->allowedFilters([
+                'name',
+            ])
+            ->allowedSorts(['name', 'created_at'])
+            ->defaultSort('name')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
 
         return Inertia::render('role/index', [
             'roles' => $roles,

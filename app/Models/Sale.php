@@ -87,4 +87,24 @@ class Sale extends BaseModel
     {
         return $this->hasMany(SaleReturn::class);
     }
+
+    public function scopeSaleDateStart($query, $date)
+    {
+        return $query->whereDate('sale_date', '>=', $date);
+    }
+
+    public function scopeSaleDateEnd($query, $date)
+    {
+        return $query->whereDate('sale_date', '<=', $date);
+    }
+
+    public function scopeTotalAmountMin($query, $amount)
+    {
+        return $query->where('total_amount', '>=', $amount);
+    }
+
+    public function scopeTotalAmountMax($query, $amount)
+    {
+        return $query->where('total_amount', '<=', $amount);
+    }
 }

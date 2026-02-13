@@ -10,13 +10,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Link } from '@inertiajs/react';
+import { LaravelPaginator, PaginatedData } from '@/types';
+import { Link, router } from '@inertiajs/react';
 import {
     ColumnDef,
     ColumnFiltersState,
+    FilterFn,
+    PaginationState,
+    Row,
     SortingState,
     Table as TanStackTable,
+    Updater,
     VisibilityState,
     flexRender,
     getCoreRowModel,
@@ -26,14 +32,25 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Filter, MoreHorizontal } from 'lucide-react';
-import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useCallback, useEffect, useState } from 'react';
+
+// Simple debounce implementation to avoid adding lodash dependency
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+    let timeout: ReturnType<typeof setTimeout>;
+    return (...args: Parameters<T>) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
+}
 
 type ActionsProp = {
     routePrefix: string;
     routeParam: { [key: string]: number | string | undefined };
+    canEdit?: boolean;
 };
-export function DataTableActions({ routePrefix, routeParam }: ActionsProp) {
+
+export function DataTableActions({ routePrefix, routeParam, canEdit = true }: ActionsProp) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -47,9 +64,11 @@ export function DataTableActions({ routePrefix, routeParam }: ActionsProp) {
                 <DropdownMenuItem asChild>
                     <Link href={route(`${routePrefix}.show`, routeParam)}>View</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href={route(`${routePrefix}.edit`, routeParam)}>Edit</Link>
-                </DropdownMenuItem>
+                {canEdit && (
+                    <DropdownMenuItem asChild>
+                        <Link href={route(`${routePrefix}.edit`, routeParam)}>Edit</Link>
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuItem className="hidden" asChild>
                     <Link
                         href={route(`${routePrefix}.show`, {
@@ -65,13 +84,13 @@ export function DataTableActions({ routePrefix, routeParam }: ActionsProp) {
     );
 }
 
-type FilterPanelProps<TData> = {
+export type FilterPanelProps<TData> = {
     table: TanStackTable<TData>;
     onClearFilters: () => void;
 };
 
 type TableProps<TData> = {
-    data: TData[];
+    data: TData[] | PaginatedData<TData> | LaravelPaginator<TData>;
     columns: ColumnDef<TData>[];
     filterPanel?: React.ComponentType<FilterPanelProps<TData>>;
     searchColumn?: string;
@@ -80,6 +99,7 @@ type TableProps<TData> = {
     initialPageSize?: number;
     compact?: boolean;
     globalFilterFn?: (row: TData, query: string) => boolean;
+    scrollable?: boolean;
 };
 
 export function DataTable<TData>({
@@ -92,58 +112,267 @@ export function DataTable<TData>({
     initialPageSize = 25,
     compact = false,
     globalFilterFn,
+    scrollable = false,
 }: TableProps<TData>) {
-    const [sorting, setSorting] = React.useState<SortingState>([]);
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(initialColumnVisibility);
-    const [rowSelection, setRowSelection] = React.useState({});
-    const [filterOpen, setFilterOpen] = React.useState(false);
-    const [globalFilter, setGlobalFilter] = React.useState('');
+    // Determine if we are in server-side mode
+    // We check for 'meta' (API Resource) or 'current_page' (Standard Paginator)
+    const isServerSide = !Array.isArray(data) && ('meta' in data || 'current_page' in data);
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tableData = isServerSide ? (data as any).data : (data as TData[]);
+    
+    // Extract meta: if data has 'meta' property, use it. Otherwise, data IS the meta (LaravelPaginator).
+     
+    const meta = isServerSide ? ('meta' in data ? (data as PaginatedData<TData>).meta : (data as LaravelPaginator<TData>)) : null;
 
-    const table = useReactTable({
-        data,
-        columns,
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        onColumnVisibilityChange: setColumnVisibility,
-        onRowSelectionChange: setRowSelection,
-        onGlobalFilterChange: setGlobalFilter,
-        globalFilterFn: globalFilterFn
-            ? (row, _columnId, filterValue) => globalFilterFn(row.original, filterValue)
-            : undefined,
-        initialState: {
-            pagination: {
-                pageSize: initialPageSize,
-            },
+    // State
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialColumnVisibility);
+    const [rowSelection, setRowSelection] = useState({});
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [globalFilter, setGlobalFilter] = useState('');
+
+    // Pagination State
+    const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+        pageIndex: meta ? meta.current_page - 1 : 0,
+        pageSize: meta ? meta.per_page : initialPageSize,
+    });
+
+    const pagination = React.useMemo(
+        () => ({
+            pageIndex,
+            pageSize,
+        }),
+        [pageIndex, pageSize],
+    );
+
+    // Sync state with props when valid server-side data updates occur
+    useEffect(() => {
+        if (isServerSide && meta) {
+            setPagination({
+                pageIndex: meta.current_page - 1,
+                pageSize: meta.per_page,
+            });
+        }
+    }, [isServerSide, meta]);
+
+    // Handle Server-Side parameter updates
+    const updateServerParams = useCallback(
+        (newParams: Record<string, string | number | undefined>) => {
+            const currentQuery = new URLSearchParams(window.location.search);
+            Object.entries(newParams).forEach(([key, value]) => {
+                if (value === undefined || value === null || value === '') {
+                    currentQuery.delete(key);
+                } else {
+                    currentQuery.set(key, String(value));
+                }
+            });
+            
+            // Convert to object for Inertia
+            const queryObj: Record<string, string> = {};
+            currentQuery.forEach((val, key) => {
+                queryObj[key] = val;
+            });
+
+            router.get(window.location.pathname, queryObj, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
         },
+        []
+    );
+
+    // Server-side change handlers
+    const onPaginationChange = (updater: Updater<PaginationState>) => {
+        if (isServerSide) {
+            const nextState = typeof updater === 'function' ? updater(pagination) : updater;
+            updateServerParams({
+                page: nextState.pageIndex + 1,
+                per_page: nextState.pageSize,
+            });
+        } else {
+            setPagination(updater);
+        }
+    };
+
+    const onSortingChange = (updater: Updater<SortingState>) => {
+        const nextState = typeof updater === 'function' ? updater(sorting) : updater;
+        setSorting(nextState);
+        
+        if (isServerSide) {
+           const sortParam = nextState.map((sort) => (sort.desc ? `-${sort.id}` : sort.id)).join(',');
+           updateServerParams({ sort: sortParam || undefined });
+        }
+    };
+
+    const onColumnFiltersChange = (updater: Updater<ColumnFiltersState>) => {
+        const nextState = typeof updater === 'function' ? updater(columnFilters) : updater;
+        setColumnFilters(nextState);
+
+        if (isServerSide) {
+            const updates: Record<string, string | number | undefined> = {};
+
+            // Identify removed filters
+            columnFilters.forEach((oldFilter) => {
+                const isStillActive = nextState.find((f) => f.id === oldFilter.id);
+                if (!isStillActive) {
+                    updates[`filter[${oldFilter.id}]`] = undefined;
+                }
+            });
+
+            // Identify added/updated filters
+            nextState.forEach((newFilter) => {
+                const value = newFilter.value;
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    // Handle object values (ranges) by flattening
+                    // e.g. {start: 'x', end: 'y'} -> filter[id_start]=x, filter[id_end]=y
+                    Object.entries(value).forEach(([subKey, subValue]) => {
+                         if (subValue !== undefined && subValue !== '') {
+                             updates[`filter[${newFilter.id}_${subKey}]`] = String(subValue);
+                         }
+                    });
+                } else {
+                    updates[`filter[${newFilter.id}]`] = String(value);
+                }
+            });
+            
+            // Reset page to 1 when filtering changes, unless it's just a removal checking
+            if (Object.keys(updates).length > 0) {
+                 updates['page'] = 1;
+                 updateServerParams(updates);
+            }
+        }
+    };
+    
+    // Debounced global search
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const debouncedSearch = useCallback(
+        debounce((value: string) => {
+            if (isServerSide) {
+                updateServerParams({ 'filter[global]': value || undefined, page: 1 });
+            }
+        }, 500),
+        [isServerSide, updateServerParams]
+    );
+
+    const onGlobalFilterChange = (value: string) => {
+        setGlobalFilter(value);
+        debouncedSearch(value);
+    };
+
+    // Adapter for globalFilterFn to match useReactTable signature
+    const globalFilterFnAdapter: FilterFn<TData> | undefined = globalFilterFn
+        ? (row: Row<TData>, _columnId: string, filterValue: unknown) => globalFilterFn(row.original, String(filterValue))
+        : undefined;
+
+    // React Table Instance
+    const table = useReactTable({
+        data: tableData,
+        columns,
+        pageCount: isServerSide && meta ? meta.last_page : undefined,
         state: {
             sorting,
             columnFilters,
             columnVisibility,
             rowSelection,
+            pagination,
             globalFilter,
         },
+        onSortingChange: onSortingChange,
+        onColumnFiltersChange: onColumnFiltersChange,
+        onColumnVisibilityChange: setColumnVisibility,
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: onPaginationChange,
+        onGlobalFilterChange: onGlobalFilterChange,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        manualPagination: isServerSide,
+        manualSorting: isServerSide,
+        manualFiltering: isServerSide,
+        globalFilterFn: globalFilterFnAdapter,
     });
+    
+    // Check if we need to sync column filters for server-side
+    useEffect(() => {
+        if (!isServerSide) return;
+        
+        const timeoutId = setTimeout(() => {
+             const filterParams: Record<string, string | number | undefined> = {};
+             
+             columnFilters.forEach((filter) => {
+                 if (filter.value !== undefined && filter.value !== null && (Array.isArray(filter.value) ? filter.value.length > 0 : true)) {
+                     const val = Array.isArray(filter.value) ? filter.value.join(',') : String(filter.value);
+                     filterParams[`filter[${filter.id}]`] = val;
+                 }
+             });
+             
+             // We also need to clear filters that were removed. 
+             const currentUrlParams = new URLSearchParams(window.location.search);
+             const keysToDelete: string[] = [];
+             currentUrlParams.forEach((_, key) => {
+                 if (key.startsWith('filter[') && key !== 'filter[global]') {
+                     // Check if this filter is present in current columnFilters
+                     // Extract ID from filter[ID]
+                     const match = key.match(/filter\[(.*?)\]/);
+                     if (match && match[1]) {
+                         const id = match[1];
+                         const hasFilter = columnFilters.some(f => f.id === id);
+                         if (!hasFilter) {
+                             keysToDelete.push(key);
+                         }
+                     }
+                 }
+             });
+
+             // Apply updates if there are changes
+             if (Object.keys(filterParams).length > 0 || keysToDelete.length > 0) {
+                 const paramsToUpdate = { ...filterParams };
+                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                 keysToDelete.forEach(k => (paramsToUpdate as any)[k] = '');
+                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                 (paramsToUpdate as any)['page'] = 1; // Reset to page 1
+                 
+                 updateServerParams(paramsToUpdate);
+             }
+             
+        }, 500);
+        
+        return () => clearTimeout(timeoutId);
+    }, [columnFilters, isServerSide, updateServerParams]);
+
 
     const handleClearFilters = () => {
         setColumnFilters([]);
+        if (isServerSide) {
+             const currentUrlParams = new URLSearchParams(window.location.search);
+             const paramsToUpdate: Record<string, string> = {};
+             currentUrlParams.forEach((_, key) => {
+                 if (key.startsWith('filter[')) {
+                     paramsToUpdate[key] = '';
+                 }
+             });
+             updateServerParams(paramsToUpdate);
+        }
     };
 
     const activeFilterCount = columnFilters.length;
+    
+    // Initial value logic for Input
+    const initialGlobalFilter = globalFilterFn ? globalFilter : ((table.getColumn(searchColumn)?.getFilterValue() as string) ?? '');
 
     return (
         <div className="w-full">
             <div className="flex items-center gap-2 py-4">
                 <Input
                     placeholder={searchPlaceholder}
-                    value={globalFilterFn ? globalFilter : ((table.getColumn(searchColumn)?.getFilterValue() as string) ?? '')}
-                    onChange={(event) =>
-                        globalFilterFn
-                            ? setGlobalFilter(event.target.value)
+                    value={globalFilterFn ? globalFilter : initialGlobalFilter}
+                    onChange={(event) => 
+                        globalFilterFn 
+                            ? onGlobalFilterChange(event.target.value)
                             : table.getColumn(searchColumn)?.setFilterValue(event.target.value)
                     }
                     className="max-w-sm"
@@ -197,9 +426,9 @@ export function DataTable<TData>({
                     </DropdownMenu>
                 </div>
             </div>
-            <div className="rounded-md border">
+            <div className={`rounded-md border ${scrollable ? 'relative h-[calc(100vh-280px)] overflow-auto' : ''}`}>
                 <Table>
-                    <TableHeader>
+                    <TableHeader className={scrollable ? "sticky top-0 z-10 bg-background shadow-sm" : ""}>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
@@ -239,7 +468,8 @@ export function DataTable<TData>({
             </div>
             <div className="flex items-center justify-between py-4">
                 <div className="text-muted-foreground flex-1 text-sm">
-                    {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
+                    {/* For server side, we might verify if we want to show selected count locally or total */}
+                    {table.getFilteredSelectedRowModel().rows.length} of {isServerSide && meta ? meta.total : table.getFilteredRowModel().rows.length} row(s) selected.
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
@@ -346,6 +576,3 @@ export function DataTable<TData>({
         </div>
     );
 }
-
-// Re-export the FilterPanelProps type for use in filter panel components
-export type { FilterPanelProps };

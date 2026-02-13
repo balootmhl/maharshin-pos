@@ -15,11 +15,37 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class CustomerPaymentController extends Controller
 {
     public function index(Request $request): Response
     {
-        $customerPayments = CustomerPayment::with(['customer', 'branch', 'createdBy'])->latest()->get();
+        $customerPayments = QueryBuilder::for(CustomerPayment::class)
+            ->with(['customer', 'branch', 'createdBy'])
+            ->allowedFilters([
+                'payment_no',
+                AllowedFilter::callback('customer.name', function ($query, $value) {
+                    $query->whereHas('customer', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::callback('branch.name', function ($query, $value) {
+                    $query->whereHas('branch', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::exact('payment_method'),
+                AllowedFilter::scope('payment_date_start'),
+                AllowedFilter::scope('payment_date_end'),
+                AllowedFilter::scope('amount_min'),
+                AllowedFilter::scope('amount_max'),
+            ])
+            ->allowedSorts(['payment_date', 'amount', 'payment_no', 'created_at'])
+            ->defaultSort('-payment_date')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
 
         return Inertia::render('CustomerPayment/index', [
             'customerPayments' => $customerPayments,

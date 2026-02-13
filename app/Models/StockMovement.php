@@ -84,4 +84,14 @@ class StockMovement extends BaseModel
     {
         return $this->morphTo();
     }
+
+    public function scopeCreatedAtStart($query, $date)
+    {
+        return $query->whereDate('created_at', '>=', $date);
+    }
+
+    public function scopeCreatedAtEnd($query, $date)
+    {
+        return $query->whereDate('created_at', '<=', $date);
+    }
 }

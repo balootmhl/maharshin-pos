@@ -19,14 +19,36 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class SaleReturnController extends Controller
 {
     public function index(Request $request): Response
     {
-        $saleReturns = SaleReturn::with(['sale.customer', 'branch', 'createdBy'])->latest()->get();
+        $saleReturns = QueryBuilder::for(SaleReturn::class)
+            ->allowedFilters([
+                'return_no',
+                AllowedFilter::callback('sale.invoice_no', function ($query, $value) {
+                    $query->whereHas('sale', function ($q) use ($value) {
+                        $q->where('invoice_no', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::exact('branch_id'),
+                AllowedFilter::scope('return_date_start'),
+                AllowedFilter::scope('return_date_end'),
+            ])
+            ->allowedSorts(['return_no', 'return_date', 'total_amount', 'created_at'])
+            ->defaultSort('-created_at')
+            ->with(['sale.customer', 'branch', 'createdBy'])
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
+
+        $branches = Branch::where('is_active', true)->get(['id', 'name', 'code']);
 
         return Inertia::render('SaleReturn/index', [
             'saleReturns' => $saleReturns,
+            'branches' => $branches,
         ]);
     }
 

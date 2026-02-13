@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
-import { Branch, BreadcrumbItem, Product, SharedData } from '@/types';
+import { Branch, BreadcrumbItem, LaravelPaginator, PaginatedData, Product, SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, X } from 'lucide-react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -26,20 +26,6 @@ const formatCurrency = (value: number) => {
         maximumFractionDigits: 0,
     }).format(value);
 };
-
-// Helper to get total stock for a product
-// const getTotalStock = (product: Product): number => {
-//     if (!product.branch_stocks?.length) return 0;
-//     return product.branch_stocks.reduce((sum, bs) => sum + (bs.quantity ?? 0), 0);
-// };
-
-// Stock level classification
-// const getStockLevel = (product: Product): 'out' | 'low' | 'in' => {
-//     const total = getTotalStock(product);
-//     if (total === 0) return 'out';
-//     if (product.low_stock_alert && total <= product.low_stock_alert) return 'low';
-//     return 'in';
-// };
 
 // Static columns that don't depend on branches
 const baseColumns: ColumnDef<Product>[] = [
@@ -86,6 +72,7 @@ const baseColumns: ColumnDef<Product>[] = [
     },
     {
         accessorKey: 'category.name',
+        id: 'category.name', // Explicit ID for server-side filtering
         header: 'Category',
         cell: ({ row }) => {
             const categoryName = row.original.category?.name;
@@ -94,10 +81,6 @@ const baseColumns: ColumnDef<Product>[] = [
             ) : (
                 <span className="text-muted-foreground">-</span>
             );
-        },
-        filterFn: (row, _id, value: string[]) => {
-            if (!value || value.length === 0) return true;
-            return value.includes(row.original.category?.name || '');
         },
     },
     {
@@ -120,10 +103,6 @@ const endColumns: ColumnDef<Product>[] = [
         cell: ({ row }) => (
             <Badge variant={row.getValue('is_active') ? 'default' : 'secondary'}>{row.getValue('is_active') ? 'Active' : 'Inactive'}</Badge>
         ),
-        filterFn: (row, _id, value: boolean[]) => {
-            if (!value || value.length === 0 || value.length === 2) return true;
-            return value.includes(row.getValue('is_active') as boolean);
-        },
     },
     {
         id: 'actions',
@@ -133,6 +112,12 @@ const endColumns: ColumnDef<Product>[] = [
             return <DataTableActions routePrefix="products" routeParam={param} />;
         },
     },
+    // {
+    //     accessorKey: 'created_at',
+    //     header: 'Created At',
+    //     enableHiding: true,
+    //     cell: ({ row }) => <div className="text-xs text-muted-foreground">{new Date(row.getValue('created_at')).toLocaleDateString()}</div>,
+    // },
 ];
 
 // Generate branch-specific columns (stock/group + cost/price in same cell)
@@ -191,156 +176,16 @@ const createBranchColumns = (branches: Branch[]): ColumnDef<Product>[] => {
                 </div>
             );
         },
-        filterFn: (row, _id, value: string[]) => {
-            if (!value || value.length === 0) return true;
-            const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
-            const quantity = branchStock?.quantity ?? 0;
-            const isLowStock = row.original.low_stock_alert && quantity <= row.original.low_stock_alert;
-
-            if (value.includes('out') && quantity === 0) return true;
-            if (value.includes('low') && quantity > 0 && isLowStock) return true;
-            if (value.includes('in') && quantity > 0 && !isLowStock) return true;
-            return false;
-        },
     }));
 };
 
-// Filter Panel
-function ProductFilterPanel({ table, onClearFilters }: FilterPanelProps<Product>) {
-    // Category filter
-    const categoryColumn = table.getColumn('category_name');
-    const categoryFilter = (categoryColumn?.getFilterValue() as string[]) || [];
-
-    // Get unique categories from data
-    const allCategories = useMemo(() => {
-        const names = new Set<string>();
-        table.getCoreRowModel().rows.forEach((row) => {
-            const name = row.original.category?.name;
-            if (name) names.add(name);
-        });
-        return Array.from(names).sort();
-    }, [table]);
-
-    const toggleCategory = (name: string) => {
-        const current = [...categoryFilter];
-        const index = current.indexOf(name);
-        if (index === -1) {
-            current.push(name);
-        } else {
-            current.splice(index, 1);
-        }
-        categoryColumn?.setFilterValue(current.length > 0 ? current : undefined);
-    };
-
-    // Stock level filter
-    const branchColumns = table.getAllColumns().filter((c) => c.id.startsWith('branch_'));
-    const firstBranchColumn = branchColumns[0];
-    const stockFilter = (firstBranchColumn?.getFilterValue() as string[]) || [];
-
-    const toggleStock = (level: string) => {
-        const current = [...stockFilter];
-        const index = current.indexOf(level);
-        if (index === -1) {
-            current.push(level);
-        } else {
-            current.splice(index, 1);
-        }
-        firstBranchColumn?.setFilterValue(current.length > 0 ? current : undefined);
-    };
-
-    // Status filter
-    const statusColumn = table.getColumn('is_active');
-    const statusFilter = (statusColumn?.getFilterValue() as boolean[]) || [];
-
-    const toggleStatus = (isActive: boolean) => {
-        const current = [...statusFilter];
-        const index = current.indexOf(isActive);
-        if (index === -1) {
-            current.push(isActive);
-        } else {
-            current.splice(index, 1);
-        }
-        statusColumn?.setFilterValue(current.length > 0 ? current : undefined);
-    };
-
-    const hasActiveFilters = categoryFilter.length > 0 || stockFilter.length > 0 || statusFilter.length > 0;
-
-    return (
-        <div className="space-y-4">
-            {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
-                    <X className="mr-2 h-4 w-4" />
-                    Clear all filters
-                </Button>
-            )}
-
-            {/* Category Filter */}
-            <div className="space-y-3">
-                <Label className="text-sm font-medium">Category</Label>
-                <div className="space-y-2 max-h-[150px] overflow-y-auto">
-                    {allCategories.map((name) => (
-                        <div key={name} className="flex items-center space-x-2">
-                            <Checkbox
-                                id={`cat-${name}`}
-                                checked={categoryFilter.includes(name)}
-                                onCheckedChange={() => toggleCategory(name)}
-                            />
-                            <Label htmlFor={`cat-${name}`} className="cursor-pointer text-sm font-normal">
-                                {name}
-                            </Label>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <Separator />
-
-            {/* Stock Level Filter */}
-            <div className="space-y-3">
-                <Label className="text-sm font-medium">Stock Level</Label>
-                <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                        <Checkbox id="stock-in" checked={stockFilter.includes('in')} onCheckedChange={() => toggleStock('in')} />
-                        <Label htmlFor="stock-in" className="cursor-pointer text-sm font-normal">
-                            <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1.5" />In Stock
-                        </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Checkbox id="stock-low" checked={stockFilter.includes('low')} onCheckedChange={() => toggleStock('low')} />
-                        <Label htmlFor="stock-low" className="cursor-pointer text-sm font-normal">
-                            <span className="inline-block w-2 h-2 rounded-full bg-orange-500 mr-1.5" />Low Stock
-                        </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Checkbox id="stock-out" checked={stockFilter.includes('out')} onCheckedChange={() => toggleStock('out')} />
-                        <Label htmlFor="stock-out" className="cursor-pointer text-sm font-normal">
-                            <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1.5" />Out of Stock
-                        </Label>
-                    </div>
-                </div>
-            </div>
-
-            <Separator />
-
-            {/* Status Filter */}
-            <div className="space-y-3">
-                <Label className="text-sm font-medium">Status</Label>
-                <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                        <Checkbox id="status-active" checked={statusFilter.includes(true)} onCheckedChange={() => toggleStatus(true)} />
-                        <Label htmlFor="status-active" className="cursor-pointer text-sm font-normal">Active</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Checkbox id="status-inactive" checked={statusFilter.includes(false)} onCheckedChange={() => toggleStatus(false)} />
-                        <Label htmlFor="status-inactive" className="cursor-pointer text-sm font-normal">Inactive</Label>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+interface ProductIndexProps {
+    products: PaginatedData<Product> | LaravelPaginator<Product>;
+    branches: Branch[];
+    categories: string[];
 }
 
-export default function ProductIndex({ products, branches }: { products: Product[]; branches: Branch[] }) {
+export default function ProductIndex({ products, branches, categories }: ProductIndexProps) {
     const { auth } = usePage<SharedData>().props;
     const user = auth.user;
 
@@ -355,16 +200,95 @@ export default function ProductIndex({ products, branches }: { products: Product
         return [...baseColumns, ...branchColumns, ...endColumns];
     }, [visibleBranches]);
 
-    // Global search: searches both code and name
+    // Global search: searches both code and name. 
+    // We keep this purely to satisfy DataTable 'search' mode trigger, even if server-side handles logic.
     const globalFilterFn = useMemo(() => {
-        return (row: Product, query: string) => {
-            const q = query.toLowerCase();
-            return (
-                row.code.toLowerCase().includes(q) ||
-                row.name.toLowerCase().includes(q)
-            );
-        };
+        return () => true; 
     }, []);
+
+    const FilterPanel = useCallback((props: FilterPanelProps<Product>) => {
+        const { table, onClearFilters } = props;
+        
+        // Category filter
+        const categoryColumn = table.getColumn('category.name');
+        const categoryFilter = (categoryColumn?.getFilterValue() as string[]) || [];
+
+        const toggleCategory = (name: string) => {
+            const current = [...categoryFilter];
+            const index = current.indexOf(name);
+            if (index === -1) {
+                current.push(name);
+            } else {
+                current.splice(index, 1);
+            }
+            categoryColumn?.setFilterValue(current.length > 0 ? current : undefined);
+        };
+
+        // Status filter
+        const statusColumn = table.getColumn('is_active');
+        const statusFilterRaw = statusColumn?.getFilterValue();
+        const statusFilter = Array.isArray(statusFilterRaw) ? statusFilterRaw : [];
+
+        const toggleStatus = (val: string) => {
+            const current = [...(statusFilter as string[])];
+            const index = current.indexOf(val);
+            if (index === -1) {
+                current.push(val);
+            } else {
+                current.splice(index, 1);
+            }
+            statusColumn?.setFilterValue(current.length > 0 ? current : undefined);
+        };
+
+        const hasActiveFilters = categoryFilter.length > 0 || statusFilter.length > 0;
+
+        return (
+            <div className="space-y-4">
+                {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
+                        <X className="mr-2 h-4 w-4" />
+                        Clear all filters
+                    </Button>
+                )}
+
+                {/* Category Filter */}
+                <div className="space-y-3">
+                    <Label className="text-sm font-medium">Category</Label>
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                        {categories.map((name) => (
+                            <div key={name} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`cat-${name}`}
+                                    checked={categoryFilter.includes(name)}
+                                    onCheckedChange={() => toggleCategory(name)}
+                                />
+                                <Label htmlFor={`cat-${name}`} className="cursor-pointer text-sm font-normal">
+                                    {name}
+                                </Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <Separator />
+
+                {/* Status Filter */}
+                <div className="space-y-3">
+                    <Label className="text-sm font-medium">Status</Label>
+                    <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="status-active" checked={statusFilter.includes('1')} onCheckedChange={() => toggleStatus('1')} />
+                            <Label htmlFor="status-active" className="cursor-pointer text-sm font-normal">Active</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Checkbox id="status-inactive" checked={statusFilter.includes('0')} onCheckedChange={() => toggleStatus('0')} />
+                            <Label htmlFor="status-inactive" className="cursor-pointer text-sm font-normal">Inactive</Label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }, [categories]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -376,11 +300,12 @@ export default function ProductIndex({ products, branches }: { products: Product
                 <DataTable
                     data={products}
                     columns={columns}
-                    filterPanel={ProductFilterPanel}
+                    filterPanel={FilterPanel}
                     searchPlaceholder="Search code or name..."
                     globalFilterFn={globalFilterFn}
                     initialPageSize={25}
                     compact
+                    scrollable
                 />
             </div>
         </AppLayout>

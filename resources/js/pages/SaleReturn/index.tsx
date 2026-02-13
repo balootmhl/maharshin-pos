@@ -1,12 +1,16 @@
 import { CreateBtn } from '@/components/buttons/create-btn';
-import { DataTable, DataTableActions } from '@/components/tables/data-table';
+import { DataTable, DataTableActions, FilterPanelProps } from '@/components/tables/data-table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem, SaleReturn } from '@/types';
+import { Branch, BreadcrumbItem, LaravelPaginator, PaginatedData, SaleReturn } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, X } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -58,25 +62,52 @@ const columns: ColumnDef<SaleReturn>[] = [
                 {row.getValue('return_no')}
             </Link>
         ),
-    },
-    {
-        accessorKey: 'return_date',
-        header: 'Date',
-        cell: ({ row }) => <div>{row.getValue('return_date')}</div>,
+        filterFn: (row, id, value) => {
+            const no = row.getValue(id) as string;
+            return no.toLowerCase().includes(value.toLowerCase());
+        },
     },
     {
         accessorKey: 'sale.invoice_no',
         header: 'Original Invoice',
         cell: ({ row }) => <div className="font-mono">{row.original.sale?.invoice_no || '-'}</div>,
+        filterFn: (row, id, value) => {
+            const no = row.original.sale?.invoice_no?.toLowerCase() || '';
+            return no.includes(value.toLowerCase());
+        },
     },
     {
         accessorKey: 'branch.name',
         header: 'Branch',
         cell: ({ row }) => <div>{row.original.branch?.name || '-'}</div>,
+        enableSorting: false, // Sorted via branch_id if needed, or disabled
+        filterFn: (row, id, value) => {
+            const no = row.original.branch?.name?.toLowerCase() || '';
+            return no.includes(value.toLowerCase());
+        },
+    },
+    {
+        accessorKey: 'return_date',
+        header: ({ column }) => {
+            return (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+                    Date
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => <div>{row.getValue('return_date')}</div>,
     },
     {
         accessorKey: 'total_amount',
-        header: 'Amount',
+        header: ({ column }) => {
+            return (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+                    Amount
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            );
+        },
         cell: ({ row }) => <div className="text-right font-mono">{formatCurrency(row.getValue('total_amount'))} Ks</div>,
     },
     {
@@ -94,7 +125,125 @@ const columns: ColumnDef<SaleReturn>[] = [
     },
 ];
 
-export default function SaleReturnIndex({ saleReturns }: { saleReturns: SaleReturn[] }) {
+export default function SaleReturnIndex({
+    saleReturns,
+    branches,
+}: {
+    saleReturns: PaginatedData<SaleReturn> | LaravelPaginator<SaleReturn>;
+    branches: Branch[];
+}) {
+    const SaleReturnFilterPanel = ({ table, onClearFilters }: FilterPanelProps<SaleReturn>) => {
+        // Return No filter
+        const returnNoColumn = table.getColumn('return_no');
+        const returnNoFilter = (returnNoColumn?.getFilterValue() as string) || '';
+
+        // Invoice No filter
+        const invoiceNoColumn = table.getColumn('sale.invoice_no');
+        const invoiceNoFilter = (invoiceNoColumn?.getFilterValue() as string) || '';
+
+        // Branch filter - using branch_id exact match
+        const branchIdColumn = table.getColumn('branch_id');
+        const branchIdFilter = (branchIdColumn?.getFilterValue() as string) || 'all';
+
+        // Date range filter
+        const dateColumn = table.getColumn('return_date');
+        const dateFilter = (dateColumn?.getFilterValue() as { start?: string; end?: string }) || {};
+
+        const hasActiveFilters = !!returnNoFilter || !!invoiceNoFilter || (branchIdFilter && branchIdFilter !== 'all') || dateFilter.start || dateFilter.end;
+
+        return (
+            <div className="space-y-4">
+                 {/* Clear All Button */}
+                 {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
+                        <X className="mr-2 h-4 w-4" />
+                        Clear all filters
+                    </Button>
+                )}
+
+                {/* Return No Filter */}
+                <div className="space-y-3">
+                    <Label className="text-sm font-medium">Return No</Label>
+                    <Input
+                        placeholder="Filter by return no..."
+                        value={returnNoFilter}
+                        onChange={(e) => returnNoColumn?.setFilterValue(e.target.value || undefined)}
+                    />
+                </div>
+
+                <Separator />
+
+                {/* Invoice No Filter */}
+                <div className="space-y-3">
+                    <Label className="text-sm font-medium">Original Invoice</Label>
+                    <Input
+                        placeholder="Filter by invoice..."
+                        value={invoiceNoFilter}
+                        onChange={(e) => invoiceNoColumn?.setFilterValue(e.target.value || undefined)}
+                    />
+                </div>
+
+                <Separator />
+
+                {/* Branch Filter */}
+                <div className="space-y-3">
+                    <Label className="text-sm font-medium">Branch</Label>
+                    <Select
+                        value={branchIdFilter}
+                        onValueChange={(value) => branchIdColumn?.setFilterValue(value === 'all' ? undefined : value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Branch" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Branches</SelectItem>
+                            {branches.map((b) => (
+                                <SelectItem key={b.id} value={String(b.id)}>
+                                    {b.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <Separator />
+
+                 {/* Date Range Filter */}
+                 <div className="space-y-3">
+                    <Label className="text-sm font-medium">Date Range</Label>
+                    <div className="flex gap-2">
+                        <div className="flex-1">
+                            <Input
+                                type="date"
+                                value={dateFilter.start || ''}
+                                onChange={(e) =>
+                                    dateColumn?.setFilterValue((old: { start?: string; end?: string } | undefined) => ({
+                                        ...old,
+                                        start: e.target.value || undefined,
+                                    }))
+                                }
+                                aria-label="Start Date"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <Input
+                                type="date"
+                                value={dateFilter.end || ''}
+                                onChange={(e) =>
+                                    dateColumn?.setFilterValue((old: { start?: string; end?: string } | undefined) => ({
+                                        ...old,
+                                        end: e.target.value || undefined,
+                                    }))
+                                }
+                                aria-label="End Date"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Sale Returns" />
@@ -102,7 +251,15 @@ export default function SaleReturnIndex({ saleReturns }: { saleReturns: SaleRetu
                 <div className="flex flex-row justify-between">
                     <CreateBtn route={route('sale-returns.create')} />
                 </div>
-                <DataTable data={saleReturns} columns={columns} />
+                <DataTable
+                    data={saleReturns}
+                    columns={[...columns, { accessorKey: 'branch_id', enableHiding: true, meta: { hidden: true }, header: () => null, cell: () => null }]}
+                    filterPanel={SaleReturnFilterPanel}
+                    searchColumn="return_no"
+                    searchPlaceholder="Search return no..."
+                    scrollable
+                    initialColumnVisibility={{ branch_id: false }}
+                />
             </div>
         </AppLayout>
     );

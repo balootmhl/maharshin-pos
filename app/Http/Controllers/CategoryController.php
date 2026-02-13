@@ -10,11 +10,24 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class CategoryController extends Controller
 {
     public function index(Request $request): Response
     {
-        $categories = Category::all();
+        $categories = QueryBuilder::for(Category::class)
+            ->allowedFilters([
+                'code',
+                'name',
+                'description',
+                AllowedFilter::exact('is_active'),
+            ])
+            ->allowedSorts(['code', 'name', 'created_at'])
+            ->defaultSort('name')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
 
         return Inertia::render('Category/index', [
             'categories' => $categories,

@@ -1,20 +1,14 @@
 import { CreateBtn } from '@/components/buttons/create-btn';
-import { DataTable, DataTableActions } from '@/components/tables/data-table';
+import { DataTable, DataTableActions, FilterPanelProps } from '@/components/tables/data-table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, LaravelPaginator, PaginatedData, Role } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown } from 'lucide-react';
-
-// Dummy interface
-// Update your types file and import from it
-type Role = {
-    id?: number;
-    name: string;
-    created_at?: string;
-};
+import { ArrowUpDown, X } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -59,6 +53,10 @@ const columns: ColumnDef<Role>[] = [
                 {row.getValue('name')}
             </Link>
         ),
+        filterFn: (row, id, value) => {
+            const name = row.getValue(id) as string;
+            return name.toLowerCase().includes(value.toLowerCase());
+        },
     },
     {
         id: 'actions',
@@ -71,7 +69,38 @@ const columns: ColumnDef<Role>[] = [
     },
 ];
 
-export default function RoleIndex({ roles }: { roles: Role[] }) {
+// Filter Panel Component
+function RoleFilterPanel({ table, onClearFilters }: FilterPanelProps<Role>) {
+    // Name filter
+    const nameColumn = table.getColumn('name');
+    const nameFilter = (nameColumn?.getFilterValue() as string) || '';
+
+    const hasActiveFilters = !!nameFilter;
+
+    return (
+        <div className="space-y-4">
+             {/* Clear All Button */}
+             {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
+                    <X className="mr-2 h-4 w-4" />
+                    Clear all filters
+                </Button>
+            )}
+
+            {/* Name Filter */}
+            <div className="space-y-3">
+                <Label className="text-sm font-medium">Name</Label>
+                <Input
+                    placeholder="Filter by name..."
+                    value={nameFilter}
+                    onChange={(e) => nameColumn?.setFilterValue(e.target.value || undefined)}
+                />
+            </div>
+        </div>
+    );
+}
+
+export default function RoleIndex({ roles }: { roles: PaginatedData<Role> | LaravelPaginator<Role> }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Role" />
@@ -79,7 +108,14 @@ export default function RoleIndex({ roles }: { roles: Role[] }) {
                 <div className="flex flex-row justify-between">
                     <CreateBtn route={route('roles.create')} />
                 </div>
-                <DataTable data={roles} columns={columns} />
+                <DataTable
+                    data={roles}
+                    columns={columns}
+                    filterPanel={RoleFilterPanel}
+                    searchColumn="name"
+                    searchPlaceholder="Search role name..."
+                    scrollable
+                />
             </div>
         </AppLayout>
     );

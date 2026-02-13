@@ -15,13 +15,37 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class StockAdjustmentController extends Controller
 {
     public function index(Request $request): Response
     {
-        $stockAdjustments = StockAdjustment::with(['product', 'branch', 'createdBy'])
-            ->latest()
-            ->get();
+        $stockAdjustments = QueryBuilder::for(StockAdjustment::class)
+            ->with(['product', 'branch', 'createdBy'])
+            ->allowedFilters([
+                'adjustment_no',
+                'adjustment_type',
+                'reason',
+                AllowedFilter::callback('product.name', function ($query, $value) {
+                    $query->whereHas('product', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%")
+                          ->orWhere('code', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::callback('branch.name', function ($query, $value) {
+                    $query->whereHas('branch', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::scope('adjustment_date_start'),
+                AllowedFilter::scope('adjustment_date_end'),
+            ])
+            ->allowedSorts(['adjustment_no', 'adjustment_date', 'quantity', 'created_at'])
+            ->defaultSort('-created_at')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
 
         return Inertia::render('StockAdjustment/index', [
             'stockAdjustments' => $stockAdjustments,

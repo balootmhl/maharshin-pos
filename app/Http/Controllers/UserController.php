@@ -11,11 +11,33 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class UserController extends Controller
 {
     public function index(Request $request): Response
     {
-        $users = User::with('branch')->get();
+        $users = QueryBuilder::for(User::class)
+            ->allowedFilters([
+                'name',
+                'email',
+                AllowedFilter::callback('branch.name', function ($query, $value) {
+                    $query->whereHas('branch', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::callback('role.name', function ($query, $value) {
+                    $query->whereHas('roles', function ($q) use ($value) {
+                        $q->where('name', $value);
+                    });
+                }),
+            ])
+            ->allowedSorts(['name', 'email', 'created_at'])
+            ->defaultSort('name')
+            ->with(['branch', 'roles'])
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
 
         return Inertia::render('user/index', [
             'users' => $users,

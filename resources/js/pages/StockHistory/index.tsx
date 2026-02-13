@@ -1,12 +1,16 @@
-import { DataTable } from '@/components/tables/data-table';
+import { DataTable, FilterPanelProps } from '@/components/tables/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, LaravelPaginator, PaginatedData } from '@/types';
 import { Head } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, X } from 'lucide-react';
 
 type User = { id: number; name: string };
 
@@ -27,14 +31,6 @@ type Activity = {
     properties: ActivityProperties;
     event?: string;
     created_at: string;
-};
-
-type PaginatedActivities = {
-    data: Activity[];
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -134,16 +130,24 @@ const columns: ColumnDef<Activity>[] = [
             const event = row.getValue('event') as string | undefined;
             return <Badge variant={getEventBadgeVariant(event)}>{event ? event.charAt(0).toUpperCase() + event.slice(1) : 'Unknown'}</Badge>;
         },
+        filterFn: (row, id, value) => {
+            return row.getValue(id) === value;
+        },
     },
     {
         accessorKey: 'subject_type',
         header: 'Model',
         cell: ({ row }) => <div className="font-mono text-xs">{formatSubjectType(row.getValue('subject_type'))}</div>,
+        enableSorting: false,
     },
     {
         accessorKey: 'description',
         header: 'Description',
         cell: ({ row }) => <div className="max-w-md truncate text-sm">{row.getValue('description')}</div>,
+        filterFn: (row, id, value) => {
+            const desc = row.getValue(id) as string;
+            return desc.toLowerCase().includes((value as string).toLowerCase());
+        },
     },
     {
         accessorKey: 'properties',
@@ -151,18 +155,134 @@ const columns: ColumnDef<Activity>[] = [
         cell: ({ row }) => (
             <div className="text-muted-foreground max-w-xs truncate text-xs">{formatChanges(row.getValue('properties') as ActivityProperties)}</div>
         ),
+        enableSorting: false,
     },
     {
-        accessorKey: 'causer',
+        accessorKey: 'causer.name',
         header: 'User',
         cell: ({ row }) => {
             const causer = row.original.causer;
             return <div className="text-sm">{causer?.name || 'System'}</div>;
         },
+        filterFn: (row, id, value) => {
+            const name = row.original.causer?.name?.toLowerCase() || '';
+            return name.includes((value as string).toLowerCase());
+        },
     },
 ];
 
-export default function StockHistoryIndex({ activities }: { activities: PaginatedActivities }) {
+export default function StockHistoryIndex({ activities }: { activities: PaginatedActivities | PaginatedData<Activity> | LaravelPaginator<Activity> }) {
+    const StockHistoryFilterPanel = ({ table, onClearFilters }: FilterPanelProps<Activity>) => {
+        // Description Filter
+        const descriptionColumn = table.getColumn('description');
+        const descriptionFilter = (descriptionColumn?.getFilterValue() as string) || '';
+
+        // User Filter
+        const userColumn = table.getColumn('causer.name');
+        const userFilter = (userColumn?.getFilterValue() as string) || '';
+
+        // Event Filter
+        const eventColumn = table.getColumn('event');
+        const eventFilter = (eventColumn?.getFilterValue() as string) || 'all';
+
+        // Date Range Filter (created_at) -> mapped to 'date_start' and 'date_end' in backend
+        // But for DataTable state, we keep it on the column, and update logic mapping in DataTable component or just pass as flattened
+        const dateColumn = table.getColumn('created_at');
+        const dateFilter = (dateColumn?.getFilterValue() as { start?: string; end?: string }) || {};
+
+        const hasActiveFilters = !!descriptionFilter || !!userFilter || (eventFilter && eventFilter !== 'all') || dateFilter.start || dateFilter.end;
+
+        return (
+            <div className="space-y-4">
+                 {/* Clear All Button */}
+                 {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
+                        <X className="mr-2 h-4 w-4" />
+                        Clear all filters
+                    </Button>
+                )}
+
+                {/* Description Filter */}
+                <div className="space-y-3">
+                    <Label className="text-sm font-medium">Description</Label>
+                    <Input
+                        placeholder="Search description..."
+                        value={descriptionFilter}
+                        onChange={(e) => descriptionColumn?.setFilterValue(e.target.value || undefined)}
+                    />
+                </div>
+
+                <Separator />
+
+                {/* User Filter */}
+                <div className="space-y-3">
+                    <Label className="text-sm font-medium">User</Label>
+                    <Input
+                        placeholder="Search user..."
+                        value={userFilter}
+                        onChange={(e) => userColumn?.setFilterValue(e.target.value || undefined)}
+                    />
+                </div>
+
+                <Separator />
+
+                {/* Event Filter */}
+                <div className="space-y-3">
+                    <Label className="text-sm font-medium">Event Type</Label>
+                    <Select
+                        value={eventFilter}
+                        onValueChange={(value) => eventColumn?.setFilterValue(value === 'all' ? undefined : value)}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Event" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Events</SelectItem>
+                            <SelectItem value="created">Created</SelectItem>
+                            <SelectItem value="updated">Updated</SelectItem>
+                            <SelectItem value="deleted">Deleted</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <Separator />
+
+                 {/* Date Range Filter */}
+                 <div className="space-y-3">
+                    <Label className="text-sm font-medium">Date Range</Label>
+                    <div className="flex gap-2">
+                        <div className="flex-1">
+                            <Input
+                                type="date"
+                                value={dateFilter.start || ''}
+                                onChange={(e) =>
+                                    dateColumn?.setFilterValue((old: { start?: string; end?: string } | undefined) => ({
+                                        ...old,
+                                        start: e.target.value || undefined,
+                                    }))
+                                }
+                                aria-label="Start Date"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <Input
+                                type="date"
+                                value={dateFilter.end || ''}
+                                onChange={(e) =>
+                                    dateColumn?.setFilterValue((old: { start?: string; end?: string } | undefined) => ({
+                                        ...old,
+                                        end: e.target.value || undefined,
+                                    }))
+                                }
+                                aria-label="End Date"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Stock History" />
@@ -173,8 +293,25 @@ export default function StockHistoryIndex({ activities }: { activities: Paginate
                         <p className="text-muted-foreground text-sm">Audit log of all stock-related changes (adjustments, movements, etc.)</p>
                     </div>
                 </div>
-                <DataTable data={activities.data} columns={columns} />
+                <DataTable
+                    data={activities}
+                    columns={columns}
+                    filterPanel={StockHistoryFilterPanel}
+                    searchColumn="description"
+                    searchPlaceholder="Search history..."
+                    scrollable
+                    initialColumnVisibility={{ subject_type: false, properties: false }}
+                />
             </div>
         </AppLayout>
     );
 }
+
+// Keep the old type for now if needed, or remove it.
+type PaginatedActivities = {
+    data: Activity[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+};

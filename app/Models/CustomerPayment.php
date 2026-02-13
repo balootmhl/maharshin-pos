@@ -59,4 +59,24 @@ class CustomerPayment extends BaseModel
     {
         return $this->belongsTo(User::class);
     }
+
+    public function scopePaymentDateStart($query, $date)
+    {
+        return $query->whereDate('payment_date', '>=', $date);
+    }
+
+    public function scopePaymentDateEnd($query, $date)
+    {
+        return $query->whereDate('payment_date', '<=', $date);
+    }
+
+    public function scopeAmountMin($query, $amount)
+    {
+        return $query->where('amount', '>=', $amount);
+    }
+
+    public function scopeAmountMax($query, $amount)
+    {
+        return $query->where('amount', '<=', $amount);
+    }
 }

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem, Purchase } from '@/types';
+import { BreadcrumbItem, Purchase, PaginatedData, LaravelPaginator } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, X } from 'lucide-react';
@@ -149,7 +149,12 @@ const columns: ColumnDef<Purchase>[] = [
         enableHiding: false,
         cell: ({ row }) => {
             const param = { purchase: row.original.id };
-            return <DataTableActions routePrefix="purchases" routeParam={param} />;
+             // Check if purchase was created more than 3 days ago
+            const canEdit = row.original.created_at 
+                ? new Date(row.original.created_at) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+                : false;
+
+            return <DataTableActions routePrefix="purchases" routeParam={param} canEdit={canEdit} />;
         },
     },
 ];
@@ -299,7 +304,7 @@ function PurchaseFilterPanel({ table, onClearFilters }: FilterPanelProps<Purchas
     );
 }
 
-export default function PurchaseIndex({ purchases }: { purchases: Purchase[] }) {
+export default function PurchaseIndex({ purchases }: { purchases: PaginatedData<Purchase> | LaravelPaginator<Purchase> }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Purchases" />
@@ -314,6 +319,7 @@ export default function PurchaseIndex({ purchases }: { purchases: Purchase[] }) 
                     searchColumn="purchase_no"
                     searchPlaceholder="Search purchase..."
                     initialColumnVisibility={{ products: false }}
+                    scrollable
                 />
             </div>
         </AppLayout>

@@ -73,4 +73,14 @@ class SaleReturn extends BaseModel
     {
         return $this->hasMany(SaleReturnItem::class);
     }
+
+    public function scopeReturnDateStart($query, $date)
+    {
+        return $query->whereDate('return_date', '>=', $date);
+    }
+
+    public function scopeReturnDateEnd($query, $date)
+    {
+        return $query->whereDate('return_date', '<=', $date);
+    }
 }

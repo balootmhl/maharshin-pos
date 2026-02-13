@@ -10,11 +10,24 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class BranchController extends Controller
 {
     public function index(Request $request): Response
     {
-        $branches = Branch::all();
+        $branches = QueryBuilder::for(Branch::class)
+            ->allowedFilters([
+                'code',
+                'name',
+                'phone',
+                AllowedFilter::exact('is_active'),
+            ])
+            ->allowedSorts(['code', 'name', 'created_at'])
+            ->defaultSort('name')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
 
         return Inertia::render('Branch/index', [
             'branches' => $branches,

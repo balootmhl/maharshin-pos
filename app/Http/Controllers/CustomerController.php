@@ -12,11 +12,24 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class CustomerController extends Controller
 {
     public function index(Request $request): Response
     {
-        $customers = Customer::all();
+        $customers = QueryBuilder::for(Customer::class)
+            ->allowedFilters([
+                'code',
+                'name',
+                'phone',
+                AllowedFilter::exact('is_active'),
+            ])
+            ->allowedSorts(['code', 'name', 'phone', 'current_balance', 'credit_limit', 'created_at'])
+            ->defaultSort('name')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
 
         return Inertia::render('Customer/index', [
             'customers' => $customers,

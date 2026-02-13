@@ -77,4 +77,24 @@ class Purchase extends BaseModel
     {
         return $this->hasMany(PurchaseItem::class);
     }
+
+    public function scopePurchaseDateStart($query, $date)
+    {
+        return $query->whereDate('purchase_date', '>=', $date);
+    }
+
+    public function scopePurchaseDateEnd($query, $date)
+    {
+        return $query->whereDate('purchase_date', '<=', $date);
+    }
+
+    public function scopeTotalAmountMin($query, $amount)
+    {
+        return $query->where('total_amount', '>=', $amount);
+    }
+
+    public function scopeTotalAmountMax($query, $amount)
+    {
+        return $query->where('total_amount', '<=', $amount);
+    }
 }

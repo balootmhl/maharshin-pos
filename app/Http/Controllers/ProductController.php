@@ -13,16 +13,38 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class ProductController extends Controller
 {
     public function index(Request $request): Response
     {
-        $products = Product::with(['category', 'branchStocks.branch', 'branchStocks.group'])->get();
+        $products = QueryBuilder::for(Product::class)
+            ->with(['category', 'branchStocks.branch', 'branchStocks.group'])
+            ->allowedFilters([
+                AllowedFilter::callback('global', function ($query, $value) {
+                    $query->where(function ($q) use ($value) {
+                        $q->where('code', 'like', "%{$value}%")
+                          ->orWhere('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::exact('category.name'),
+                AllowedFilter::exact('is_active'),
+            ])
+            ->allowedSorts(['name', 'code', 'selling_price', 'cost_price', 'is_active', 'created_at'])
+            ->defaultSort('-created_at')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
+
         $branches = Branch::where('is_active', true)->get(['id', 'name', 'code']);
+        // We need unique category names for the filter dropdown since we can't derive them from paginated data
+        $categories = Category::distinct()->pluck('name')->sort()->values();
 
         return Inertia::render('Product/index', [
             'products' => $products,
             'branches' => $branches,
+            'categories' => $categories, // Passed for filter
         ]);
     }
 

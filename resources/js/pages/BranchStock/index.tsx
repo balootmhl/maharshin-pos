@@ -1,25 +1,14 @@
-import { DataTable } from '@/components/tables/data-table';
+import { DataTable, FilterPanelProps } from '@/components/tables/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem } from '@/types';
+import { BranchStock, BreadcrumbItem, LaravelPaginator, PaginatedData } from '@/types';
 import { Head } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown } from 'lucide-react';
-
-type Branch = { id: number; name: string };
-type Product = { id: number; name: string; code: string; low_stock_alert: number };
-
-type BranchStock = {
-    id: number;
-    branch_id: number;
-    branch?: Branch;
-    product_id: number;
-    product?: Product;
-    quantity: number;
-    reserved_quantity: number;
-};
+import { ArrowUpDown, X } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -75,7 +64,14 @@ const columns: ColumnDef<BranchStock>[] = [
     },
     {
         accessorKey: 'quantity',
-        header: 'Quantity',
+        header: ({ column }) => {
+            return (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+                    Quantity
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                </Button>
+            );
+        },
         cell: ({ row }) => {
             const qty = row.getValue('quantity') as number;
             const lowAlert = row.original.product?.low_stock_alert || 0;
@@ -91,6 +87,13 @@ const columns: ColumnDef<BranchStock>[] = [
                 </div>
             );
         },
+        filterFn: (row, id, value: { lowStock?: boolean }) => {
+            // We rely on backend filtering for scope 'low_stock', but if we did client side:
+            if (!value.lowStock) return true;
+            const qty = row.getValue(id) as number;
+            const lowAlert = row.original.product?.low_stock_alert || 0;
+            return qty <= lowAlert;
+        },
     },
     {
         accessorKey: 'reserved_quantity',
@@ -99,16 +102,67 @@ const columns: ColumnDef<BranchStock>[] = [
     },
 ];
 
-export default function BranchStockIndex({ branchStocks }: { branchStocks: BranchStock[] }) {
+// Filter Panel Component
+function BranchStockFilterPanel({ table, onClearFilters }: FilterPanelProps<BranchStock>) {
+    // Low Stock filter
+    const lowStockColumn = table.getColumn('low_stock');
+    const isLowStock = lowStockColumn?.getFilterValue() === '1';
+
+    return (
+        <div className="space-y-4">
+             {/* Clear All Button */}
+             {isLowStock && (
+                <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
+                    <X className="mr-2 h-4 w-4" />
+                    Clear all filters
+                </Button>
+            )}
+
+            <div className="space-y-3">
+                <Label className="text-sm font-medium">Stock Status</Label>
+                <div className="flex items-center space-x-2">
+                    <Checkbox 
+                        id="low-stock" 
+                        checked={isLowStock}
+                        onCheckedChange={(checked) => {
+                            // We set '1' for true, or undefined to clear
+                            lowStockColumn?.setFilterValue(checked ? '1' : undefined);
+                        }} 
+                    />
+                    <Label htmlFor="low-stock" className="cursor-pointer text-sm font-normal">
+                        Low Stock Only
+                    </Label>
+                </div>
+            </div>
+            <Separator />
+        </div>
+    );
+}
+
+export default function BranchStockIndex({ branchStocks }: { branchStocks: PaginatedData<BranchStock> | LaravelPaginator<BranchStock> }) {
+    
+    // Add hidden low_stock column for filtering purposes
+    const tableColumns = [
+        ...columns,
+        {
+            id: 'low_stock',
+            enableHiding: true,
+            header: 'Low Stock', // Won't show if we hide it via initial visibility
+        }
+    ];
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Stock Levels" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <DataTable
                     data={branchStocks}
-                    columns={columns}
+                    columns={tableColumns}
+                    filterPanel={BranchStockFilterPanel}
                     searchColumn="product_name"
                     searchPlaceholder="Filter by product name..."
+                    initialColumnVisibility={{ low_stock: false }}
+                    scrollable
                 />
             </div>
         </AppLayout>

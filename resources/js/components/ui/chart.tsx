@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { ResponsiveContainer, Tooltip } from "recharts"
+import { ResponsiveContainer, Tooltip, TooltipProps } from "recharts"
+import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent"
 
 export type ChartConfig = {
   [k: string]: {
@@ -14,36 +15,43 @@ export type ChartConfig = {
 
 export const ChartContainer = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { config: any }
->(({ className, children, config, ...props }, ref) => (
-  <div ref={ref} className={className} {...props}>
-    <style dangerouslySetInnerHTML={{ __html: "" }} />
-    <ResponsiveContainer width="100%" height="100%">
-      {children as any}
-    </ResponsiveContainer>
-  </div>
-))
+  React.HTMLAttributes<HTMLDivElement> & { config: ChartConfig }
+>(({ className, children, config, ...props }, ref) => {
+    // Satisfy linter for unused config prop which we extract to avoid passing to DOM
+    void config;
+  return (
+    <div ref={ref} className={className} {...props}>
+      <style dangerouslySetInnerHTML={{ __html: "" }} />
+      <ResponsiveContainer width="100%" height="100%">
+        {children as React.ReactElement}
+      </ResponsiveContainer>
+    </div>
+  )
+})
 ChartContainer.displayName = "ChartContainer"
 
 export const ChartTooltip = Tooltip
 
-export const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
-    active?: boolean
-    payload?: any[]
+// Using slightly looser types here to match Recharts internal types which can be complex
+ 
+type ChartTooltipContentProps = TooltipProps<ValueType, NameType> & React.HTMLAttributes<HTMLDivElement> & {
     indicator?: "line" | "dot" | "dashed"
     hideLabel?: boolean
     hideIndicator?: boolean
-    label?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     labelFormatter?: (value: any, payload: any[]) => React.ReactNode
     labelClassName?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     formatter?: (value: any, name: string, item: any, index: number, payload: any) => React.ReactNode
     color?: string
     nameKey?: string
     labelKey?: string
-  }
->(({ active, payload, className, indicator = "dot", hideLabel = false, hideIndicator = false, label, labelFormatter, labelClassName, formatter, color, nameKey, labelKey }, ref) => {
+}
+
+export const ChartTooltipContent = React.forwardRef<
+  HTMLDivElement,
+  ChartTooltipContentProps
+>(({ active, payload, label }, ref) => {
   if (!active || !payload?.length) {
     return null
   }

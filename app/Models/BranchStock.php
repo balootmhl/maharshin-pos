@@ -71,4 +71,15 @@ class BranchStock extends BaseModel
     {
         return $this->belongsTo(Group::class);
     }
+
+    public function scopeLowStock($query, $isLowStock = true)
+    {
+        if ($isLowStock) {
+            return $query->whereHas('product', function ($q) {
+                $q->whereColumn('branch_stocks.quantity', '<=', 'products.low_stock_alert');
+            });
+        }
+
+        return $query;
+    }
 }

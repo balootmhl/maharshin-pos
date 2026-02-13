@@ -11,24 +11,36 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
+
 class GroupController extends Controller
 {
     public function index(Request $request): Response
     {
-        $groups = Group::with('branch')
-            ->when($request->branch_id, fn ($q) => $q->where('branch_id', $request->branch_id))
-            ->orderBy('branch_id')
-            ->orderBy('name')
-            ->get();
+        $groups = QueryBuilder::for(Group::class)
+            ->allowedFilters([
+                'code',
+                'name',
+                AllowedFilter::callback('branch.name', function ($query, $value) {
+                    $query->whereHas('branch', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::exact('is_active'),
+                AllowedFilter::exact('branch_id'),
+            ])
+            ->allowedSorts(['code', 'name', 'created_at'])
+            ->defaultSort('name')
+            ->with('branch')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
 
-        $branches = Branch::where('is_active', true)->get();
+        $branches = Branch::where('is_active', true)->get(['id', 'name']);
 
         return Inertia::render('Group/index', [
             'groups' => $groups,
             'branches' => $branches,
-            'filters' => [
-                'branch_id' => $request->branch_id,
-            ],
         ]);
     }
 

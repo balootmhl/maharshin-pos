@@ -71,4 +71,14 @@ class CustomerCreditLedger extends BaseModel
     {
         return $this->morphTo();
     }
+
+    public function scopeTransactionDateStart($query, $date)
+    {
+        return $query->whereDate('transaction_date', '>=', $date);
+    }
+
+    public function scopeTransactionDateEnd($query, $date)
+    {
+        return $query->whereDate('transaction_date', '<=', $date);
+    }
 }

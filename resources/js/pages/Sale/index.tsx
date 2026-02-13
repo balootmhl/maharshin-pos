@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem, Sale } from '@/types';
+import { BreadcrumbItem, LaravelPaginator, PaginatedData, Sale } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, X } from 'lucide-react';
@@ -149,7 +149,12 @@ const columns: ColumnDef<Sale>[] = [
         enableHiding: false,
         cell: ({ row }) => {
             const param = { sale: row.original.id };
-            return <DataTableActions routePrefix="sales" routeParam={param} />;
+            // Check if sale was created more than 3 days ago
+            const canEdit = row.original.created_at 
+                ? new Date(row.original.created_at) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+                : false;
+            
+            return <DataTableActions routePrefix="sales" routeParam={param} canEdit={canEdit} />;
         },
     },
 ];
@@ -299,7 +304,7 @@ function SalesFilterPanel({ table, onClearFilters }: FilterPanelProps<Sale>) {
     );
 }
 
-export default function SaleIndex({ sales }: { sales: Sale[] }) {
+export default function SaleIndex({ sales }: { sales: PaginatedData<Sale> | LaravelPaginator<Sale> }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Sales" />
@@ -314,6 +319,7 @@ export default function SaleIndex({ sales }: { sales: Sale[] }) {
                     searchColumn="invoice_no"
                     searchPlaceholder="Search invoice..."
                     initialColumnVisibility={{ products: false }}
+                    scrollable
                 />
             </div>
         </AppLayout>

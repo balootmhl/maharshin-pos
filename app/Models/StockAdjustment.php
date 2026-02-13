@@ -89,4 +89,14 @@ class StockAdjustment extends BaseModel
     {
         return self::REASONS[$this->reason] ?? $this->reason;
     }
+
+    public function scopeAdjustmentDateStart($query, $date)
+    {
+        return $query->whereDate('adjustment_date', '>=', $date);
+    }
+
+    public function scopeAdjustmentDateEnd($query, $date)
+    {
+        return $query->whereDate('adjustment_date', '<=', $date);
+    }
 }
