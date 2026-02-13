@@ -31,7 +31,7 @@ export default function AuthSimpleLayout({ children, title, description }: Props
 
                     {/* Brand text */}
                     <h1 className="mb-3 text-3xl font-bold tracking-tight text-white">
-                        Maharshin <span className="text-[#F5941D]">POS</span>
+                        ZabyuAungPyae <span className="text-[#F5941D]">POS</span>
                     </h1>
                     <p className="max-w-xs text-center text-sm leading-relaxed text-white/60">
                         Streamline your business with our powerful point of sale system
@@ -71,7 +71,7 @@ export default function AuthSimpleLayout({ children, title, description }: Props
 
                 {/* Footer */}
                 <div className="text-muted-foreground mt-12 text-center text-xs">
-                    © {new Date().getFullYear()} Maharshin. All rights reserved.
+                    © {new Date().getFullYear()} ZabyuAungPyae. All rights reserved.
                 </div>
             </div>
         </div>
