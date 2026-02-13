@@ -16,7 +16,7 @@ export default function AppLogo() {
                     background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(139,92,246,0.2) 50%, rgba(167,139,250,0.3) 100%)',
                 }}
             >
-                <img src="/logo.png" alt="App Logo" className="h-full w-full object-contain drop-shadow-sm" />
+                <img src="/logo.png?v=2" alt="ZAP POS" className="h-full w-full object-contain drop-shadow-sm" />
             </div>
             {!isCollapsed && (
                 <div className="grid flex-1 text-left">

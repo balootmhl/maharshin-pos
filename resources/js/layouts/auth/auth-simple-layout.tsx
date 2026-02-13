@@ -25,7 +25,7 @@ export default function AuthSimpleLayout({ children, title, description }: Props
                     {/* Logo */}
                     <div className="mb-8 flex items-center justify-center">
                         <div className="rounded-3xl bg-white/10 p-6 shadow-2xl ring-1 ring-white/20 backdrop-blur-sm">
-                            <img src="/logo.png" alt="Maharshin" className="h-40 w-40 object-contain drop-shadow-2xl" />
+                            <img src="/logo.png?v=2" alt="ZAP POS" className="h-40 w-40 object-contain drop-shadow-2xl" />
                         </div>
                     </div>
 
@@ -55,7 +55,7 @@ export default function AuthSimpleLayout({ children, title, description }: Props
                     {/* Mobile logo */}
                     <div className="mb-8 flex flex-col items-center lg:hidden">
                         <Link href={route('home')} className="mb-4">
-                            <img src="/logo.png" alt="Maharshin" className="h-20 w-20 object-contain" />
+                            <img src="/logo.png?v=2" alt="Maharshin" className="h-20 w-20 object-contain" />
                         </Link>
                     </div>
 
