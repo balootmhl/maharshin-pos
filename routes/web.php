@@ -24,7 +24,6 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\UserController;
 use App\Models\BranchStock;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -97,7 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('stock-adjustments/quick', [StockAdjustmentController::class, 'quickStore'])->name('stock-adjustments.quick');
     Route::resource('stock-adjustments', StockAdjustmentController::class)->only(['index', 'create', 'store', 'show']);
 
-    Route::get('stock-history', [StockHistoryController::class, 'index'])->name('stock-history.index');
+    Route::resource('stock-history', StockHistoryController::class)->only('index');
 
     Route::resource('settings', SettingController::class)->only('index', 'update');
 
