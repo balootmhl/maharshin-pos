@@ -39,9 +39,9 @@ export function NavMain({ items }: { items: NavGroup[] }) {
                             // When sidebar is collapsed, use dropdown menu for sub-items
                             <DropdownMenu key={item.title}>
                                 <DropdownMenuTrigger asChild>
-                                    <SidebarMenuItem>
+                                    <SidebarMenuItem className="">
                                         <SidebarMenuButton tooltip={item.title} size="lg">
-                                            {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
+                                            {item.icon && <Icon iconNode={item.icon} />}
                                             <span>{item.title}</span>
                                             <ChevronRight className="ml-auto h-4 w-4" />
                                         </SidebarMenuButton>
@@ -68,7 +68,7 @@ export function NavMain({ items }: { items: NavGroup[] }) {
                                 <SidebarMenuItem>
                                     <CollapsibleTrigger asChild>
                                         <SidebarMenuButton tooltip={item.title} size="lg">
-                                            {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
+                                            {item.icon && <Icon iconNode={item.icon} />}
                                             <span>{item.title}</span>
                                             <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                                         </SidebarMenuButton>
@@ -93,7 +93,7 @@ export function NavMain({ items }: { items: NavGroup[] }) {
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton asChild isActive={checkActiveUrl(item.url)} size="lg" tooltip={item.title}>
                                 <Link href={item.url}>
-                                    {item.icon && <Icon iconNode={item.icon} className="h-5 w-5" />}
+                                    {item.icon && <Icon iconNode={item.icon} />}
                                     <span>{item.title}</span>
                                 </Link>
                             </SidebarMenuButton>
