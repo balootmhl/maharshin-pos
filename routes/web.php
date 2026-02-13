@@ -78,9 +78,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('suppliers', SupplierController::class);
 
+    Route::get('sales/trash', [SaleController::class, 'trash'])->name('sales.trash');
+    Route::post('sales/{sale}/restore', [SaleController::class, 'restore'])->name('sales.restore')->withTrashed();
+    Route::delete('sales/{sale}/force-delete', [SaleController::class, 'forceDelete'])->name('sales.force-delete')->withTrashed();
     Route::get('sales/{sale}/print', [SaleController::class, 'print'])->name('sales.print');
     Route::resource('sales', SaleController::class);
 
+    Route::get('purchases/trash', [PurchaseController::class, 'trash'])->name('purchases.trash');
+    Route::post('purchases/{purchase}/restore', [PurchaseController::class, 'restore'])->name('purchases.restore')->withTrashed();
+    Route::delete('purchases/{purchase}/force-delete', [PurchaseController::class, 'forceDelete'])->name('purchases.force-delete')->withTrashed();
+    Route::get('purchases/{purchase}/print', [PurchaseController::class, 'print'])->name('purchases.print');
     Route::resource('purchases', PurchaseController::class);
 
     Route::resource('sale-returns', SaleReturnController::class);

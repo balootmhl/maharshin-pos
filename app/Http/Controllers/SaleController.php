@@ -360,7 +360,62 @@ class SaleController extends Controller
 
     public function destroy(Request $request, Sale $sale): RedirectResponse
     {
-        $sale->delete();
+        if ($sale->created_at->diffInDays(now()) > 3) {
+            return redirect()->route('sales.index')->with('error', 'Sale cannot be deleted after 3 days.');
+        }
+
+        DB::transaction(function () use ($sale) {
+            // Restore stock
+            foreach ($sale->saleItems as $item) {
+                $branchStock = BranchStock::withoutGlobalScopes()->where([
+                    'branch_id' => $sale->branch_id,
+                    'product_id' => $item->product_id,
+                ])->first();
+
+                if ($branchStock) {
+                    $oldStock = $branchStock->quantity;
+                    $branchStock->increment('quantity', $item->quantity);
+
+                    StockMovement::create([
+                        'branch_id' => $sale->branch_id,
+                        'product_id' => $item->product_id,
+                        'movement_type' => 'sale_correction',
+                        'quantity' => $item->quantity,
+                        'quantity_before' => $oldStock,
+                        'quantity_after' => $branchStock->fresh()->quantity,
+                        'reference_type' => Sale::class,
+                        'reference_id' => $sale->id,
+                        'notes' => "Deletion of Sale: {$sale->invoice_no}",
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
+
+            // Restore customer balance
+            if ($sale->customer_id && $sale->credit_amount > 0) {
+                $customer = Customer::find($sale->customer_id);
+                if ($customer) {
+                    $customer->decrement('current_balance', (float) $sale->credit_amount);
+
+                    CustomerCreditLedger::create([
+                        'customer_id' => $sale->customer_id,
+                        'branch_id' => $sale->branch_id,
+                        'transaction_date' => now(),
+                        'transaction_type' => 'correction',
+                        'reference_type' => Sale::class,
+                        'reference_id' => $sale->id,
+                        'reference_no' => $sale->invoice_no,
+                        'debit' => 0,
+                        'credit' => $sale->credit_amount,
+                        'balance' => $customer->fresh()->current_balance,
+                        'description' => "Deletion of Sale: {$sale->invoice_no}",
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
+
+            $sale->delete();
+        });
 
         return redirect()->route('sales.index')->with('success', 'Sale deleted successfully.');
     }
@@ -374,5 +429,105 @@ class SaleController extends Controller
             'sale' => $sale,
             'format' => $format,
         ]);
+    }
+
+    public function trash(Request $request): Response
+    {
+        $sales = QueryBuilder::for(Sale::onlyTrashed())
+            ->with(['branch', 'customer', 'createdBy', 'saleItems.product'])
+            ->allowedFilters([
+                'invoice_no',
+                'payment_status',
+                AllowedFilter::callback('customer.name', function ($query, $value) {
+                    $query->whereHas('customer', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::scope('sale_date_start'),
+                AllowedFilter::scope('sale_date_end'),
+                AllowedFilter::scope('total_amount_min'),
+                AllowedFilter::scope('total_amount_max'),
+            ])
+            ->allowedSorts(['invoice_no', 'sale_date', 'total_amount', 'deleted_at'])
+            ->defaultSort('-deleted_at')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
+
+        return Inertia::render('Sale/Trash', [
+            'sales' => $sales,
+        ]);
+    }
+
+    public function restore(Request $request, Sale $sale): RedirectResponse
+    {
+        if ($sale->trashed()) {
+            DB::transaction(function () use ($sale) {
+                // 1. Re-deduct stock
+                foreach ($sale->saleItems as $item) {
+                     // Check if branch has enough stock is optional depending on business logic. 
+                     // Here we allow negative stock or assume manager knows what they are doing,
+                     // but we should verify if we want to enforce strict stock.
+                     // For now, simple re-deduction.
+                    
+                    $branchStock = BranchStock::withoutGlobalScopes()->firstOrCreate(
+                        ['branch_id' => $sale->branch_id, 'product_id' => $item->product_id],
+                        ['quantity' => 0]
+                    );
+
+                    $oldStock = $branchStock->quantity;
+                    $branchStock->decrement('quantity', $item->quantity);
+
+                    StockMovement::create([
+                        'branch_id' => $sale->branch_id,
+                        'product_id' => $item->product_id,
+                        'movement_type' => 'sale', // Treating as original sale movement
+                        'quantity' => -$item->quantity,
+                        'quantity_before' => $oldStock,
+                        'quantity_after' => $branchStock->fresh()->quantity,
+                        'reference_type' => Sale::class,
+                        'reference_id' => $sale->id,
+                        'notes' => "Restored Sale: {$sale->invoice_no}",
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+
+                // 2. Re-apply customer balance
+                if ($sale->customer_id && $sale->credit_amount > 0) {
+                    $customer = Customer::find($sale->customer_id);
+                    if ($customer) {
+                        $customer->increment('current_balance', (float) $sale->credit_amount);
+
+                        CustomerCreditLedger::create([
+                            'customer_id' => $sale->customer_id,
+                            'branch_id' => $sale->branch_id,
+                            'transaction_date' => now(),
+                            'transaction_type' => 'credit',
+                            'reference_type' => Sale::class,
+                            'reference_id' => $sale->id,
+                            'reference_no' => $sale->invoice_no,
+                            'debit' => $sale->credit_amount,
+                            'credit' => 0,
+                            'balance' => $customer->fresh()->current_balance,
+                            'description' => "Restored Sale: {$sale->invoice_no}",
+                            'created_by' => Auth::id(),
+                        ]);
+                    }
+                }
+
+                $sale->restore();
+            });
+        }
+
+        return redirect()->route('sales.trash')->with('success', 'Sale restored successfully.');
+    }
+
+    public function forceDelete(Request $request, Sale $sale): RedirectResponse
+    {
+        if ($sale->trashed()) {
+            // Permanent delete - no stock reversal needed as it was already reversed during soft delete
+            $sale->forceDelete();
+        }
+
+        return redirect()->route('sales.trash')->with('success', 'Sale permanently deleted.');
     }
 }

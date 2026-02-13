@@ -47,17 +47,17 @@ export function NavMain({ items }: { items: NavGroup[] }) {
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent side="right" align="start" sideOffset={12} className="min-w-56 rounded-lg p-2 shadow-lg">
-                                    <div className="text-muted-foreground mb-2 border-b px-3 pb-2 text-sm font-semibold">{item.title}</div>
-                                    {item.subItems?.map((subItem) => (
-                                        <DropdownMenuItem
-                                            key={subItem.title}
-                                            asChild
-                                            className="cursor-pointer rounded-md px-3 py-3 text-base font-medium"
-                                        >
-                                            <Link href={subItem.url} className={checkActiveUrl(subItem.url) ? 'bg-accent' : ''}>
-                                                {subItem.title}
-                                            </Link>
+                                    <DropdownMenuContent side="right" align="start" sideOffset={12} className="min-w-56 rounded-lg p-2 shadow-lg">
+                                        <div className="text-muted-foreground mb-2 border-b px-3 pb-2 text-base font-bold">{item.title}</div>
+                                        {item.subItems?.map((subItem) => (
+                                            <DropdownMenuItem
+                                                key={subItem.title}
+                                                asChild
+                                                className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium"
+                                            >
+                                                <Link href={subItem.url} className={checkActiveUrl(subItem.url) ? 'bg-accent' : ''}>
+                                                    {subItem.title}
+                                                </Link>
                                         </DropdownMenuItem>
                                     ))}
                                 </DropdownMenuContent>

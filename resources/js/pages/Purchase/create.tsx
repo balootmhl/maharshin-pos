@@ -1,5 +1,6 @@
 import InputError from '@/components/input-error';
 import { useProductSearch } from '@/hooks/use-product-search';
+import { useDirectPrint } from '@/hooks/use-direct-print';
 import { PurchaseSuccessDialog } from '@/components/purchase-success-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -330,10 +331,12 @@ export default function PurchaseCreate({
         });
     };
 
+    const { printUrl } = useDirectPrint();
+
     // Handle print action from success dialog
-    const handlePrint = (format: 'a4' | 'thermal') => {
+    const handlePrint = (format: 'a4' | 'a5' | 'thermal') => {
         if (!completedPurchase) return;
-        window.open(route('purchases.show', { purchase: completedPurchase.id }) + `?format=${format}`, '_blank');
+        printUrl(route('purchases.print', { purchase: completedPurchase.id, format }));
     };
 
     // Handle new purchase action from success dialog

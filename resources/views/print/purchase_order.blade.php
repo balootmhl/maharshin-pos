@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice {{ $sale->invoice_no }}</title>
+    <title>Purchase Order {{ $purchase->purchase_no }}</title>
     <style>
         * {
             margin: 0;
@@ -270,38 +270,40 @@
 </head>
 
 <body>
-    <button class="print-button no-print" onclick="window.print()">🖨️ Print Invoice</button>
+    <button class="print-button no-print" onclick="window.print()">🖨️ Print Order</button>
 
     <div class="invoice-container">
         <!-- Header -->
         <div class="invoice-header">
             <div class="company-info">
-                <h1>{{ $sale->branch?->name ?? 'Maharshin' }}</h1>
-                <p>{{ $sale->branch?->address ?? '' }}</p>
-                <p>{{ $sale->branch?->phone ?? '' }}</p>
+                <h1>{{ $purchase->branch?->name ?? 'Maharshin' }}</h1>
+                <p>{{ $purchase->branch?->address ?? '' }}</p>
+                <p>{{ $purchase->branch?->phone ?? '' }}</p>
             </div>
             <div class="invoice-title">
-                <h2>INVOICE</h2>
-                <div class="invoice-no">{{ $sale->invoice_no }}</div>
+                <h2>PURCHASE ORDER</h2>
+                <div class="invoice-no">{{ $purchase->purchase_no }}</div>
             </div>
         </div>
 
         <!-- Details -->
         <div class="invoice-details">
             <div class="detail-section">
-                <h3>Bill To</h3>
-                <p><strong>{{ $sale->customer?->name ?? 'Walk-in Customer' }}</strong></p>
-                @if ($sale->customer?->phone)
-                    <p>{{ $sale->customer->phone }}</p>
+                <h3>Supplier</h3>
+                <p><strong>{{ $purchase->supplier?->name ?? 'N/A' }}</strong></p>
+                @if ($purchase->supplier?->phone)
+                    <p>{{ $purchase->supplier->phone }}</p>
+                @endif
+                @if ($purchase->supplier?->address)
+                    <p>{{ $purchase->supplier->address }}</p>
                 @endif
             </div>
             <div class="detail-section" style="text-align: right;">
-                <h3>Invoice Details</h3>
-                <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($sale->sale_date)->format('d M Y') }}</p>
-                <p><strong>Payment:</strong> {{ $sale->payment_method ?? 'N/A' }}</p>
+                <h3>Order Details</h3>
+                <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($purchase->purchase_date)->format('d M Y') }}</p>
                 <p>
-                    <span class="status-badge status-{{ $sale->payment_status }}">
-                        {{ ucfirst($sale->payment_status) }}
+                    <span class="status-badge status-{{ $purchase->payment_status }}">
+                        {{ ucfirst($purchase->payment_status) }}
                     </span>
                 </p>
             </div>
@@ -313,20 +315,20 @@
                 <tr>
                     <th>Item</th>
                     <th>Qty</th>
-                    <th>Price</th>
+                    <th>Cost</th>
                     <th>Tax</th>
                     <th>Amount</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($sale->saleItems as $item)
+                @foreach ($purchase->purchaseItems as $item)
                     <tr>
                         <td>
                             {{ $item->product?->name ?? 'Unknown Product' }}
                             <div class="product-code">{{ $item->product?->code ?? '' }}</div>
                         </td>
                         <td>{{ $item->quantity }}</td>
-                        <td>{{ number_format($item->unit_price, 0) }}</td>
+                        <td>{{ number_format($item->unit_cost, 0) }}</td>
                         <td>{{ number_format($item->tax_amount, 0) }}</td>
                         <td>{{ number_format($item->subtotal, 0) }}</td>
                     </tr>
@@ -339,32 +341,26 @@
             <table class="totals-table">
                 <tr>
                     <td>Subtotal</td>
-                    <td>{{ number_format($sale->subtotal, 0) }} Ks</td>
+                    <td>{{ number_format($purchase->subtotal, 0) }} Ks</td>
                 </tr>
                 <tr>
                     <td>Tax</td>
-                    <td>{{ number_format($sale->tax_amount, 0) }} Ks</td>
+                    <td>{{ number_format($purchase->tax_amount, 0) }} Ks</td>
                 </tr>
-                @if ($sale->discount_amount > 0)
-                    <tr>
-                        <td>Discount</td>
-                        <td>-{{ number_format($sale->discount_amount, 0) }} Ks</td>
-                    </tr>
-                @endif
                 <tr class="total-row">
                     <td>Total</td>
-                    <td>{{ number_format($sale->total_amount, 0) }} Ks</td>
+                    <td>{{ number_format($purchase->total_amount, 0) }} Ks</td>
                 </tr>
-                @if ($sale->paid_amount > 0)
+                @if ($purchase->paid_amount > 0)
                     <tr class="paid-row">
                         <td>Paid</td>
-                        <td>{{ number_format($sale->paid_amount, 0) }} Ks</td>
+                        <td>{{ number_format($purchase->paid_amount, 0) }} Ks</td>
                     </tr>
                 @endif
-                @if ($sale->credit_amount > 0)
+                @if ($purchase->total_amount - $purchase->paid_amount > 0)
                     <tr class="credit-row">
-                        <td>Credit</td>
-                        <td>{{ number_format($sale->credit_amount, 0) }} Ks</td>
+                        <td>Balance</td>
+                        <td>{{ number_format($purchase->total_amount - $purchase->paid_amount, 0) }} Ks</td>
                     </tr>
                 @endif
             </table>
@@ -372,10 +368,9 @@
 
         <!-- Footer -->
         <div class="invoice-footer">
-            <p>Thank you for your business!</p>
-            <p>Invoice generated on {{ now()->format('d M Y, h:i A') }}</p>
-            @if ($sale->createdBy)
-                <p>Served by: {{ $sale->createdBy->name }}</p>
+            <p>Purchase Order generated on {{ now()->format('d M Y, h:i A') }}</p>
+            @if ($purchase->createdBy)
+                <p>Created by: {{ $purchase->createdBy->name }}</p>
             @endif
         </div>
     </div>

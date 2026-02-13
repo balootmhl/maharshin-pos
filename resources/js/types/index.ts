@@ -199,6 +199,7 @@ export interface Sale {
     sale_items?: SaleItem[];
     created_at?: string;
     updated_at?: string;
+    deleted_at?: string;
 }
 
 export interface PurchaseItem {
@@ -235,6 +236,7 @@ export interface Purchase {
     purchase_items?: PurchaseItem[];
     created_at?: string;
     updated_at?: string;
+    deleted_at?: string;
 }
 
 export interface StockMovement {

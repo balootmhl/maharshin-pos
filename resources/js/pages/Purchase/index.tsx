@@ -1,5 +1,5 @@
 import { CreateBtn } from '@/components/buttons/create-btn';
-import { DataTable, DataTableActions, FilterPanelProps } from '@/components/tables/data-table';
+import { DataTable, FilterPanelProps } from '@/components/tables/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem, Purchase, PaginatedData, LaravelPaginator } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { BreadcrumbItem, LaravelPaginator, PaginatedData, Purchase } from '@/types';
+import { Head, Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, X } from 'lucide-react';
+import { ArrowUpDown, Edit, Trash2, X } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -148,13 +148,36 @@ const columns: ColumnDef<Purchase>[] = [
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => {
-            const param = { purchase: row.original.id };
-             // Check if purchase was created more than 3 days ago
-            const canEdit = row.original.created_at 
+            // Check if purchase was created more than 3 days ago
+            const canEdit = row.original.created_at
                 ? new Date(row.original.created_at) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
                 : false;
 
-            return <DataTableActions routePrefix="purchases" routeParam={param} canEdit={canEdit} />;
+            if (!canEdit) return null;
+
+            return (
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href={route('purchases.edit', { purchase: row.original.id })}>
+                            <Edit className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                            if (confirm('Are you sure you want to delete this purchase? This action cannot be undone.')) {
+                                router.visit(route('purchases.destroy', { purchase: row.original.id }), {
+                                    method: 'delete',
+                                });
+                            }
+                        }}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            );
         },
     },
 ];
@@ -309,8 +332,14 @@ export default function PurchaseIndex({ purchases }: { purchases: PaginatedData<
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Purchases" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex flex-row justify-between">
+                <div className="flex flex-row justify-between gap-2">
                     <CreateBtn route={route('purchases.create')} />
+                    <Button variant="outline" size="sm" asChild>
+                        <Link href={route('purchases.trash')}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Trash Bin
+                        </Link>
+                    </Button>
                 </div>
                 <DataTable
                     data={purchases}

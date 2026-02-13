@@ -1,6 +1,4 @@
-import { CreateBtn } from '@/components/buttons/create-btn';
 import { DataTable, FilterPanelProps } from '@/components/tables/data-table';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -10,12 +8,16 @@ import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PaginatedData, Sale } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Edit, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowUpDown, RefreshCw, Trash2, X } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Sales',
         href: route('sales.index'),
+    },
+    {
+        title: 'Trash',
+        href: route('sales.trash'),
     },
 ];
 
@@ -24,19 +26,6 @@ const formatCurrency = (value: number) => {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
     }).format(value);
-};
-
-const getPaymentStatusVariant = (status: string) => {
-    switch (status) {
-        case 'paid':
-            return 'default';
-        case 'partial':
-            return 'outline';
-        case 'unpaid':
-            return 'destructive';
-        default:
-            return 'secondary';
-    }
 };
 
 const columns: ColumnDef<Sale>[] = [
@@ -65,16 +54,7 @@ const columns: ColumnDef<Sale>[] = [
                 </Button>
             );
         },
-        cell: ({ row }) => (
-            <Link
-                className="text-link font-mono font-medium"
-                href={route('sales.show', {
-                    sale: row.original.id,
-                })}
-            >
-                {row.getValue('invoice_no')}
-            </Link>
-        ),
+        cell: ({ row }) => <div className="font-mono font-medium">{row.getValue('invoice_no')}</div>,
         filterFn: (row, id, value) => {
             const invoiceNo = row.getValue(id) as string;
             return invoiceNo.toLowerCase().includes(value.toLowerCase());
@@ -121,54 +101,37 @@ const columns: ColumnDef<Sale>[] = [
         },
     },
     {
-        accessorKey: 'payment_status',
-        header: 'Status',
-        cell: ({ row }) => (
-            <Badge variant={getPaymentStatusVariant(row.getValue('payment_status'))}>
-                {(row.getValue('payment_status') as string).charAt(0).toUpperCase() + (row.getValue('payment_status') as string).slice(1)}
-            </Badge>
-        ),
-        filterFn: (row, id, value: string[]) => {
-            if (!value || value.length === 0) return true;
-            return value.includes(row.getValue(id) as string);
-        },
-    },
-    // Hidden column for product filtering (searches name and code)
-    {
-        id: 'products',
-        accessorFn: (row) =>
-            row.sale_items?.map((item) => `${item.product?.name?.toLowerCase()} ${item.product?.code?.toLowerCase()}`).join(' ') || '',
-        enableHiding: true,
-        filterFn: (row, id, value) => {
-            const productData = row.getValue(id) as string;
-            return productData.includes(value.toLowerCase());
-        },
+        accessorKey: 'deleted_at',
+        header: 'Deleted At',
+        cell: ({ row }) => <div className="text-muted-foreground text-xs">{new Date(row.original.deleted_at!).toLocaleString()}</div>,
     },
     {
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => {
-            // Check if sale was created more than 3 days ago
-            const canEdit = row.original.created_at
-                ? new Date(row.original.created_at) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-                : false;
-
-            if (!canEdit) return null;
-
             return (
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href={route('sales.edit', { sale: row.original.id })}>
-                            <Edit className="h-4 w-4" />
-                        </Link>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Restore"
+                        className="text-green-600 hover:bg-green-50 hover:text-green-700"
+                        onClick={() => {
+                            if (confirm('Are you sure you want to restore this sale? Stock will be re-deducted.')) {
+                                router.post(route('sales.restore', { sale: row.original.id }));
+                            }
+                        }}
+                    >
+                        <RefreshCw className="h-4 w-4" />
                     </Button>
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        title="Permanently Delete"
+                        className="text-red-500 hover:bg-red-50 hover:text-red-600"
                         onClick={() => {
-                            if (confirm('Are you sure you want to delete this sale? This action cannot be undone.')) {
-                                router.visit(route('sales.destroy', { sale: row.original.id }), {
+                            if (confirm('Are you sure you want to PERMANENTLY delete this sale? This action cannot be undone.')) {
+                                router.visit(route('sales.force-delete', { sale: row.original.id }), {
                                     method: 'delete',
                                 });
                             }
@@ -182,45 +145,20 @@ const columns: ColumnDef<Sale>[] = [
     },
 ];
 
-// Filter Panel Component
+// Filter Panel Component (Reusing similar logic)
 function SalesFilterPanel({ table, onClearFilters }: FilterPanelProps<Sale>) {
-    // Status filter
-    const statusColumn = table.getColumn('payment_status');
-    const statusFilter = (statusColumn?.getFilterValue() as string[]) || [];
-
-    const toggleStatus = (status: string) => {
-        const current = [...statusFilter];
-        const index = current.indexOf(status);
-        if (index === -1) {
-            current.push(status);
-        } else {
-            current.splice(index, 1);
-        }
-        statusColumn?.setFilterValue(current.length > 0 ? current : undefined);
-    };
-
     // Customer filter
     const customerColumn = table.getColumn('customer');
     const customerFilter = (customerColumn?.getFilterValue() as string) || '';
-
-    // Product filter
-    const productColumn = table.getColumn('products');
-    const productFilter = (productColumn?.getFilterValue() as string) || '';
 
     // Date range filter
     const dateColumn = table.getColumn('sale_date');
     const dateFilter = (dateColumn?.getFilterValue() as { start?: string; end?: string }) || {};
 
-    // Amount range filter
-    const amountColumn = table.getColumn('total_amount');
-    const amountFilter = (amountColumn?.getFilterValue() as { min?: number; max?: number }) || {};
-
-    const hasActiveFilters =
-        statusFilter.length > 0 || customerFilter || productFilter || dateFilter.start || dateFilter.end || amountFilter.min || amountFilter.max;
+    const hasActiveFilters = customerFilter || dateFilter.start || dateFilter.end;
 
     return (
         <div className="space-y-4">
-            {/* Clear All Button */}
             {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                     <X className="mr-2 h-4 w-4" />
@@ -228,24 +166,6 @@ function SalesFilterPanel({ table, onClearFilters }: FilterPanelProps<Sale>) {
                 </Button>
             )}
 
-            {/* Status Filter */}
-            <div className="space-y-3">
-                <Label className="text-sm font-medium">Payment Status</Label>
-                <div className="space-y-2">
-                    {['paid', 'partial', 'unpaid'].map((status) => (
-                        <div key={status} className="flex items-center space-x-2">
-                            <Checkbox id={`status-${status}`} checked={statusFilter.includes(status)} onCheckedChange={() => toggleStatus(status)} />
-                            <Label htmlFor={`status-${status}`} className="cursor-pointer text-sm font-normal capitalize">
-                                {status}
-                            </Label>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <Separator />
-
-            {/* Customer Filter */}
             <div className="space-y-3">
                 <Label className="text-sm font-medium">Customer</Label>
                 <Input
@@ -257,20 +177,6 @@ function SalesFilterPanel({ table, onClearFilters }: FilterPanelProps<Sale>) {
 
             <Separator />
 
-            {/* Product Filter */}
-            <div className="space-y-3">
-                <Label className="text-sm font-medium">Product</Label>
-                <Input
-                    placeholder="Filter by name or code..."
-                    value={productFilter}
-                    onChange={(e) => productColumn?.setFilterValue(e.target.value || undefined)}
-                />
-                <p className="text-muted-foreground text-xs">Search by product name or code</p>
-            </div>
-
-            <Separator />
-
-            {/* Date Range Filter */}
             <div className="space-y-3">
                 <Label className="text-sm font-medium">Date Range</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -292,52 +198,21 @@ function SalesFilterPanel({ table, onClearFilters }: FilterPanelProps<Sale>) {
                     </div>
                 </div>
             </div>
-
-            <Separator />
-
-            {/* Amount Range Filter */}
-            <div className="space-y-3">
-                <Label className="text-sm font-medium">Amount Range</Label>
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                        <Label className="text-muted-foreground text-xs">Min</Label>
-                        <Input
-                            type="number"
-                            placeholder="0"
-                            value={amountFilter.min || ''}
-                            onChange={(e) =>
-                                amountColumn?.setFilterValue({ ...amountFilter, min: e.target.value ? Number(e.target.value) : undefined })
-                            }
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <Label className="text-muted-foreground text-xs">Max</Label>
-                        <Input
-                            type="number"
-                            placeholder="999999"
-                            value={amountFilter.max || ''}
-                            onChange={(e) =>
-                                amountColumn?.setFilterValue({ ...amountFilter, max: e.target.value ? Number(e.target.value) : undefined })
-                            }
-                        />
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }
 
-export default function SaleIndex({ sales }: { sales: PaginatedData<Sale> | LaravelPaginator<Sale> }) {
+export default function SaleTrash({ sales }: { sales: PaginatedData<Sale> | LaravelPaginator<Sale> }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Sales" />
+            <Head title="Trash Bin - Sales" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex flex-row justify-between gap-2">
-                    <CreateBtn route={route('sales.create')} />
+                <div className="flex flex-row justify-between items-center">
+                    <h2 className="text-lg font-semibold">Deleted Sales</h2>
                     <Button variant="outline" size="sm" asChild>
-                        <Link href={route('sales.trash')}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Trash Bin
+                        <Link href={route('sales.index')}>
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Sales
                         </Link>
                     </Button>
                 </div>
@@ -347,7 +222,6 @@ export default function SaleIndex({ sales }: { sales: PaginatedData<Sale> | Lara
                     filterPanel={SalesFilterPanel}
                     searchColumn="invoice_no"
                     searchPlaceholder="Search invoice..."
-                    initialColumnVisibility={{ products: false }}
                     scrollable
                 />
             </div>

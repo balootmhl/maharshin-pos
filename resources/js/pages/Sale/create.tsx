@@ -1,5 +1,6 @@
 import InputError from '@/components/input-error';
 import { useProductSearch } from '@/hooks/use-product-search';
+import { useDirectPrint } from '@/hooks/use-direct-print';
 import { SaleSuccessDialog } from '@/components/sale-success-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -368,10 +369,13 @@ export default function SaleCreate({
     const selectedCustomer = data.customer_id !== 'walk-in' ? customers.find((c) => c.id.toString() === data.customer_id) : undefined;
 
     // Handle print action from success dialog
+    const { printUrl } = useDirectPrint();
+
+    // Handle print action from success dialog
     const handlePrint = (format: 'a4' | 'a5' | 'thermal') => {
         if (!completedSale) return;
-        // Open print window with the appropriate format
-        window.open(route('sales.print', { sale: completedSale.id, format }), '_blank');
+        // Print directly using hidden iframe
+        printUrl(route('sales.print', { sale: completedSale.id, format }));
     };
 
     // Handle new sale action from success dialog

@@ -22,7 +22,7 @@ type PurchaseSuccessDialogProps = {
     onOpenChange: (open: boolean) => void;
     purchase: CompletedPurchase | null;
     onNewPurchase: () => void;
-    onPrint: (format: 'a4' | 'thermal') => void;
+    onPrint: (format: 'a4' | 'a5' | 'thermal') => void;
 };
 
 const formatCurrency = (value: number) => {
@@ -91,6 +91,7 @@ export function PurchaseSuccessDialog({ open, onOpenChange, purchase, onNewPurch
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="center" className="w-48">
                                 <DropdownMenuItem onClick={() => onPrint('a4')}>A4 Purchase Order</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onPrint('a5')}>A5 Purchase Order</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => onPrint('thermal')}>Thermal Receipt</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

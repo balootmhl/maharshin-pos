@@ -280,10 +280,123 @@ class PurchaseController extends Controller
         return redirect()->route('purchases.index')->with('success', 'Purchase updated successfully.');
     }
 
+    public function print(Request $request, Purchase $purchase)
+    {
+        $purchase->load(['branch', 'supplier', 'purchaseItems.product', 'createdBy']);
+
+        return view('print.purchase_order', [
+            'purchase' => $purchase,
+            'format' => $request->input('format', 'a4'),
+        ]);
+    }
+
     public function destroy(Request $request, Purchase $purchase): RedirectResponse
     {
-        $purchase->delete();
+        if ($purchase->created_at->diffInDays(now()) > 3) {
+            return redirect()->route('purchases.index')->with('error', 'Purchase cannot be deleted after 3 days.');
+        }
+
+        DB::transaction(function () use ($purchase) {
+            // Reverse stock (remove stock added by purchase)
+            foreach ($purchase->purchaseItems as $item) {
+                $branchStock = BranchStock::withoutGlobalScopes()->where([
+                    'branch_id' => $purchase->branch_id,
+                    'product_id' => $item->product_id,
+                ])->first();
+
+                if ($branchStock) {
+                    $oldStock = $branchStock->quantity;
+                    $branchStock->decrement('quantity', $item->quantity);
+
+                    StockMovement::create([
+                        'branch_id' => $purchase->branch_id,
+                        'product_id' => $item->product_id,
+                        'movement_type' => 'purchase_correction',
+                        'quantity' => -$item->quantity, // Negative for removal
+                        'quantity_before' => $oldStock,
+                        'quantity_after' => $branchStock->fresh()->quantity,
+                        'reference_type' => Purchase::class,
+                        'reference_id' => $purchase->id,
+                        'notes' => "Deletion of Purchase: {$purchase->purchase_no}",
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+            }
+
+            $purchase->delete();
+        });
 
         return redirect()->route('purchases.index')->with('success', 'Purchase deleted successfully.');
+    }
+
+    public function trash(Request $request): Response
+    {
+        $purchases = QueryBuilder::for(Purchase::onlyTrashed())
+            ->with(['branch', 'supplier', 'createdBy', 'purchaseItems.product'])
+            ->allowedFilters([
+                'purchase_no',
+                'payment_status',
+                AllowedFilter::callback('supplier.name', function ($query, $value) {
+                    $query->whereHas('supplier', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::scope('purchase_date_start'),
+                AllowedFilter::scope('purchase_date_end'),
+                AllowedFilter::scope('total_amount_min'),
+                AllowedFilter::scope('total_amount_max'),
+            ])
+            ->allowedSorts(['purchase_no', 'purchase_date', 'total_amount', 'deleted_at'])
+            ->defaultSort('-deleted_at')
+            ->paginate($request->input('per_page', 25))
+            ->withQueryString();
+
+        return Inertia::render('Purchase/Trash', [
+            'purchases' => $purchases,
+        ]);
+    }
+
+    public function restore(Request $request, Purchase $purchase): RedirectResponse
+    {
+        if ($purchase->trashed()) {
+            DB::transaction(function () use ($purchase) {
+                // Re-add stock (re-apply purchase)
+                foreach ($purchase->purchaseItems as $item) {
+                    $branchStock = BranchStock::withoutGlobalScopes()->firstOrCreate(
+                        ['branch_id' => $purchase->branch_id, 'product_id' => $item->product_id],
+                        ['quantity' => 0]
+                    );
+
+                    $oldStock = $branchStock->quantity;
+                    $branchStock->increment('quantity', $item->quantity);
+
+                    StockMovement::create([
+                        'branch_id' => $purchase->branch_id,
+                        'product_id' => $item->product_id,
+                        'movement_type' => 'purchase',
+                        'quantity' => $item->quantity,
+                        'quantity_before' => $oldStock,
+                        'quantity_after' => $branchStock->fresh()->quantity,
+                        'reference_type' => Purchase::class,
+                        'reference_id' => $purchase->id,
+                        'notes' => "Restored Purchase: {$purchase->purchase_no}",
+                        'created_by' => Auth::id(),
+                    ]);
+                }
+
+                $purchase->restore();
+            });
+        }
+
+        return redirect()->route('purchases.trash')->with('success', 'Purchase restored successfully.');
+    }
+
+    public function forceDelete(Request $request, Purchase $purchase): RedirectResponse
+    {
+        if ($purchase->trashed()) {
+            $purchase->forceDelete();
+        }
+
+        return redirect()->route('purchases.trash')->with('success', 'Purchase permanently deleted.');
     }
 }
