@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Products', href: route('products.index') },
-    { title: 'Branch Pricing', href: '#' },
+    { title: 'Product Pricing', href: '#' },
 ];
 
 interface PriceChange {
@@ -163,12 +163,12 @@ export default function ProductPricing({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Branch Pricing" />
+            <Head title="Product Pricing" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 {/* Header */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold">Branch Pricing</h2>
+                        <h2 className="text-xl font-semibold">Product Pricing</h2>
                         <p className="text-muted-foreground text-sm">
                             Set branch-specific prices. Empty fields use the product's default price.
                         </p>

@@ -64,7 +64,7 @@ export default function QuickAdjustDialog({
             setMode('adjust');
             form.clearErrors();
         }
-    }, [open, product.id, branchId]);
+    }, [open, product.id, branchId, form]);
 
     // Handle "Set" mode calculation
     const handleSubmit = (e: React.FormEvent) => {
