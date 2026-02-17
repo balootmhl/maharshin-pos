@@ -276,6 +276,7 @@
         <!-- Header -->
         <div class="invoice-header">
             <div class="company-info">
+                <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 50px; margin-bottom: 5px;">
                 <h1>{{ $sale->branch?->name ?? 'Maharshin' }}</h1>
                 <p>{{ $sale->branch?->address ?? '' }}</p>
                 <p>{{ $sale->branch?->phone ?? '' }}</p>
@@ -314,7 +315,7 @@
                     <th>Item</th>
                     <th>Qty</th>
                     <th>Price</th>
-                    <th>Tax</th>
+                    <th>Group</th>
                     <th>Amount</th>
                 </tr>
             </thead>
@@ -327,7 +328,7 @@
                         </td>
                         <td>{{ $item->quantity }}</td>
                         <td>{{ number_format($item->unit_price, 0) }}</td>
-                        <td>{{ number_format($item->tax_amount, 0) }}</td>
+                        <td>{{ $item->product?->branchStocks->where('branch_id', $sale->branch_id)->first()?->group?->name ?? '-' }}</td>
                         <td>{{ number_format($item->subtotal, 0) }}</td>
                     </tr>
                 @endforeach
