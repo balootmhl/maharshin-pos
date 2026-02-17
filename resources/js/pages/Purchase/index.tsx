@@ -2,15 +2,24 @@ import { CreateBtn } from '@/components/buttons/create-btn';
 import { DataTable, FilterPanelProps } from '@/components/tables/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { useDirectPrint } from '@/hooks/use-direct-print';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PaginatedData, Purchase } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Edit, Trash2, X } from 'lucide-react';
+import { ArrowUpDown, Edit, Printer, Trash2, X } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -147,38 +156,7 @@ const columns: ColumnDef<Purchase>[] = [
     {
         id: 'actions',
         enableHiding: false,
-        cell: ({ row }) => {
-            // Check if purchase was created more than 3 days ago
-            const canEdit = row.original.created_at
-                ? new Date(row.original.created_at) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-                : false;
-
-            if (!canEdit) return null;
-
-            return (
-                <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href={route('purchases.edit', { purchase: row.original.id })}>
-                            <Edit className="h-4 w-4" />
-                        </Link>
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                        onClick={() => {
-                            if (confirm('Are you sure you want to delete this purchase? This action cannot be undone.')) {
-                                router.visit(route('purchases.destroy', { purchase: row.original.id }), {
-                                    method: 'delete',
-                                });
-                            }
-                        }}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            );
-        },
+        cell: ({ row }) => <ActionsCell row={row} />,
     },
 ];
 
@@ -326,6 +304,63 @@ function PurchaseFilterPanel({ table, onClearFilters }: FilterPanelProps<Purchas
         </div>
     );
 }
+
+
+
+const ActionsCell = ({ row }: { row: { original: Purchase } }) => {
+    const { printUrl } = useDirectPrint();
+    // Check if purchase was created more than 3 days ago
+    const canEdit = row.original.created_at ? new Date(row.original.created_at) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) : false;
+
+    return (
+        <div className="flex items-center gap-1">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <Printer className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Print Invoice</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => printUrl(route('purchases.print', { purchase: row.original.id, format: 'a4' }))}>
+                        Print A4
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => printUrl(route('purchases.print', { purchase: row.original.id, format: 'a5' }))}>
+                        Print A5
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => printUrl(route('purchases.print', { purchase: row.original.id, format: 'thermal' }))}>
+                        Print Thermal
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            {canEdit && (
+                <>
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href={route('purchases.edit', { purchase: row.original.id })}>
+                            <Edit className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                            if (confirm('Are you sure you want to delete this purchase? This action cannot be undone.')) {
+                                router.visit(route('purchases.destroy', { purchase: row.original.id }), {
+                                    method: 'delete',
+                                });
+                            }
+                        }}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </>
+            )}
+        </div>
+    );
+};
 
 export default function PurchaseIndex({ purchases }: { purchases: PaginatedData<Purchase> | LaravelPaginator<Purchase> }) {
     return (
