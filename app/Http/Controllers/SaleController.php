@@ -202,7 +202,7 @@ class SaleController extends Controller
             return redirect()->route('sales.index')->with('error', 'Sale cannot be edited after 3 days.');
         }
 
-        $sale->load(['saleItems.product.branch_stocks', 'customer', 'branch']);
+        $sale->load(['saleItems.product.branchStocks', 'customer', 'branch']);
 
         return Inertia::render('Sale/edit', [
             'sale' => $sale,
