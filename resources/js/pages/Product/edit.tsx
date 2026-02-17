@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Category, Product } from '@/types';
+import { type BreadcrumbItem, Category, Group, Product } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
@@ -22,6 +22,7 @@ type ProductForm = {
     tax_rate: string;
     low_stock_alert: string;
     is_active: boolean;
+    group_id: string;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -35,13 +36,14 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function ProductEdit({ product, categories }: { product: Product; categories: Category[] }) {
+export default function ProductEdit({ product, categories, groups }: { product: Product; categories: Category[]; groups: Group[] }) {
     const { data, setData, patch, errors, processing } = useForm<ProductForm>({
         code: product.code,
         barcode: product.barcode || '',
         name: product.name,
         description: product.description || '',
         category_id: String(product.category_id),
+        group_id: product.branch_stocks && product.branch_stocks.length > 0 ? String(product.branch_stocks[0].group_id || '') : '',
         unit: product.unit || 'pcs',
         cost_price: String(product.cost_price),
         selling_price: String(product.selling_price),
@@ -101,6 +103,22 @@ export default function ProductEdit({ product, categories }: { product: Product;
                                     </SelectContent>
                                 </Select>
                                 <InputError className="mt-2" message={errors.category_id} />
+                            </div>
+                            <div className="grid grid-flow-row gap-2">
+                                <Label htmlFor="group_id">Group</Label>
+                                <Select value={data.group_id} onValueChange={(v) => setData('group_id', v)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select group" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {groups.map((group) => (
+                                            <SelectItem key={group.id} value={String(group.id)}>
+                                                {group.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError className="mt-2" message={errors.group_id} />
                             </div>
                         </div>
                         <div className="grid grid-flow-row gap-2">

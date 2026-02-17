@@ -7,6 +7,7 @@ use App\Http\Requests\ProductUpdateRequest;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Group;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -85,10 +86,13 @@ class ProductController extends Controller
     public function edit(Request $request, Product $product): Response
     {
         $categories = Category::where('is_active', true)->get();
+        $groups = Group::where('is_active', true)->get();
+        $product->load('branchStocks');
 
         return Inertia::render('Product/edit', [
             'product' => $product,
             'categories' => $categories,
+            'groups' => $groups,
         ]);
     }
 
@@ -98,6 +102,12 @@ class ProductController extends Controller
         $data['updated_by'] = Auth::id();
 
         $product->update($data);
+
+        // Update branch stocks with new group and prices if they exist in the request
+        if ($request->has('group_id')) {
+            // This will respect the BranchScope if active, updating only for the current branch
+            $product->branchStocks()->update(['group_id' => $data['group_id']]);
+        }
 
         $request->session()->flash('product.id', $product->id);
 
