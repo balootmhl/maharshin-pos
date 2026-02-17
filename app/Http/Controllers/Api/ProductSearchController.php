@@ -27,10 +27,10 @@ class ProductSearchController extends Controller
         if ($request->filled('branch_id')) {
             $branchId = $request->input('branch_id');
             $query->with(['branchStocks' => function ($q) use ($branchId) {
-                $q->where('branch_id', $branchId);
+                $q->where('branch_id', $branchId)->with('group:id,name');
             }]);
         } else {
-            $query->with('branchStocks');
+            $query->with(['branchStocks.group:id,name']);
         }
 
         // Search by name, code, or barcode

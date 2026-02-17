@@ -159,6 +159,7 @@ export default function SaleCreate({
             stock: stock?.quantity ?? 0,
             price: stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price),
             cost: stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price),
+            groupName: stock?.group?.name, // Add group name
         };
     }, [data.branch_id]);
 
@@ -425,6 +426,9 @@ export default function SaleCreate({
                                                     e.preventDefault();
                                                     const selectedProduct = searchResults[selectedIndex];
                                                     if (selectedProduct) {
+                                                        // Prevent adding if out of stock
+                                                        if (getProductDetails(selectedProduct).stock <= 0) return;
+                                                        
                                                         addToCart(selectedProduct);
                                                         setSearchQuery('');
                                                         setSearchOpen(false);
@@ -704,6 +708,12 @@ export default function SaleCreate({
                                                             <div className="font-medium">{item.product.name}</div>
                                                             <div className="text-muted-foreground text-xs">
                                                                 @ {formatCurrency(item.unit_price)} Ks
+                                                                {/* Display Group Name if available */}
+                                                                {getProductDetails(item.product).groupName && (
+                                                                    <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-0 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                                                        {getProductDetails(item.product).groupName}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </TableCell>
                                                         <TableCell>
