@@ -64,7 +64,8 @@ export default function QuickAdjustDialog({
             setMode('adjust');
             form.clearErrors();
         }
-    }, [open, product.id, branchId, form]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, product.id, branchId]);
 
     // Handle "Set" mode calculation
     const handleSubmit = (e: React.FormEvent) => {

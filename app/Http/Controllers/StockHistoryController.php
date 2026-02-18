@@ -33,7 +33,14 @@ class StockHistoryController extends Controller
             ])
             ->allowedSorts(['created_at', 'id'])
             ->defaultSort('-created_at')
-            ->with(['causer', 'subject'])
+            ->with(['causer'])
+            ->with(['subject' => function ($query) {
+                $query->morphWith([
+                    \App\Models\BranchStock::class => ['product'],
+                    \App\Models\StockMovement::class => ['product'],
+                    \App\Models\StockAdjustment::class => ['product'],
+                ]);
+            }])
             ->paginate($request->input('per_page', 50))
             ->withQueryString();
 

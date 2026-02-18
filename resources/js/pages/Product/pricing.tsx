@@ -230,6 +230,7 @@ export default function ProductPricing({
                             <TableRow>
                                 <TableHead className="w-[120px]">Code</TableHead>
                                 <TableHead>Name</TableHead>
+                                <TableHead className="w-[100px]">Group</TableHead>
                                 <TableHead className="w-[100px]">Category</TableHead>
                                 <TableHead className="w-[80px] text-right">Stock</TableHead>
                                 <TableHead className="w-[60px]">Unit</TableHead>
@@ -269,6 +270,9 @@ export default function ProductPricing({
                                         >
                                             <TableCell className="font-mono text-xs">{product.code}</TableCell>
                                             <TableCell className="text-sm font-medium">{product.name}</TableCell>
+                                            <TableCell className="text-muted-foreground text-xs">
+                                                {bs?.group?.name}
+                                            </TableCell>
                                             <TableCell className="text-muted-foreground text-xs">
                                                 {product.category?.name}
                                             </TableCell>

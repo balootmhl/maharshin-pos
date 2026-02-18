@@ -30,6 +30,12 @@ type Activity = {
     causer?: User;
     properties: ActivityProperties;
     event?: string;
+    subject?: {
+        product?: {
+            code: string;
+            name: string;
+        };
+    };
     created_at: string;
 };
 
@@ -133,6 +139,21 @@ const columns: ColumnDef<Activity>[] = [
         filterFn: (row, id, value) => {
             return row.getValue(id) === value;
         },
+    },
+    {
+        accessorKey: 'subject.product.name',
+        header: 'Product',
+        cell: ({ row }) => {
+            const product = row.original.subject?.product as { code: string; name: string } | undefined;
+            if (!product) return <span className="text-muted-foreground">-</span>;
+            return (
+                <div className="flex flex-col">
+                    <span className="text-sm font-medium">{product.name}</span>
+                    <span className="text-muted-foreground font-mono text-xs">{product.code}</span>
+                </div>
+            );
+        },
+        enableSorting: false, // Sorting by related model field requires more backend logic
     },
     {
         accessorKey: 'subject_type',

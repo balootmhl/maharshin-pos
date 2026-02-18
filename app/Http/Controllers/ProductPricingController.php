@@ -31,7 +31,9 @@ class ProductPricingController extends Controller
             $products = [];
         } else {
             $products = Product::with(['category', 'branchStocks' => function ($query) use ($branchId) {
-                    $query->withoutGlobalScopes()->where('branch_id', $branchId);
+                    $query->withoutGlobalScopes()
+                          ->where('branch_id', $branchId)
+                          ->with('group');
                 }])
                 ->where('is_active', true)
                 ->when($search, function ($query, $search) {
