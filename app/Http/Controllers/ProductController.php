@@ -52,9 +52,11 @@ class ProductController extends Controller
     public function create(Request $request): Response
     {
         $categories = Category::where('is_active', true)->get();
+        $groups = Group::where('is_active', true)->get();
 
         return Inertia::render('Product/create', [
             'categories' => $categories,
+            'groups' => $groups,
         ]);
     }
 
@@ -68,6 +70,18 @@ class ProductController extends Controller
 
         /** @var Product $product */
         $product = Product::create($data);
+
+        if (!empty($data['group_id'])) {
+            // Get all active branches and create default branch stock records with the chosen group
+            $branches = Branch::where('is_active', true)->get();
+            foreach ($branches as $branch) {
+                $product->branchStocks()->create([
+                    'branch_id' => $branch->id,
+                    'group_id' => $data['group_id'],
+                    'quantity' => 0,
+                ]);
+            }
+        }
 
         $request->session()->flash('product.id', $product->id);
 

@@ -6,9 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Category } from '@/types';
+import { type BreadcrumbItem, Category, Group } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ProductForm = {
     code: string;
@@ -16,6 +20,7 @@ type ProductForm = {
     name: string;
     description: string;
     category_id: string;
+    group_id: string;
     unit: string;
     cost_price: string;
     selling_price: string;
@@ -35,13 +40,15 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function ProductCreate({ categories }: { categories: Category[] }) {
+export default function ProductCreate({ categories, groups }: { categories: Category[]; groups: Group[] }) {
+    const [openGroup, setOpenGroup] = useState(false);
     const { data, setData, post, reset, errors, processing } = useForm<ProductForm>({
         code: '',
         barcode: '',
         name: '',
         description: '',
         category_id: '',
+        group_id: '',
         unit: 'pcs',
         cost_price: '0',
         selling_price: '0',
@@ -66,7 +73,7 @@ export default function ProductCreate({ categories }: { categories: Category[] }
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <form onSubmit={submit} className="md:max-w-2xl">
                     <div className="space-y-6">
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-4 gap-4">
                             <div className="grid grid-flow-row gap-2">
                                 <Label htmlFor="code">Product Code*</Label>
                                 <Input
@@ -104,6 +111,53 @@ export default function ProductCreate({ categories }: { categories: Category[] }
                                     </SelectContent>
                                 </Select>
                                 <InputError className="mt-2" message={errors.category_id} />
+                            </div>
+                            <div className="grid grid-flow-row gap-2">
+                                <Label htmlFor="group_id">Group</Label>
+                                <Popover open={openGroup} onOpenChange={setOpenGroup}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={openGroup}
+                                            className={cn("w-full justify-between font-normal", !data.group_id && "text-muted-foreground")}
+                                        >
+                                            {data.group_id
+                                                ? groups.find((group) => String(group.id) === data.group_id)?.name
+                                                : "Select group..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[300px] p-0" align="start">
+                                        <Command>
+                                            <CommandInput placeholder="Search group..." />
+                                            <CommandList>
+                                                <CommandEmpty>No group found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {groups.map((group) => (
+                                                        <CommandItem
+                                                            key={group.id}
+                                                            value={group.name}
+                                                            onSelect={() => {
+                                                                setData('group_id', String(group.id) === data.group_id ? "" : String(group.id));
+                                                                setOpenGroup(false);
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    data.group_id === String(group.id) ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {group.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <InputError className="mt-2" message={errors.group_id} />
                             </div>
                         </div>
                         <div className="grid grid-flow-row gap-2">

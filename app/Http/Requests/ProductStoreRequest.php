@@ -25,6 +25,7 @@ class ProductStoreRequest extends FormRequest
             'name' => ['required', 'string'],
             'description' => ['nullable', 'string'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
+            'group_id' => ['nullable', 'integer', 'exists:groups,id'],
             'unit' => ['required', 'string', 'max:50'],
             'cost_price' => ['required', 'numeric', 'between:-9999999999999.99,9999999999999.99'],
             'selling_price' => ['required', 'numeric', 'between:-9999999999999.99,9999999999999.99'],

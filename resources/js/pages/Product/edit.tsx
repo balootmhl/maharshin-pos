@@ -8,7 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, Category, Group, Product } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ProductForm = {
     code: string;
@@ -37,6 +41,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function ProductEdit({ product, categories, groups }: { product: Product; categories: Category[]; groups: Group[] }) {
+    const [openGroup, setOpenGroup] = useState(false);
     const { data, setData, patch, errors, processing } = useForm<ProductForm>({
         code: product.code,
         barcode: product.barcode || '',
@@ -106,18 +111,49 @@ export default function ProductEdit({ product, categories, groups }: { product: 
                             </div>
                             <div className="grid grid-flow-row gap-2">
                                 <Label htmlFor="group_id">Group</Label>
-                                <Select value={data.group_id} onValueChange={(v) => setData('group_id', v)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select group" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {groups.map((group) => (
-                                            <SelectItem key={group.id} value={String(group.id)}>
-                                                {group.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Popover open={openGroup} onOpenChange={setOpenGroup}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={openGroup}
+                                            className={cn("w-full justify-between font-normal", !data.group_id && "text-muted-foreground")}
+                                        >
+                                            {data.group_id
+                                                ? groups.find((group) => String(group.id) === data.group_id)?.name
+                                                : "Select group..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[300px] p-0" align="start">
+                                        <Command>
+                                            <CommandInput placeholder="Search group..." />
+                                            <CommandList>
+                                                <CommandEmpty>No group found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {groups.map((group) => (
+                                                        <CommandItem
+                                                            key={group.id}
+                                                            value={group.name}
+                                                            onSelect={() => {
+                                                                setData('group_id', String(group.id) === data.group_id ? "" : String(group.id));
+                                                                setOpenGroup(false);
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    data.group_id === String(group.id) ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {group.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                                 <InputError className="mt-2" message={errors.group_id} />
                             </div>
                         </div>
