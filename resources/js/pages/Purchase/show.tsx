@@ -81,8 +81,8 @@ export default function PurchaseShow({ purchase }: { purchase: Purchase }) {
                                     {purchase.purchase_items.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
-                                                <div className="font-medium">{item.product?.name}</div>
-                                                <div className="text-muted-foreground font-mono text-xs">{item.product?.code}</div>
+                                                <div className="text-xs font-bold font-mono">{item.product?.code}</div>
+                                                <div className="text-muted-foreground text-xs">{item.product?.name}</div>
                                             </TableCell>
                                             <TableCell className="text-right">{item.quantity}</TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(item.unit_cost)}</TableCell>

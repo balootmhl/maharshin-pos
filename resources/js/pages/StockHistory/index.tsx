@@ -148,8 +148,8 @@ const columns: ColumnDef<Activity>[] = [
             if (!product) return <span className="text-muted-foreground">-</span>;
             return (
                 <div className="flex flex-col">
-                    <span className="text-sm font-medium">{product.name}</span>
-                    <span className="text-muted-foreground font-mono text-xs">{product.code}</span>
+                    <span className="text-sm font-mono font-medium">{product.code}</span>
+                    <span className="text-muted-foreground text-xs">{product.name}</span>
                 </div>
             );
         },

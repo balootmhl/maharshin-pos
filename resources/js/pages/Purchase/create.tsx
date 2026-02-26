@@ -434,9 +434,9 @@ export default function PurchaseCreate({
                                                     }`}
                                                 >
                                                     <div className="flex flex-col">
-                                                        <span className="font-medium">{product.name}</span>
-                                                        <span className="text-muted-foreground text-xs font-mono">
-                                                            {product.code}
+                                                        <span className="font-small font-mono">{product.code}</span>
+                                                        <span className="text-muted-foreground text-xs">
+                                                            {product.name}
                                                             {product.barcode && ` • ${product.barcode}`}
                                                         </span>
                                                     </div>
@@ -617,9 +617,9 @@ export default function PurchaseCreate({
                                             {cart.map((item) => (
                                                 <TableRow key={item.product_id}>
                                                     <TableCell>
-                                                        <div className="font-medium">{item.product.name}</div>
+                                                        <div className="font-small font-mono">{item.product.code}</div>
                                                         <div className="text-muted-foreground text-xs">
-                                                            {item.product.code}
+                                                            {item.product.name}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>

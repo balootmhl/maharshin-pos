@@ -41,7 +41,7 @@ const columns: ColumnDef<BranchStock>[] = [
         id: 'product_code',
         accessorKey: 'product.code',
         header: 'Code',
-        cell: ({ row }) => <div className="font-mono text-xs">{row.original.product?.code}</div>,
+        cell: ({ row }) => <div className="font-mono font-bold text-sm">{row.original.product?.code}</div>,
     },
     {
         id: 'product_name',
@@ -54,7 +54,7 @@ const columns: ColumnDef<BranchStock>[] = [
                 </Button>
             );
         },
-        cell: ({ row }) => <div className="font-medium">{row.original.product?.name}</div>,
+        cell: ({ row }) => <div className="text-muted-foreground text-xs">{row.original.product?.name}</div>,
     },
     {
         id: 'branch_name',

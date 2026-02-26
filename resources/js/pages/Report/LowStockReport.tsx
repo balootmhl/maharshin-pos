@@ -134,8 +134,8 @@ export default function LowStockReport({
                                 {lowStockItems.map((item) => (
                                     <TableRow key={item.id}>
                                         <TableCell>
-                                            <div className="font-medium">{item.product_name}</div>
-                                            <div className="text-muted-foreground font-mono text-xs">{item.product_code}</div>
+                                            <div className="font-mono font-bold text-xs">{item.product_code}</div>
+                                            <div className="text-muted-foreground text-xs">{item.product_name}</div>
                                         </TableCell>
                                         <TableCell>{item.branch}</TableCell>
                                         <TableCell className="text-center">

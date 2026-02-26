@@ -234,8 +234,8 @@ export default function SalesReport({
                                         {topProducts.slice(0, 5).map((p, i) => (
                                             <TableRow key={i}>
                                                 <TableCell>
-                                                    <div className="font-medium">{p.name}</div>
-                                                    <div className="text-muted-foreground text-xs">{p.code}</div>
+                                                    <div className="font-mono text-xs font-bold">{p.code}</div>
+                                                    <div className="text-muted-foreground text-xs">{p.name}</div>
                                                 </TableCell>
                                                 <TableCell className="text-right">{p.qty_sold}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatCurrency(p.revenue)} Ks</TableCell>

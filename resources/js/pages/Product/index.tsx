@@ -47,7 +47,7 @@ const baseColumns: ColumnDef<Product>[] = [
     {
         accessorKey: 'code',
         header: 'Code',
-        cell: ({ row }) => <div className="font-mono text-xs text-muted-foreground">{row.getValue('code')}</div>,
+        cell: ({ row }) => <div className="text-medium font-mono font-bold">{row.getValue('code')}</div>,
     },
     {
         accessorKey: 'name',
@@ -61,7 +61,7 @@ const baseColumns: ColumnDef<Product>[] = [
         },
         cell: ({ row }) => (
             <Link
-                className="text-link font-medium hover:underline"
+                className="text-muted-foreground font-small hover:underline"
                 href={route('products.show', {
                     product: row.original.id,
                 })}

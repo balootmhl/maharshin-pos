@@ -268,8 +268,8 @@ export default function ProductPricing({
                                             key={product.id}
                                             className={`${index % 2 === 1 ? 'bg-muted/30' : ''} ${hasChange ? 'bg-yellow-50 dark:bg-yellow-950/20' : ''}`}
                                         >
-                                            <TableCell className="font-mono text-xs">{product.code}</TableCell>
-                                            <TableCell className="text-sm font-medium">{product.name}</TableCell>
+                                            <TableCell className="font-mono font-bold text-sm">{product.code}</TableCell>
+                                            <TableCell className="text-xs font-small">{product.name}</TableCell>
                                             <TableCell className="text-muted-foreground text-xs">
                                                 {bs?.group?.name}
                                             </TableCell>

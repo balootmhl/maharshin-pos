@@ -323,8 +323,8 @@
                 @foreach ($sale->saleItems as $item)
                     <tr>
                         <td>
-                            {{ $item->product?->name ?? 'Unknown Product' }}
-                            <div class="product-code">{{ $item->product?->code ?? '' }}</div>
+                            {{ $item->product?->code ?? '' }}
+                            <div class="product-code">{{ $item->product?->name ?? 'Unknown Product' }}</div>
                         </td>
                         <td>{{ $item->quantity }}</td>
                         <td>{{ number_format($item->unit_price, 0) }}</td>

@@ -374,9 +374,9 @@ export default function SaleEdit({
                                                     } ${index === selectedIndex ? 'bg-accent text-accent-foreground' : ''}`}
                                                 >
                                                      <div className="flex flex-col">
-                                                        <span className="font-medium">{product.name}</span>
-                                                        <span className="text-muted-foreground text-xs font-mono">
-                                                            {product.code}
+                                                        <span className="font-small font-mono">{product.code}</span>
+                                                        <span className="text-muted-foreground text-xs">
+                                                            {product.name}
                                                             {product.barcode && ` • ${product.barcode}`}
                                                         </span>
                                                     </div>

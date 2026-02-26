@@ -215,8 +215,8 @@ export default function StockAdjustmentIndex({
             header: 'Product',
             cell: ({ row }) => (
                 <div>
-                    <div className="font-medium">{row.original.product?.name}</div>
-                    <div className="text-muted-foreground font-mono text-xs">{row.original.product?.code}</div>
+                    <div className="font-medium font-mono">{row.original.product?.code}</div>
+                    <div className="text-muted-foreground text-xs">{row.original.product?.name}</div>
                 </div>
             ),
             filterFn: (row, id, value) => {

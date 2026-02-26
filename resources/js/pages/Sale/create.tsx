@@ -494,9 +494,9 @@ export default function SaleCreate({
                                                         } ${index === selectedIndex ? 'bg-accent text-accent-foreground' : ''}`}
                                                     >
                                                         <div className="flex flex-col">
-                                                            <span className="font-medium">{product.name}</span>
-                                                            <span className="text-muted-foreground text-xs font-mono">
-                                                                {product.code}
+                                                            <span className="font-small font-mono">{product.code}</span>
+                                                            <span className="text-muted-foreground text-xs">
+                                                                {product.name}
                                                                 {product.barcode && ` • ${product.barcode}`}
                                                             </span>
                                                         </div>
@@ -718,9 +718,9 @@ export default function SaleCreate({
                                                 {cart.map((item) => (
                                                     <TableRow key={item.product_id}>
                                                         <TableCell>
-                                                            <div className="font-medium">{item.product.name}</div>
+                                                            <div className="font-small font-mono">{item.product.code}</div>
                                                             <div className="text-muted-foreground text-xs">
-                                                                @ {formatCurrency(item.unit_price)} Ks
+                                                                {item.product.name} - {formatCurrency(item.unit_price)} Ks
                                                                 {/* Display Group Name if available */}
                                                                 {getProductDetails(item.product).groupName && (
                                                                     <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-0 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
