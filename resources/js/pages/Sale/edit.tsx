@@ -81,6 +81,11 @@ export default function SaleEdit({
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+    const [discountPercentage, setDiscountPercentage] = useState<string>(
+        sale.discount_amount > 0 && sale.subtotal > 0
+            ? parseFloat(((sale.discount_amount / sale.subtotal) * 100).toFixed(2)).toString()
+            : ''
+    );
     const searchInputRef = useRef<HTMLInputElement>(null);
     const barcodeInputRef = useRef<HTMLInputElement>(null);
     const discountInputRef = useRef<HTMLInputElement>(null);
@@ -181,6 +186,17 @@ export default function SaleEdit({
             payment_status: status,
         }));
     }, [data.paid_amount, cartTotals.total, setData]);
+
+    // Recalculate discount if percentage is active
+    useEffect(() => {
+        if (discountPercentage && cartTotals.subtotal > 0) {
+            const perc = parseFloat(discountPercentage);
+            if (!isNaN(perc)) {
+                setData('discount_amount', Math.round(cartTotals.subtotal * (perc / 100)));
+            }
+        }
+    }, [cartTotals.subtotal, discountPercentage, setData]);
+
 
 
     const addToCart = useCallback((product: Product) => {
@@ -611,24 +627,52 @@ export default function SaleEdit({
                             </div>
                              <div className="flex items-center justify-between text-sm">
                                 <span>Discount</span>
-                                <Input
-                                    ref={discountInputRef}
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={data.discount_amount || ''}
-                                    onChange={(e) => {
-                                        const val = e.target.value.replace(/[^0-9]/g, '');
-                                        setData('discount_amount', val === '' ? 0 : parseInt(val, 10));
-                                    }}
-                                    onKeyDown={(e) => {
+                                <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                        <Input
+                                            type="text"
+                                            inputMode="decimal"
+                                            value={discountPercentage}
+                                            placeholder="%"
+                                            onChange={(e) => {
+                                                let val = e.target.value.replace(/[^0-9.]/g, '');
+                                                if (val.split('.').length > 2) val = val.substring(0, val.length - 1);
+                                                setDiscountPercentage(val);
+                                                if (val === '') {
+                                                    setData('discount_amount', 0);
+                                                } else if (cartTotals.subtotal > 0) {
+                                                    const perc = parseFloat(val);
+                                                    if (!isNaN(perc)) {
+                                                        setData('discount_amount', Math.round(cartTotals.subtotal * (perc / 100)));
+                                                    }
+                                                }
+                                            }}
+                                            className="h-8 w-16 text-right font-mono pr-6"
+                                            tabIndex={6}
+                                        />
+                                        <span className="absolute right-2 top-1.5 text-xs text-muted-foreground">%</span>
+                                    </div>
+                                    <Input
+                                        ref={discountInputRef}
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={data.discount_amount || ''}
+                                        placeholder="Ks"
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            setData('discount_amount', val === '' ? 0 : parseInt(val, 10));
+                                            setDiscountPercentage('');
+                                        }}
+                                        onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 e.preventDefault();
                                                 paidAmountInputRef.current?.focus();
                                             }
                                         }}
-                                    className="h-8 w-28 text-right font-mono"
-                                    tabIndex={6}
-                                />
+                                        className="h-8 w-24 text-right font-mono"
+                                        tabIndex={7}
+                                    />
+                                </div>
                             </div>
                             <Separator />
                             <div className="flex justify-between text-lg font-bold">
@@ -640,7 +684,7 @@ export default function SaleEdit({
                                  <div className="space-y-1">
                                     <Label className="text-xs">Payment Method</Label>
                                     <Select value={data.payment_method} onValueChange={(v) => setData('payment_method', v)}>
-                                        <SelectTrigger className="h-9" tabIndex={7}>
+                                        <SelectTrigger className="h-9" tabIndex={8}>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -669,7 +713,7 @@ export default function SaleEdit({
                                         setData('paid_amount', val === '' ? 0 : parseInt(val, 10));
                                     }}
                                     className="h-10 text-right font-mono text-lg font-bold"
-                                    tabIndex={8}
+                                    tabIndex={9}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">

@@ -148,7 +148,7 @@ export default function SaleShow({ sale }: { sale: Sale }) {
                                 <span className="font-mono">{formatCurrency(sale.tax_amount)} Ks</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Discount</span>
+                                <span className="text-muted-foreground">Discount {sale.discount_amount > 0 && sale.subtotal > 0 && `(${parseFloat(((sale.discount_amount / sale.subtotal) * 100).toFixed(2))}%)`}</span>
                                 <span className="font-mono">-{formatCurrency(sale.discount_amount)} Ks</span>
                             </div>
                             <div className="flex justify-between border-t pt-2 text-lg font-bold">
@@ -221,7 +221,7 @@ export default function SaleShow({ sale }: { sale: Sale }) {
                         )}
                         {sale.discount_amount > 0 && (
                             <div className="row">
-                                <span>Discount:</span>
+                                <span>Discount {sale.subtotal > 0 && `(${parseFloat(((sale.discount_amount / sale.subtotal) * 100).toFixed(2))}%)`}:</span>
                                 <span>-{formatCurrency(sale.discount_amount)} Ks</span>
                             </div>
                         )}

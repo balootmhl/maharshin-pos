@@ -348,7 +348,7 @@
                 </tr>
                 @if ($sale->discount_amount > 0)
                     <tr>
-                        <td>Discount</td>
+                        <td>Discount {{ $sale->subtotal > 0 ? '(' . floatval(number_format(($sale->discount_amount / $sale->subtotal) * 100, 2)) . '%)' : '' }}</td>
                         <td>-{{ number_format($sale->discount_amount, 0) }} Ks</td>
                     </tr>
                 @endif

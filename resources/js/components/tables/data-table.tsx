@@ -210,40 +210,6 @@ export function DataTable<TData>({
     const onColumnFiltersChange = (updater: Updater<ColumnFiltersState>) => {
         const nextState = typeof updater === 'function' ? updater(columnFilters) : updater;
         setColumnFilters(nextState);
-
-        if (isServerSide) {
-            const updates: Record<string, string | number | undefined> = {};
-
-            // Identify removed filters
-            columnFilters.forEach((oldFilter) => {
-                const isStillActive = nextState.find((f) => f.id === oldFilter.id);
-                if (!isStillActive) {
-                    updates[`filter[${oldFilter.id}]`] = undefined;
-                }
-            });
-
-            // Identify added/updated filters
-            nextState.forEach((newFilter) => {
-                const value = newFilter.value;
-                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                    // Handle object values (ranges) by flattening
-                    // e.g. {start: 'x', end: 'y'} -> filter[id_start]=x, filter[id_end]=y
-                    Object.entries(value).forEach(([subKey, subValue]) => {
-                         if (subValue !== undefined && subValue !== '') {
-                             updates[`filter[${newFilter.id}_${subKey}]`] = String(subValue);
-                         }
-                    });
-                } else {
-                    updates[`filter[${newFilter.id}]`] = String(value);
-                }
-            });
-            
-            // Reset page to 1 when filtering changes, unless it's just a removal checking
-            if (Object.keys(updates).length > 0) {
-                 updates['page'] = 1;
-                 updateServerParams(updates);
-            }
-        }
     };
     
     // Debounced global search
@@ -304,9 +270,18 @@ export function DataTable<TData>({
              const filterParams: Record<string, string | number | undefined> = {};
              
              columnFilters.forEach((filter) => {
-                 if (filter.value !== undefined && filter.value !== null && (Array.isArray(filter.value) ? filter.value.length > 0 : true)) {
-                     const val = Array.isArray(filter.value) ? filter.value.join(',') : String(filter.value);
-                     filterParams[`filter[${filter.id}]`] = val;
+                 const value = filter.value;
+                 if (value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)) {
+                     if (typeof value === 'object' && !Array.isArray(value)) {
+                         Object.entries(value).forEach(([subKey, subValue]) => {
+                             if (subValue !== undefined && subValue !== '') {
+                                 filterParams[`filter[${filter.id}_${subKey}]`] = String(subValue);
+                             }
+                         });
+                     } else {
+                         const val = Array.isArray(value) ? value.join(',') : String(value);
+                         filterParams[`filter[${filter.id}]`] = val;
+                     }
                  }
              });
              
@@ -315,21 +290,22 @@ export function DataTable<TData>({
              const keysToDelete: string[] = [];
              currentUrlParams.forEach((_, key) => {
                  if (key.startsWith('filter[') && key !== 'filter[global]') {
-                     // Check if this filter is present in current columnFilters
-                     // Extract ID from filter[ID]
-                     const match = key.match(/filter\[(.*?)\]/);
-                     if (match && match[1]) {
-                         const id = match[1];
-                         const hasFilter = columnFilters.some(f => f.id === id);
-                         if (!hasFilter) {
-                             keysToDelete.push(key);
-                         }
+                     if (!(key in filterParams)) {
+                         keysToDelete.push(key);
                      }
                  }
              });
 
+             // Check if there are ACTUAL differences between URL and our new state to avoid infinite ping
+             let hasChanges = keysToDelete.length > 0;
+             Object.entries(filterParams).forEach(([key, value]) => {
+                 if (currentUrlParams.get(key) !== value) {
+                     hasChanges = true;
+                 }
+             });
+
              // Apply updates if there are changes
-             if (Object.keys(filterParams).length > 0 || keysToDelete.length > 0) {
+             if (hasChanges) {
                  const paramsToUpdate = { ...filterParams };
                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                  keysToDelete.forEach(k => (paramsToUpdate as any)[k] = '');

@@ -31,9 +31,15 @@ class PurchaseController extends Controller
             ->allowedFilters([
                 'purchase_no',
                 'payment_status',
-                AllowedFilter::callback('supplier.name', function ($query, $value) {
+                AllowedFilter::callback('supplier', function ($query, $value) {
                     $query->whereHas('supplier', function ($q) use ($value) {
                         $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::callback('products', function ($query, $value) {
+                    $query->whereHas('purchaseItems.product', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%")
+                          ->orWhere('code', 'like', "%{$value}%");
                     });
                 }),
                 AllowedFilter::scope('purchase_date_start'),
@@ -336,9 +342,15 @@ class PurchaseController extends Controller
             ->allowedFilters([
                 'purchase_no',
                 'payment_status',
-                AllowedFilter::callback('supplier.name', function ($query, $value) {
+                AllowedFilter::callback('supplier', function ($query, $value) {
                     $query->whereHas('supplier', function ($q) use ($value) {
                         $q->where('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::callback('products', function ($query, $value) {
+                    $query->whereHas('purchaseItems.product', function ($q) use ($value) {
+                        $q->where('name', 'like', "%{$value}%")
+                          ->orWhere('code', 'like', "%{$value}%");
                     });
                 }),
                 AllowedFilter::scope('purchase_date_start'),
