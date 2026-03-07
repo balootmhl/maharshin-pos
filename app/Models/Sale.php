@@ -26,6 +26,7 @@ class Sale extends BaseModel
         'invoice_no',
         'branch_id',
         'customer_id',
+        'price_type',
         'sale_date',
         'subtotal',
         'tax_amount',

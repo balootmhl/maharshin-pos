@@ -194,6 +194,7 @@ export interface Sale {
     paid_amount: number;
     credit_amount: number;
     notes?: string;
+    price_type?: string;
     created_by?: number;
     createdBy?: User;
     sale_items?: SaleItem[];

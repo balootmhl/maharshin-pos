@@ -33,6 +33,7 @@ class SaleStoreRequest extends FormRequest
         return [
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+            'price_type' => ['required', 'string', 'in:selling_price,cost_price'],
             'sale_date' => ['required', 'date'],
             'subtotal' => ['required', 'numeric', 'min:0'],
             'tax_amount' => ['required', 'numeric', 'min:0'],

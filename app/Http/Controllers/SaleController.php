@@ -102,6 +102,7 @@ class SaleController extends Controller
                 'invoice_no' => $invoiceNo,
                 'branch_id' => $validated['branch_id'],
                 'customer_id' => $validated['customer_id'] ?? null,
+                'price_type' => $validated['price_type'],
                 'sale_date' => $validated['sale_date'],
                 'subtotal' => $validated['subtotal'],
                 'tax_amount' => $validated['tax_amount'],
@@ -225,6 +226,7 @@ class SaleController extends Controller
         }
 
         $validated = $request->validated();
+        \Illuminate\Support\Facades\Log::info("UPDATING SALE", ['sale_id' => $sale->id, 'validated_items' => $validated['items'] ?? 'MISSING']);
 
         DB::transaction(function () use ($validated, $sale) {
             // 1. REVERSAL PHASE
@@ -289,6 +291,7 @@ class SaleController extends Controller
             $sale->update([
                 'branch_id' => $validated['branch_id'],
                 'customer_id' => $validated['customer_id'] ?? null,
+                'price_type' => $validated['price_type'],
                 'sale_date' => $validated['sale_date'],
                 'subtotal' => $validated['subtotal'],
                 'tax_amount' => $validated['tax_amount'],

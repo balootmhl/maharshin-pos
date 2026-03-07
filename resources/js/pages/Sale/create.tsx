@@ -14,9 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Category, Customer, Product } from '@/types';
+import { type BreadcrumbItem, Branch, Customer, Product } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, Loader2, Minus, Package, Pause, Play, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Minus, Package, Pause, Play, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 
@@ -50,6 +50,7 @@ type SaleForm = {
     paid_amount: number;
     credit_amount: number;
     notes: string;
+    price_type: string;
     items: {
         product_id: number;
         quantity: number;
@@ -62,11 +63,12 @@ type SaleForm = {
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'POS', href: route('sales.create') }];
 
-const formatCurrency = (value: number) => {
+const formatCurrency = (value: number | string | null | undefined) => {
+    const num = Number(value) || 0;
     return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-    }).format(value);
+    }).format(num);
 };
 
 const paymentMethods = ['Cash', 'KBZ Pay', 'Wave Money', 'Bank Transfer', 'Card'];
@@ -87,11 +89,9 @@ type CompletedSale = {
 export default function SaleCreate({
     branches,
     customers,
-    categories,
 }: {
     branches: Branch[];
     customers: Customer[];
-    categories: Category[];
     invoiceNo: string;
 }) {
     // Get flash data for completed sale
@@ -115,7 +115,6 @@ export default function SaleCreate({
     const [searchQuery, setSearchQuery] = useState('');
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [heldSales, setHeldSales] = useState<HeldSale[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const barcodeInputRef = useRef<HTMLInputElement>(null);
@@ -123,7 +122,7 @@ export default function SaleCreate({
     const paidAmountInputRef = useRef<HTMLInputElement>(null);
 
     // Server-side product search
-    const { products: searchResults, isLoading: isSearching, search: searchProducts, searchByCategory, lookupBarcode } = useProductSearch({
+    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
         branchId: branches[0]?.id?.toString() || '',
         context: 'sale',
     });
@@ -141,6 +140,7 @@ export default function SaleCreate({
         paid_amount: 0,
         credit_amount: 0,
         notes: '',
+        price_type: 'selling_price',
         items: [],
     });
 
@@ -151,18 +151,20 @@ export default function SaleCreate({
         if (!branchId || !product.branch_stocks) {
              return {
                 stock: product.stock ?? 0,
-                price: Number(product.selling_price),
+                price: data.price_type === 'cost_price' ? Number(product.cost_price) : Number(product.selling_price),
                 cost: Number(product.cost_price),
              };
         }
         const stock = product.branch_stocks.find(bs => bs.branch_id === branchId);
         return {
             stock: stock?.quantity ?? 0,
-            price: stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price),
+            price: data.price_type === 'cost_price' 
+                ? (stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price))
+                : (stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price)),
             cost: stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price),
             groupName: stock?.group?.name, // Add group name
         };
-    }, [data.branch_id]);
+    }, [data.branch_id, data.price_type]);
 
     // Clear cart when branch changes to avoid price/stock mismatches
     useEffect(() => {
@@ -173,7 +175,7 @@ export default function SaleCreate({
     const cartTotals = useMemo(() => {
         const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
         const taxAmount = cart.reduce((sum, item) => sum + item.tax_amount, 0);
-        const total = subtotal + taxAmount - data.discount_amount;
+        const total = subtotal + taxAmount - Number(data.discount_amount || 0);
         return { subtotal, taxAmount, total };
     }, [cart, data.discount_amount]);
 
@@ -404,7 +406,7 @@ export default function SaleCreate({
         <>
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="POS - New Sale" />
-                <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-[1fr_400px] h-[calc(100vh-120px)] gap-4 p-4 overflow-hidden">
+                <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(400px,450px)] h-[calc(100vh-110px)] gap-4 p-4 overflow-hidden">
                     {/* Left: Product Selection */}
                     <div className="flex flex-col gap-4 h-full">
                         {/* Keyboard-First Product Search */}
@@ -532,9 +534,9 @@ export default function SaleCreate({
                             />
                         </div>
 
-                        {/* Header with Branch and Customer */}
+                        {/* Header with Branch, Customer, and Price Type */}
                         <Card>
-                            <CardContent className="grid grid-cols-2 gap-4 pt-4">
+                            <CardContent className="grid grid-cols-3 gap-4 pt-4">
                                 <div className="space-y-2">
                                     <Label>Branch</Label>
                                     <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
@@ -564,6 +566,39 @@ export default function SaleCreate({
                                                     {c.name} ({c.code})
                                                 </SelectItem>
                                             ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Price Type</Label>
+                                    <Select 
+                                        value={data.price_type} 
+                                        onValueChange={(v) => {
+                                            setData('price_type', v);
+                                            // Recalculate cart prices instantly based on new price type
+                                            setCart(prev => prev.map(item => {
+                                                const product = item.product;
+                                                const branchId = parseInt(data.branch_id);
+                                                const stock = product.branch_stocks?.find(bs => bs.branch_id === branchId);
+                                                const newPrice = v === 'cost_price' 
+                                                    ? (stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price))
+                                                    : (stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price));
+                                                
+                                                return {
+                                                    ...item,
+                                                    unit_price: newPrice,
+                                                    tax_amount: item.quantity * newPrice * (item.tax_rate / 100),
+                                                    subtotal: newPrice * item.quantity
+                                                };
+                                            }));
+                                        }}
+                                    >
+                                        <SelectTrigger tabIndex={5}>
+                                            <SelectValue placeholder="Select Price Type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="selling_price">Selling Price</SelectItem>
+                                            <SelectItem value="cost_price">Cost Price</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

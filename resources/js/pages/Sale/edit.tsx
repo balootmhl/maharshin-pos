@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Category, Customer, Product, Sale } from '@/types';
+import { type BreadcrumbItem, Branch, Customer, Product, Sale } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { AlertTriangle, Loader2, Minus, Package, Plus, ShoppingCart, Trash2, ArrowLeft, Save } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -41,6 +41,7 @@ type SaleForm = {
     paid_amount: number;
     credit_amount: number;
     notes: string;
+    price_type: string;
     items: {
         product_id: number;
         quantity: number;
@@ -53,23 +54,22 @@ type SaleForm = {
     creator_id?: number;
 };
 
-const formatCurrency = (value: number) => {
+const formatCurrency = (value: number | string | null | undefined) => {
+    const num = Number(value) || 0;
     return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-    }).format(value);
+    }).format(num);
 };
 
 export default function SaleEdit({
     sale,
     branches,
     customers,
-    categories,
 }: {
     sale: Sale;
     branches: Branch[];
     customers: Customer[];
-    categories: Category[];
 }) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Sales', href: route('sales.index') },
@@ -80,10 +80,9 @@ export default function SaleEdit({
     const [searchQuery, setSearchQuery] = useState('');
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [discountPercentage, setDiscountPercentage] = useState<string>(
-        sale.discount_amount > 0 && sale.subtotal > 0
-            ? parseFloat(((sale.discount_amount / sale.subtotal) * 100).toFixed(2)).toString()
+        Number(sale.discount_amount) > 0 && Number(sale.subtotal) > 0
+            ? parseFloat(((Number(sale.discount_amount) / Number(sale.subtotal)) * 100).toFixed(2)).toString()
             : ''
     );
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -97,18 +96,18 @@ export default function SaleEdit({
             const initialCart: CartItem[] = sale.sale_items.map(item => ({
                 product_id: item.product_id,
                 product: item.product as Product, // Assumes product is loaded
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                tax_rate: item.tax_rate ?? 0,
-                tax_amount: item.tax_amount,
-                subtotal: item.subtotal,
+                quantity: Number(item.quantity) || 0,
+                unit_price: Number(item.unit_price) || 0,
+                tax_rate: Number(item.tax_rate) || 0,
+                tax_amount: Number(item.tax_amount) || 0,
+                subtotal: Number(item.subtotal) || 0,
             }));
             setCart(initialCart);
         }
     }, [sale]);
 
     // Server-side product search
-    const { products: searchResults, isLoading: isSearching, search: searchProducts, searchByCategory, lookupBarcode } = useProductSearch({
+    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
         branchId: sale.branch_id.toString(), // Use sale branch initially
         context: 'sale',
     });
@@ -118,15 +117,16 @@ export default function SaleEdit({
         branch_id: sale.branch_id.toString(),
         customer_id: sale.customer_id ? sale.customer_id.toString() : 'walk-in',
         sale_date: sale.sale_date,
-        subtotal: sale.subtotal,
-        tax_amount: sale.tax_amount,
-        discount_amount: sale.discount_amount,
-        total_amount: sale.total_amount,
+        subtotal: Number(sale.subtotal) || 0,
+        tax_amount: Number(sale.tax_amount) || 0,
+        discount_amount: Number(sale.discount_amount) || 0,
+        total_amount: Number(sale.total_amount) || 0,
         payment_status: sale.payment_status,
         payment_method: sale.payment_method || 'Cash',
-        paid_amount: sale.paid_amount,
-        credit_amount: sale.credit_amount,
+        paid_amount: Number(sale.paid_amount) || 0,
+        credit_amount: Number(sale.credit_amount) || 0,
         notes: sale.notes || '',
+        price_type: sale.price_type || 'selling_price',
         items: [],
         creator_id: sale.created_by,
     });
@@ -138,21 +138,23 @@ export default function SaleEdit({
         if (!branchId || !product.branch_stocks) {
              return {
                 stock: product.stock ?? 0,
-                price: Number(product.selling_price),
+                price: data.price_type === 'cost_price' ? Number(product.cost_price) : Number(product.selling_price),
              };
         }
         const stock = product.branch_stocks.find(bs => bs.branch_id === branchId);
         return {
             stock: stock?.quantity ?? 0,
-            price: stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price),
+            price: data.price_type === 'cost_price' 
+                ? (stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price))
+                : (stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price)),
         };
-    }, [data.branch_id]);
+    }, [data.branch_id, data.price_type]);
 
     // Calculate totals when cart changes
     const cartTotals = useMemo(() => {
         const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
         const taxAmount = cart.reduce((sum, item) => sum + item.tax_amount, 0);
-        const total = subtotal + taxAmount - data.discount_amount;
+        const total = subtotal + taxAmount - Number(data.discount_amount || 0);
         return { subtotal, taxAmount, total };
     }, [cart, data.discount_amount]);
 
@@ -295,17 +297,17 @@ export default function SaleEdit({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${sale.invoice_no}`} />
-            <form onSubmit={submit} className="flex h-[calc(100vh-120px)] gap-4 p-4">
+            <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(400px,450px)] h-[calc(100vh-110px)] gap-4 p-4 overflow-hidden">
                 {/* Left: Product Selection */}
-                <div className="flex w-3/5 flex-col gap-4">
-                    {/* Search */}
+                <div className="flex flex-col gap-4 h-full">
+                    {/* Keyboard-First Product Search */}
                     <div className="flex gap-4">
                         <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                             <PopoverAnchor asChild>
                                 <div className="relative flex-1">
                                     <Input
                                         ref={searchInputRef}
-                                        placeholder="Search products (F1)..."
+                                        placeholder="Search products (F1)... ↑↓ to navigate, Enter to add"
                                         value={searchQuery}
                                         onChange={(e) => {
                                             const val = e.target.value;
@@ -316,7 +318,8 @@ export default function SaleEdit({
                                         }}
                                         onFocus={() => setSearchOpen(searchQuery.length > 0)}
                                         onKeyDown={(e) => {
-                                             const maxIndex = Math.min(searchResults.length, 10) - 1;
+                                            const maxIndex = Math.min(searchResults.length, 10) - 1;
+                                            
                                             if (e.key === 'ArrowDown' && searchOpen) {
                                                 e.preventDefault();
                                                 setSelectedIndex((prev) => Math.min(prev + 1, maxIndex));
@@ -329,6 +332,7 @@ export default function SaleEdit({
                                                 e.preventDefault();
                                                 const selectedProduct = searchResults[selectedIndex];
                                                 if (selectedProduct) {
+                                                    if (getProductDetails(selectedProduct).stock <= 0) return;
                                                     addToCart(selectedProduct);
                                                     setSearchQuery('');
                                                     setSearchOpen(false);
@@ -347,14 +351,19 @@ export default function SaleEdit({
                                     />
                                 </div>
                             </PopoverAnchor>
-                            <PopoverContent 
-                                className="w-[var(--radix-popover-trigger-width)] p-0" 
+                            <PopoverContent
+                                className="w-[var(--radix-popover-trigger-width)] p-0"
                                 align="start"
                                 onOpenAutoFocus={(e) => e.preventDefault()}
+                                onInteractOutside={(e) => {
+                                    if ((e.target as HTMLElement).closest('input')) {
+                                        e.preventDefault();
+                                    }
+                                }}
                             >
                                 <Command shouldFilter={false}>
                                     <CommandList className="max-h-[300px]">
-                                        <CommandEmpty>No products found.</CommandEmpty>
+                                        <CommandEmpty>No products found. Try a different search.</CommandEmpty>
                                         <CommandGroup>
                                             {searchResults.slice(0, 10).map((product, index) => (
                                                 <CommandItem
@@ -373,7 +382,7 @@ export default function SaleEdit({
                                                         getProductDetails(product).stock <= 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                                                     } ${index === selectedIndex ? 'bg-accent text-accent-foreground' : ''}`}
                                                 >
-                                                     <div className="flex flex-col">
+                                                    <div className="flex flex-col">
                                                         <span className="font-small font-mono">{product.code}</span>
                                                         <span className="text-muted-foreground text-xs">
                                                             {product.name}
@@ -403,7 +412,7 @@ export default function SaleEdit({
                                 </Command>
                             </PopoverContent>
                         </Popover>
-                         <Input
+                        <Input
                             ref={barcodeInputRef}
                             placeholder="Scan barcode (F2)..."
                             onKeyDown={handleBarcodeInput}
@@ -412,88 +421,10 @@ export default function SaleEdit({
                         />
                     </div>
 
-                    {/* Category Filter */}
-                     <div className="flex flex-wrap gap-2">
-                        <Button
-                            type="button"
-                            variant={selectedCategory === null ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => { setSelectedCategory(null); searchByCategory(null); }}
-                            tabIndex={-1}
-                        >
-                            All
-                        </Button>
-                        {categories.map((cat) => (
-                            <Button
-                                key={cat.id}
-                                type="button"
-                                variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedCategory(cat.id); searchByCategory(cat.id); }}
-                                tabIndex={-1}
-                            >
-                                {cat.name}
-                            </Button>
-                        ))}
-                    </div>
-
-                    {/* Product Grid */}
-                    <ScrollArea className="bg-card flex-1 rounded-lg border">
-                         <div className="grid grid-cols-4 gap-2 p-3">
-                            {isSearching && (
-                                <div className="col-span-4 flex items-center justify-center py-8">
-                                    <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-                                </div>
-                            )}
-                            {!isSearching && searchResults.map((product) => (
-                                <button
-                                    key={product.id}
-                                    type="button"
-                                    onClick={() => addToCart(product)}
-                                    disabled={getProductDetails(product).stock <= 0}
-                                    tabIndex={-1}
-                                    className={`bg-background flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors ${
-                                        getProductDetails(product).stock <= 0
-                                            ? 'opacity-50 cursor-not-allowed'
-                                            : 'hover:bg-accent hover:text-accent-foreground'
-                                    }`}
-                                >
-                                    <span className="line-clamp-2 text-sm font-medium">{product.code}</span>
-                                    <span className="text-muted-foreground font-mono text-xs">{product.name}</span>
-                                    <div className="flex w-full items-center justify-between">
-                                        <span className="text-primary font-mono font-bold">
-                                            {formatCurrency(getProductDetails(product).price)}
-                                        </span>
-                                        <div className="flex items-center gap-1">
-                                            {getProductDetails(product).stock <= 10 ? (
-                                                <Badge variant="destructive" className="text-xs">
-                                                    <AlertTriangle className="mr-1 h-3 w-3" />
-                                                    {getProductDetails(product).stock}
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="secondary" className="text-xs">
-                                                    <Package className="mr-1 h-3 w-3" />
-                                                    {getProductDetails(product).stock}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </div>
-                                </button>
-                            ))}
-                              {!isSearching && searchResults.length === 0 && (
-                                <div className="text-muted-foreground col-span-4 py-8 text-center">
-                                    {selectedCategory !== null ? 'No products in this category' : 'Search or select a category to browse products'}
-                                </div>
-                            )}
-                         </div>
-                    </ScrollArea>
-                </div>
-
-                {/* Right: Cart and Payment */}
-                <div className="flex w-2/5 flex-col gap-4">
-                     <Card>
-                        <CardContent className="grid grid-cols-2 gap-4 pt-4">
-                             <div className="space-y-2">
+                    {/* Header with Branch, Customer, and Price Type */}
+                    <Card>
+                        <CardContent className="grid grid-cols-3 gap-4 pt-4">
+                            <div className="space-y-2">
                                 <Label>Branch</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
                                     <SelectTrigger tabIndex={3}>
@@ -525,22 +456,55 @@ export default function SaleEdit({
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="space-y-2">
+                                <Label>Price Type</Label>
+                                <Select 
+                                    value={data.price_type} 
+                                    onValueChange={(v) => {
+                                        setData('price_type', v);
+                                        // Recalculate cart prices instantly based on new price type
+                                        setCart(prev => prev.map(item => {
+                                            const product = item.product;
+                                            const branchId = parseInt(data.branch_id);
+                                            const stock = product.branch_stocks?.find(bs => bs.branch_id === branchId);
+                                            const newPrice = v === 'cost_price' 
+                                                ? (stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price))
+                                                : (stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price));
+                                            
+                                            return {
+                                                ...item,
+                                                unit_price: newPrice,
+                                                tax_amount: item.quantity * newPrice * (item.tax_rate / 100),
+                                                subtotal: newPrice * item.quantity
+                                            };
+                                        }));
+                                    }}
+                                >
+                                    <SelectTrigger tabIndex={5}>
+                                        <SelectValue placeholder="Select Price Type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="selling_price">Selling Price</SelectItem>
+                                        <SelectItem value="cost_price">Cost Price</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </CardContent>
                     </Card>
 
-                    {/* Cart */}
-                    <Card className="flex flex-1 flex-col">
+                    {/* Cart Items */}
+                    <Card className="flex h-full flex-col min-h-0">
                         <CardHeader className="flex flex-row items-center justify-between py-3">
-                             <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2">
                                 <ShoppingCart className="h-5 w-5" />
                                 <CardTitle className="text-lg">Cart (Edit Mode)</CardTitle>
                                 <Badge variant="secondary">{cart.length} items</Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="flex-1 overflow-hidden p-0">
-                            <ScrollArea className="h-[200px]">
+                            <ScrollArea className="h-full relative min-h-0 max-h-[100%]">
                                 <Table>
-                                    <TableHeader>
+                                    <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                                         <TableRow>
                                             <TableHead>Product</TableHead>
                                             <TableHead className="w-28 text-center">Qty</TableHead>
@@ -549,142 +513,168 @@ export default function SaleEdit({
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {cart.map((item) => (
-                                            <TableRow key={item.product_id}>
-                                                <TableCell>
-                                                    <div className="font-medium">{item.product.name}</div>
-                                                    <div className="text-muted-foreground text-xs">
-                                                        @ {formatCurrency(item.unit_price)} Ks
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                     <div className="flex items-center justify-center gap-1">
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-7 w-7"
-                                                            onClick={() => updateQuantity(item.product_id, -1)}
-                                                            tabIndex={-1}
-                                                        >
-                                                            <Minus className="h-3 w-3" />
-                                                        </Button>
-                                                        <input
-                                                            type="number"
-                                                            min="1"
-                                                            value={item.quantity}
-                                                            onChange={(e) => {
-                                                                const val = parseInt(e.target.value) || 0;
-                                                                setQuantity(item.product_id, val);
-                                                            }}
-                                                            className="h-7 w-14 text-center font-mono border rounded [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                                            tabIndex={5}
-                                                        />
-                                                         <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-7 w-7"
-                                                            onClick={() => updateQuantity(item.product_id, 1)}
-                                                            tabIndex={-1}
-                                                        >
-                                                            <Plus className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono font-medium">
-                                                    {formatCurrency(item.subtotal)}
-                                                </TableCell>
-                                                <TableCell>
-                                                     <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-destructive hover:text-destructive h-7 w-7"
-                                                        onClick={() => removeFromCart(item.product_id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                        {cart.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                                                    No items in cart
                                                 </TableCell>
                                             </TableRow>
-                                        ))}
+                                        ) : (
+                                            cart.map((item) => (
+                                                <TableRow key={item.product_id} className="group">
+                                                    <TableCell>
+                                                        <div className="font-medium line-clamp-1">{item.product.name}</div>
+                                                        <div className="text-muted-foreground text-xs flex gap-2">
+                                                            <span>{item.product.code}</span>
+                                                            {item.product.barcode && <span>• {item.product.barcode}</span>}
+                                                            <span>• @ {formatCurrency(item.unit_price)} Ks</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                onClick={() => updateQuantity(item.product_id, -1)}
+                                                                tabIndex={-1}
+                                                            >
+                                                                <Minus className="h-3 w-3" />
+                                                            </Button>
+                                                            <input
+                                                                type="number"
+                                                                min="1"
+                                                                value={item.quantity}
+                                                                onChange={(e) => {
+                                                                    const val = parseInt(e.target.value) || 0;
+                                                                    setQuantity(item.product_id, val);
+                                                                }}
+                                                                className="h-7 w-12 text-center font-mono border rounded text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none focus:ring-1 focus:ring-ring focus:outline-none"
+                                                                tabIndex={2}
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                onClick={() => updateQuantity(item.product_id, 1)}
+                                                                tabIndex={-1}
+                                                            >
+                                                                <Plus className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-mono font-medium">
+                                                        {formatCurrency(item.subtotal)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            onClick={() => removeFromCart(item.product_id)}
+                                                            tabIndex={-1}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
                                     </TableBody>
                                 </Table>
                             </ScrollArea>
                         </CardContent>
                     </Card>
+                </div>
 
-                    {/* Footer */}
+                {/* Right: Payment */}
+                <div className="flex flex-col gap-4 overflow-y-auto h-full pr-1">
                     <Card>
-                        <CardContent className="space-y-3 pt-4">
-                             <div className="flex justify-between text-sm">
-                                <span>Subtotal</span>
-                                <span className="font-mono">{formatCurrency(cartTotals.subtotal)} Ks</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span>Tax</span>
-                                <span className="font-mono">{formatCurrency(cartTotals.taxAmount)} Ks</span>
-                            </div>
-                             <div className="flex items-center justify-between text-sm">
-                                <span>Discount</span>
-                                <div className="flex items-center gap-2">
-                                    <div className="relative">
-                                        <Input
-                                            type="text"
-                                            inputMode="decimal"
-                                            value={discountPercentage}
-                                            placeholder="%"
-                                            onChange={(e) => {
-                                                let val = e.target.value.replace(/[^0-9.]/g, '');
-                                                if (val.split('.').length > 2) val = val.substring(0, val.length - 1);
-                                                setDiscountPercentage(val);
-                                                if (val === '') {
-                                                    setData('discount_amount', 0);
-                                                } else if (cartTotals.subtotal > 0) {
-                                                    const perc = parseFloat(val);
-                                                    if (!isNaN(perc)) {
-                                                        setData('discount_amount', Math.round(cartTotals.subtotal * (perc / 100)));
+                        <CardHeader className="py-3 items-center flex justify-between">
+                            <CardTitle className="text-lg">Payment</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 pt-0">
+                            <div className="space-y-2 rounded-lg bg-slate-50 p-4 dark:bg-slate-900 overflow-hidden">
+                                <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+                                    <span>Subtotal</span>
+                                    <span className="font-mono">{formatCurrency(cartTotals.subtotal)} Ks</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-600 dark:text-slate-400">Tax</span>
+                                    <span className="font-mono">{formatCurrency(cartTotals.taxAmount)} Ks</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm group">
+                                    <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                                        Discount
+                                    </span>
+                                    <div className="flex items-center justify-end gap-2 w-[180px]">
+                                        <div className="relative w-16">
+                                            <Input
+                                                ref={discountInputRef}
+                                                type="text"
+                                                inputMode="decimal"
+                                                value={discountPercentage}
+                                                placeholder="%"
+                                                onChange={(e) => {
+                                                    let val = e.target.value.replace(/[^0-9.]/g, '');
+                                                    if (val.split('.').length > 2) val = val.substring(0, val.length - 1);
+                                                    setDiscountPercentage(val);
+                                                    if (val === '') {
+                                                        setData('discount_amount', 0);
+                                                    } else if (cartTotals.subtotal > 0) {
+                                                        const perc = parseFloat(val);
+                                                        if (!isNaN(perc)) {
+                                                            setData('discount_amount', Math.round(cartTotals.subtotal * (perc / 100)));
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                            className="h-8 w-16 text-right font-mono pr-6"
-                                            tabIndex={6}
-                                        />
-                                        <span className="absolute right-2 top-1.5 text-xs text-muted-foreground">%</span>
+                                                }}
+                                                className="h-8 w-16 px-2 py-1 text-right font-mono text-sm pr-5 shadow-none focus-visible:ring-1 focus-visible:border-primary"
+                                                tabIndex={6}
+                                            />
+                                            <span className="absolute right-1 top-1.5 text-[10px] text-muted-foreground pointer-events-none">%</span>
+                                        </div>
+                                        <div className="relative flex-1 group-hover:block transition-all ease-in-out">
+                                            <Input
+                                                type="text"
+                                                inputMode="numeric"
+                                                value={data.discount_amount || ''}
+                                                placeholder="Amount"
+                                                onChange={(e) => {
+                                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                                    setData('discount_amount', val === '' ? 0 : parseInt(val, 10));
+                                                    setDiscountPercentage('');
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        paidAmountInputRef.current?.focus();
+                                                    }
+                                                }}
+                                                className="h-8 w-full px-2 py-1 text-right font-mono text-sm shadow-none focus-visible:ring-1 focus-visible:border-primary"
+                                                tabIndex={7}
+                                            />
+                                            <span className="absolute left-2 top-1.5 text-[10px] text-muted-foreground pointer-events-none">Ks</span>
+                                        </div>
                                     </div>
-                                    <Input
-                                        ref={discountInputRef}
-                                        type="text"
-                                        inputMode="numeric"
-                                        value={data.discount_amount || ''}
-                                        placeholder="Ks"
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/[^0-9]/g, '');
-                                            setData('discount_amount', val === '' ? 0 : parseInt(val, 10));
-                                            setDiscountPercentage('');
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault();
-                                                paidAmountInputRef.current?.focus();
-                                            }
-                                        }}
-                                        className="h-8 w-24 text-right font-mono"
-                                        tabIndex={7}
-                                    />
+                                </div>
+                                <Separator className="my-2 bg-slate-200 dark:bg-slate-800" />
+                                <div className="flex items-end justify-between">
+                                    <span className="text-base font-medium text-slate-800 dark:text-slate-200">Total</span>
+                                    <span className="text-3xl text-primary font-mono font-bold tracking-tight">
+                                        <span className="text-xl text-primary/70 mr-1 font-sans font-normal">Ks</span>
+                                        {formatCurrency(cartTotals.total)}
+                                    </span>
                                 </div>
                             </div>
-                            <Separator />
-                            <div className="flex justify-between text-lg font-bold">
-                                <span>Total</span>
-                                <span className="text-primary font-mono">{formatCurrency(cartTotals.total)} Ks</span>
-                            </div>
-                            <Separator />
-                             <div className="grid grid-cols-2 gap-3">
-                                 <div className="space-y-1">
-                                    <Label className="text-xs">Payment Method</Label>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Payment Method</Label>
                                     <Select value={data.payment_method} onValueChange={(v) => setData('payment_method', v)}>
-                                        <SelectTrigger className="h-9" tabIndex={8}>
+                                        <SelectTrigger className="h-10 text-sm bg-background border-slate-200" tabIndex={8}>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -696,33 +686,74 @@ export default function SaleEdit({
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Invoice No</Label>
-                                    <Input value={data.invoice_no} disabled className="h-9 font-mono bg-muted" />
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Invoice No</Label>
+                                    <Input value={data.invoice_no} disabled className="h-10 font-mono bg-muted" />
                                 </div>
-                             </div>
-                             <div className="space-y-1">
-                                <Label className="text-xs">Paid Amount</Label>
-                                <Input
-                                    ref={paidAmountInputRef}
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={data.paid_amount || ''}
-                                     onChange={(e) => {
-                                        const val = e.target.value.replace(/[^0-9]/g, '');
-                                        setData('paid_amount', val === '' ? 0 : parseInt(val, 10));
-                                    }}
-                                    className="h-10 text-right font-mono text-lg font-bold"
-                                    tabIndex={9}
-                                />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+
+                            <Separator />
+
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium">Paid Amount</Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-2.5 text-muted-foreground font-mono">Ks</span>
+                                    <Input
+                                        ref={paidAmountInputRef}
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={data.paid_amount || ''}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            setData('paid_amount', val === '' ? 0 : parseInt(val, 10));
+                                        }}
+                                        className="h-12 pl-10 pr-4 text-right font-mono text-xl font-bold bg-background shadow-inner transition-colors focus-visible:bg-slate-50 dark:focus-visible:bg-slate-900 border-slate-300 focus-visible:border-primary disabled:opacity-100"
+                                        tabIndex={9}
+                                    />
+                                    {cartTotals.total > 0 && data.paid_amount !== cartTotals.total && (
+                                        <div className="absolute top-14 left-0 right-0 flex justify-end gap-1 px-1">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setData('paid_amount', cartTotals.total)}
+                                                className="text-[10px] text-primary hover:underline font-medium"
+                                                tabIndex={-1}
+                                            >
+                                                Full Payment
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {data.credit_amount > 0 && (
+                                <div className="rounded border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/20">
+                                    <div className="flex justify-between text-sm text-red-800 dark:text-red-400 px-1">
+                                        <span className="font-medium">Credit Balance</span>
+                                        <span className="font-mono">{formatCurrency(data.credit_amount)} Ks</span>
+                                    </div>
+                                    {data.customer_id === 'walk-in' && (
+                                        <p className="mt-1 text-xs text-red-600 dark:text-red-500">
+                                            Warning: Walk-in customers cannot have credit
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-4 pt-4">
                                 <Button asChild variant="outline" className="w-full">
                                     <Link href={route('sales.index')}>
                                         <ArrowLeft className="mr-2 h-4 w-4" /> Back
                                     </Link>
                                 </Button>
-                                <Button type="submit" disabled={processing || cart.length === 0} className="w-full">
+                                <Button 
+                                    type="submit" 
+                                    disabled={processing || cart.length === 0 || (data.credit_amount > 0 && data.customer_id === 'walk-in')} 
+                                    className="w-full"
+                                    onClick={() => {
+                                        // Give focus back to barcode after clicking
+                                        setTimeout(() => barcodeInputRef.current?.focus(), 100);
+                                    }}
+                                >
                                     {processing ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
