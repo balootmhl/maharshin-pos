@@ -404,9 +404,9 @@ export default function SaleCreate({
         <>
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="POS - New Sale" />
-                <form onSubmit={submit} className="flex h-[calc(100vh-120px)] gap-4 p-4">
+                <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-[1fr_400px] h-[calc(100vh-120px)] gap-4 p-4 overflow-hidden">
                     {/* Left: Product Selection */}
-                    <div className="flex w-3/5 flex-col gap-4">
+                    <div className="flex flex-col gap-4 h-full">
                         {/* Keyboard-First Product Search */}
                         <div className="flex gap-4">
                             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -532,83 +532,6 @@ export default function SaleCreate({
                             />
                         </div>
 
-                        {/* Category Filter - Clickable but skipped in Tab navigation */}
-                        <div className="flex flex-wrap gap-2">
-                            <Button
-                                type="button"
-                                variant={selectedCategory === null ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedCategory(null); searchByCategory(null); }}
-                                tabIndex={-1}
-                            >
-                                All
-                            </Button>
-                            {categories.map((cat) => (
-                                <Button
-                                    key={cat.id}
-                                    type="button"
-                                    variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                                    size="sm"
-                                    onClick={() => { setSelectedCategory(cat.id); searchByCategory(cat.id); }}
-                                    tabIndex={-1}
-                                >
-                                    {cat.name}
-                                </Button>
-                            ))}
-                        </div>
-
-                        {/* Product Grid - Visual catalog (clickable but keyboard-optional) */}
-                        <ScrollArea className="bg-card flex-1 rounded-lg border">
-                            <div className="grid grid-cols-4 gap-2 p-3">
-                                {isSearching && (
-                                    <div className="col-span-4 flex items-center justify-center py-8">
-                                        <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-                                    </div>
-                                )}
-                                {!isSearching && searchResults.map((product) => (
-                                    <button
-                                        key={product.id}
-                                        type="button"
-                                        onClick={() => addToCart(product)}
-                                        disabled={getProductDetails(product).stock <= 0}
-                                        tabIndex={-1}
-                                        className={`bg-background flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors ${
-                                            getProductDetails(product).stock <= 0
-                                                ? 'opacity-50 cursor-not-allowed'
-                                                : 'hover:bg-accent hover:text-accent-foreground'
-                                        }`}
-                                    >
-                                        <span className="line-clamp-2 text-sm font-medium">{product.code}</span>
-                                        <span className="text-muted-foreground font-mono text-xs">{product.name}</span>
-                                        <div className="flex w-full items-center justify-between">
-                                            <span className="text-primary font-mono font-bold">{formatCurrency(getProductDetails(product).price)}</span>
-                                            <div className="flex items-center gap-1">
-                                                {getProductDetails(product).stock <= 10 ? (
-                                                    <Badge variant="destructive" className="text-xs">
-                                                        <AlertTriangle className="mr-1 h-3 w-3" />
-                                                        {getProductDetails(product).stock}
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="secondary" className="text-xs">
-                                                        <Package className="mr-1 h-3 w-3" />
-                                                        {getProductDetails(product).stock}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </button>
-                                ))}
-                                {!isSearching && searchResults.length === 0 && (
-                                    <div className="text-muted-foreground col-span-4 py-8 text-center">
-                                        {selectedCategory !== null ? 'No products in this category' : 'Search or select a category to browse products'}
-                                    </div>
-                                )}
-                            </div>
-                        </ScrollArea>
-                    </div>
-
-                    {/* Right: Cart and Payment */}
-                    <div className="flex w-2/5 flex-col gap-4">
                         {/* Header with Branch and Customer */}
                         <Card>
                             <CardContent className="grid grid-cols-2 gap-4 pt-4">
@@ -676,7 +599,7 @@ export default function SaleCreate({
                         )}
 
                         {/* Cart Items */}
-                        <Card className="flex flex-1 flex-col">
+                        <Card className="flex h-full flex-col min-h-0">
                             <CardHeader className="flex flex-row items-center justify-between py-3">
                                 <div className="flex items-center gap-2">
                                     <ShoppingCart className="h-5 w-5" />
@@ -699,7 +622,7 @@ export default function SaleCreate({
                                 </div>
                             </CardHeader>
                             <CardContent className="flex-1 overflow-hidden p-0">
-                                <ScrollArea className="h-[200px]">
+                                <ScrollArea className="h-full">
                                     {cart.length === 0 ? (
                                         <div className="text-muted-foreground flex h-full items-center justify-center py-8">
                                             Cart is empty. Add products to start.
@@ -787,6 +710,9 @@ export default function SaleCreate({
                             </CardContent>
                         </Card>
 
+                    </div>
+                    {/* Right: Totals and Payment */}
+                    <div className="flex flex-col gap-4 h-full">
                         {/* Totals and Payment */}
                         <Card>
                             <CardContent className="space-y-3 pt-4">
