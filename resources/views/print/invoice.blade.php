@@ -38,8 +38,8 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: {{ $format === 'thermal' ? '10px' : ($format === 'a5' ? '11px' : '12px') }};
-            line-height: 1.2;
+            font-size: {{ $format === 'thermal' ? '10px' : ($format === 'a5' ? '13px' : '14px') }};
+            line-height: 1.3;
             color: #333;
             background: #fff;
         }
@@ -69,13 +69,13 @@
         }
 
         .company-info h1 {
-            font-size: {{ $format === 'thermal' ? '16px' : ($format === 'a5' ? '18px' : '24px') }};
+            font-size: {{ $format === 'thermal' ? '16px' : ($format === 'a5' ? '20px' : '28px') }};
             color: #1E3A5F;
             margin-bottom: 5px;
         }
 
         .company-info p {
-            font-size: {{ $format === 'thermal' ? '9px' : ($format === 'a5' ? '10px' : '11px') }};
+            font-size: {{ $format === 'thermal' ? '9px' : ($format === 'a5' ? '12px' : '13px') }};
             color: #666;
         }
 
@@ -141,7 +141,7 @@
             color: {{ $format === 'thermal' ? '#000' : 'white' }};
             padding: {{ $format === 'thermal' ? '5px 0' : ($format === 'a5' ? '8px 6px' : '10px 8px') }};
             text-align: left;
-            font-size: {{ $format === 'thermal' ? '9px' : ($format === 'a5' ? '10px' : '11px') }};
+            font-size: {{ $format === 'thermal' ? '9px' : ($format === 'a5' ? '12px' : '13px') }};
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: {{ $format === 'thermal' ? '1px dashed #000' : 'none' }};
@@ -180,7 +180,7 @@
         .items-table td {
             padding: {{ $format === 'thermal' ? '5px 0' : ($format === 'a5' ? '8px 6px' : '10px 8px') }};
             border-bottom: {{ $format === 'thermal' ? 'none' : '1px solid #eee' }};
-            font-size: {{ $format === 'thermal' ? '9px' : ($format === 'a5' ? '10px' : '11px') }};
+            font-size: {{ $format === 'thermal' ? '9px' : ($format === 'a5' ? '12px' : '13px') }};
         }
 
         .items-table tr:nth-child(even) {
@@ -189,7 +189,7 @@
 
         .product-code {
             color: #888;
-            font-size: {{ $format === 'thermal' ? '8px' : ($format === 'a5' ? '9px' : '10px') }};
+            font-size: {{ $format === 'thermal' ? '8px' : ($format === 'a5' ? '10px' : '11px') }};
         }
 
         /* Totals */
