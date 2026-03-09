@@ -153,12 +153,28 @@
         }
 
         .items-table th:nth-child(2),
-        .items-table th:nth-child(3),
-        .items-table th:nth-child(4),
         .items-table td:nth-child(2),
-        .items-table td:nth-child(3),
+        .items-table th:nth-child(3),
+        .items-table td:nth-child(3) {
+            text-align: center;
+        }
+
+        .items-table th:nth-child(3),
+        .items-table td:nth-child(3) {
+            padding-right: 0;
+        }
+
+        .items-table th:nth-child(4),
         .items-table td:nth-child(4) {
             text-align: center;
+            width: 1%;
+            white-space: nowrap;
+            padding-left: 2px;
+        }
+
+        .items-table th:nth-child(5),
+        .items-table td:nth-child(5) {
+            text-align: right;
         }
 
         .items-table td {
@@ -276,8 +292,9 @@
         <!-- Header -->
         <div class="invoice-header">
             <div class="company-info">
-                <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 50px; margin-bottom: 5px;">
-                <h1>{{ $sale->branch?->name ?? 'Maharshin' }}</h1>
+                <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 80px; margin-bottom: 5px;">
+                <h1>Zabyuaungpyae</h1>
+                <p><strong>{{ $sale->branch?->name ?? 'Bayintnaung Showroom' }}</strong></p>
                 <p>{{ $sale->branch?->address ?? '' }}</p>
                 <p>{{ $sale->branch?->phone ?? '' }}</p>
             </div>
@@ -313,10 +330,11 @@
             <thead>
                 <tr>
                     <th>Item</th>
-                    <th>Qty</th>
-                    <th>Price</th>
                     <th>Group</th>
-                    <th>Amount</th>
+                    <th>Price</th>
+                    <th>Qty</th>
+                    <th></th>
+                    <th style="text-align: right;">Amount</th>
                 </tr>
             </thead>
             <tbody>
@@ -326,10 +344,11 @@
                             {{ $item->product?->code ?? '' }}
                             <div class="product-code">{{ $item->product?->name ?? 'Unknown Product' }}</div>
                         </td>
-                        <td>{{ $item->quantity }}</td>
-                        <td>{{ number_format($item->unit_price, 0) }}</td>
                         <td>{{ $item->product?->branchStocks->where('branch_id', $sale->branch_id)->first()?->group?->name ?? '-' }}</td>
-                        <td>{{ number_format($item->subtotal, 0) }}</td>
+                        <td>{{ number_format($item->unit_price, 0) }}</td>
+                        <td style="text-align: center;">{{ $item->quantity }}</td>
+                        <td style="text-align: left; padding-left: 2px;"><span style="font-size: 1.4em;">&#9744;</span></td>
+                        <td style="text-align: right;">{{ number_format($item->subtotal, 0) }}</td>
                     </tr>
                 @endforeach
             </tbody>
