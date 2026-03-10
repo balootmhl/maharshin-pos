@@ -205,8 +205,11 @@ class SaleController extends Controller
 
     public function edit(Request $request, Sale $sale): Response|RedirectResponse
     {
-        if ($sale->created_at->diffInDays(now()) > 3) {
-            return redirect()->route('sales.index')->with('error', 'Sale cannot be edited after 3 days.');
+        $limitEnabled = config('project.sale_edit_time_limit_enabled', true);
+        $limitDays = config('project.sale_edit_time_limit_days', 3);
+
+        if ($limitEnabled && $sale->created_at->diffInDays(now()) > $limitDays) {
+            return redirect()->route('sales.index')->with('error', "Sale cannot be edited after {$limitDays} days.");
         }
 
         $sale->load(['saleItems.product.branchStocks', 'customer', 'branch']);
@@ -221,8 +224,11 @@ class SaleController extends Controller
 
     public function update(SaleUpdateRequest $request, Sale $sale): RedirectResponse
     {
-        if ($sale->created_at->diffInDays(now()) > 3) {
-            return redirect()->route('sales.index')->with('error', 'Sale cannot be edited after 3 days.');
+        $limitEnabled = config('project.sale_edit_time_limit_enabled', true);
+        $limitDays = config('project.sale_edit_time_limit_days', 3);
+
+        if ($limitEnabled && $sale->created_at->diffInDays(now()) > $limitDays) {
+            return redirect()->route('sales.index')->with('error', "Sale cannot be edited after {$limitDays} days.");
         }
 
         $validated = $request->validated();
@@ -369,8 +375,11 @@ class SaleController extends Controller
 
     public function destroy(Request $request, Sale $sale): RedirectResponse
     {
-        if ($sale->created_at->diffInDays(now()) > 3) {
-            return redirect()->route('sales.index')->with('error', 'Sale cannot be deleted after 3 days.');
+        $limitEnabled = config('project.sale_edit_time_limit_enabled', true);
+        $limitDays = config('project.sale_edit_time_limit_days', 3);
+
+        if ($limitEnabled && $sale->created_at->diffInDays(now()) > $limitDays) {
+            return redirect()->route('sales.index')->with('error', "Sale cannot be deleted after {$limitDays} days.");
         }
 
         DB::transaction(function () use ($sale) {
