@@ -7,7 +7,7 @@ import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -671,8 +671,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                     )}
                                 </div>
                             </CardHeader>
-                            <CardContent className="flex-1 overflow-hidden p-0">
-                                <ScrollArea className="h-full">
+                            <CardContent className="flex-1 overflow-y-auto p-0">
                                     {cart.length === 0 ? (
                                         <div className="text-muted-foreground flex h-full items-center justify-center py-8">
                                             Cart is empty. Add products to start.
@@ -756,7 +755,6 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                             </TableBody>
                                         </Table>
                                     )}
-                                </ScrollArea>
                             </CardContent>
                         </Card>
                     </div>

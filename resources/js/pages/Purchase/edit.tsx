@@ -515,8 +515,7 @@ export default function PurchaseEdit({
                                 <Badge variant="secondary">{cart.length} items</Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-hidden p-0">
-                            <ScrollArea className="h-full">
+                        <CardContent className="flex-1 overflow-y-auto p-0">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -600,7 +599,6 @@ export default function PurchaseEdit({
                                         ))}
                                     </TableBody>
                                 </Table>
-                            </ScrollArea>
                         </CardContent>
                     </Card>
 

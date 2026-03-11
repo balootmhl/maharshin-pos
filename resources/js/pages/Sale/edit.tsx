@@ -7,7 +7,7 @@ import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -501,8 +501,7 @@ export default function SaleEdit({
                                 <Badge variant="secondary">{cart.length} items</Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-hidden p-0">
-                            <ScrollArea className="h-full relative min-h-0 max-h-[100%]">
+                        <CardContent className="flex-1 overflow-y-auto p-0">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                                         <TableRow>
@@ -585,7 +584,6 @@ export default function SaleEdit({
                                         )}
                                     </TableBody>
                                 </Table>
-                            </ScrollArea>
                         </CardContent>
                     </Card>
                 </div>

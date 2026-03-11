@@ -596,8 +596,7 @@ export default function PurchaseCreate({
                                 </Button>
                             )}
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-hidden p-0">
-                            <ScrollArea className="h-full">
+                        <CardContent className="flex-1 overflow-y-auto p-0">
                                 {cart.length === 0 ? (
                                     <div className="text-muted-foreground flex h-full items-center justify-center py-8">
                                         Add products to continue
@@ -687,7 +686,6 @@ export default function PurchaseCreate({
                                         </TableBody>
                                     </Table>
                                 )}
-                            </ScrollArea>
                         </CardContent>
                     </Card>
 
