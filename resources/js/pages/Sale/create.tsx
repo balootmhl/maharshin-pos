@@ -1,6 +1,4 @@
 import InputError from '@/components/input-error';
-import { useProductSearch } from '@/hooks/use-product-search';
-import { useDirectPrint } from '@/hooks/use-direct-print';
 import { SaleSuccessDialog } from '@/components/sale-success-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,12 +11,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useDirectPrint } from '@/hooks/use-direct-print';
+import { useProductSearch } from '@/hooks/use-product-search';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, Branch, Customer, Product } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, Minus, Package, Pause, Play, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
 
 type CartItem = {
     product_id: number;
@@ -86,14 +85,7 @@ type CompletedSale = {
     };
 };
 
-export default function SaleCreate({
-    branches,
-    customers,
-}: {
-    branches: Branch[];
-    customers: Customer[];
-    invoiceNo: string;
-}) {
+export default function SaleCreate({ branches, customers }: { branches: Branch[]; customers: Customer[]; invoiceNo: string }) {
     // Get flash data for completed sale
     const { flash } = usePage<{ flash: { completedSale?: CompletedSale } }>().props;
 
@@ -122,7 +114,11 @@ export default function SaleCreate({
     const paidAmountInputRef = useRef<HTMLInputElement>(null);
 
     // Server-side product search
-    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
+    const {
+        products: searchResults,
+        search: searchProducts,
+        lookupBarcode,
+    } = useProductSearch({
         branchId: branches[0]?.id?.toString() || '',
         context: 'sale',
     });
@@ -145,26 +141,34 @@ export default function SaleCreate({
     });
 
     // Helper to get product details based on selected branch
-    const getProductDetails = useCallback((product: Product) => {
-        const branchId = parseInt(data.branch_id);
-        // If no branch selected or no branch stocks loaded, fallback to default
-        if (!branchId || !product.branch_stocks) {
-             return {
-                stock: product.stock ?? 0,
-                price: data.price_type === 'cost_price' ? Number(product.cost_price) : Number(product.selling_price),
-                cost: Number(product.cost_price),
-             };
-        }
-        const stock = product.branch_stocks.find(bs => bs.branch_id === branchId);
-        return {
-            stock: stock?.quantity ?? 0,
-            price: data.price_type === 'cost_price' 
-                ? (stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price))
-                : (stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price)),
-            cost: stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price),
-            groupName: stock?.group?.name, // Add group name
-        };
-    }, [data.branch_id, data.price_type]);
+    const getProductDetails = useCallback(
+        (product: Product) => {
+            const branchId = parseInt(data.branch_id);
+            // If no branch selected or no branch stocks loaded, fallback to default
+            if (!branchId || !product.branch_stocks) {
+                return {
+                    stock: product.stock ?? 0,
+                    price: data.price_type === 'cost_price' ? Number(product.cost_price) : Number(product.selling_price),
+                    cost: Number(product.cost_price),
+                };
+            }
+            const stock = product.branch_stocks.find((bs) => bs.branch_id === branchId);
+            return {
+                stock: stock?.quantity ?? 0,
+                price:
+                    data.price_type === 'cost_price'
+                        ? stock?.cost_price
+                            ? Number(stock.cost_price)
+                            : Number(product.cost_price)
+                        : stock?.selling_price
+                          ? Number(stock.selling_price)
+                          : Number(product.selling_price),
+                cost: stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price),
+                groupName: stock?.group?.name, // Add group name
+            };
+        },
+        [data.branch_id, data.price_type],
+    );
 
     // Clear cart when branch changes to avoid price/stock mismatches
     useEffect(() => {
@@ -220,38 +224,39 @@ export default function SaleCreate({
         }
     }, [cartTotals.subtotal, discountPercentage, setData]);
 
-
-
-    const addToCart = useCallback((product: Product) => {
-        setCart((prev) => {
-            const existing = prev.find((item) => item.product_id === product.id);
-            if (existing) {
-                return prev.map((item) =>
-                    item.product_id === product.id
-                        ? {
-                              ...item,
-                              quantity: item.quantity + 1,
-                              tax_amount: (item.quantity + 1) * item.unit_price * (item.tax_rate / 100),
-                              subtotal: (item.quantity + 1) * item.unit_price,
-                          }
-                        : item,
-                );
-            }
-            const details = getProductDetails(product);
-            const newItem: CartItem = {
-                product_id: product.id,
-                product,
-                quantity: 1,
-                unit_price: details.price,
-                tax_rate: Number(product.tax_rate),
-                tax_amount: details.price * (Number(product.tax_rate) / 100),
-                subtotal: details.price,
-            };
-            return [...prev, newItem];
-        });
-        setSearchQuery('');
-        searchInputRef.current?.focus();
-    }, [getProductDetails]);
+    const addToCart = useCallback(
+        (product: Product) => {
+            setCart((prev) => {
+                const existing = prev.find((item) => item.product_id === product.id);
+                if (existing) {
+                    return prev.map((item) =>
+                        item.product_id === product.id
+                            ? {
+                                  ...item,
+                                  quantity: item.quantity + 1,
+                                  tax_amount: (item.quantity + 1) * item.unit_price * (item.tax_rate / 100),
+                                  subtotal: (item.quantity + 1) * item.unit_price,
+                              }
+                            : item,
+                    );
+                }
+                const details = getProductDetails(product);
+                const newItem: CartItem = {
+                    product_id: product.id,
+                    product,
+                    quantity: 1,
+                    unit_price: details.price,
+                    tax_rate: Number(product.tax_rate),
+                    tax_amount: details.price * (Number(product.tax_rate) / 100),
+                    subtotal: details.price,
+                };
+                return [...prev, newItem];
+            });
+            setSearchQuery('');
+            searchInputRef.current?.focus();
+        },
+        [getProductDetails],
+    );
 
     const updateQuantity = (productId: number, delta: number) => {
         setCart((prev) =>
@@ -406,9 +411,12 @@ export default function SaleCreate({
         <>
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="POS - New Sale" />
-                <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(400px,450px)] h-[calc(100vh-110px)] gap-4 p-4 overflow-hidden">
+                <form
+                    onSubmit={submit}
+                    className="grid h-[calc(100vh-110px)] grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-[1fr_minmax(400px,450px)]"
+                >
                     {/* Left: Product Selection */}
-                    <div className="flex flex-col gap-4 h-full">
+                    <div className="flex h-full flex-col gap-4">
                         {/* Keyboard-First Product Search */}
                         <div className="flex gap-4">
                             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -428,7 +436,7 @@ export default function SaleCreate({
                                             onFocus={() => setSearchOpen(searchQuery.length > 0)}
                                             onKeyDown={(e) => {
                                                 const maxIndex = Math.min(searchResults.length, 10) - 1;
-                                                
+
                                                 if (e.key === 'ArrowDown' && searchOpen) {
                                                     e.preventDefault();
                                                     setSelectedIndex((prev) => Math.min(prev + 1, maxIndex));
@@ -443,7 +451,7 @@ export default function SaleCreate({
                                                     if (selectedProduct) {
                                                         // Prevent adding if out of stock
                                                         if (getProductDetails(selectedProduct).stock <= 0) return;
-                                                        
+
                                                         addToCart(selectedProduct);
                                                         setSearchQuery('');
                                                         setSearchOpen(false);
@@ -492,7 +500,7 @@ export default function SaleCreate({
                                                         }}
                                                         disabled={getProductDetails(product).stock <= 0}
                                                         className={`flex items-center justify-between gap-2 ${
-                                                            getProductDetails(product).stock <= 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                                            getProductDetails(product).stock <= 0 ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                                                         } ${index === selectedIndex ? 'bg-accent text-accent-foreground' : ''}`}
                                                     >
                                                         <div className="flex flex-col">
@@ -571,26 +579,33 @@ export default function SaleCreate({
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Price Type</Label>
-                                    <Select 
-                                        value={data.price_type} 
+                                    <Select
+                                        value={data.price_type}
                                         onValueChange={(v) => {
                                             setData('price_type', v);
                                             // Recalculate cart prices instantly based on new price type
-                                            setCart(prev => prev.map(item => {
-                                                const product = item.product;
-                                                const branchId = parseInt(data.branch_id);
-                                                const stock = product.branch_stocks?.find(bs => bs.branch_id === branchId);
-                                                const newPrice = v === 'cost_price' 
-                                                    ? (stock?.cost_price ? Number(stock.cost_price) : Number(product.cost_price))
-                                                    : (stock?.selling_price ? Number(stock.selling_price) : Number(product.selling_price));
-                                                
-                                                return {
-                                                    ...item,
-                                                    unit_price: newPrice,
-                                                    tax_amount: item.quantity * newPrice * (item.tax_rate / 100),
-                                                    subtotal: newPrice * item.quantity
-                                                };
-                                            }));
+                                            setCart((prev) =>
+                                                prev.map((item) => {
+                                                    const product = item.product;
+                                                    const branchId = parseInt(data.branch_id);
+                                                    const stock = product.branch_stocks?.find((bs) => bs.branch_id === branchId);
+                                                    const newPrice =
+                                                        v === 'cost_price'
+                                                            ? stock?.cost_price
+                                                                ? Number(stock.cost_price)
+                                                                : Number(product.cost_price)
+                                                            : stock?.selling_price
+                                                              ? Number(stock.selling_price)
+                                                              : Number(product.selling_price);
+
+                                                    return {
+                                                        ...item,
+                                                        unit_price: newPrice,
+                                                        tax_amount: item.quantity * newPrice * (item.tax_rate / 100),
+                                                        subtotal: newPrice * item.quantity,
+                                                    };
+                                                }),
+                                            );
                                         }}
                                     >
                                         <SelectTrigger tabIndex={5}>
@@ -634,7 +649,7 @@ export default function SaleCreate({
                         )}
 
                         {/* Cart Items */}
-                        <Card className="flex h-full flex-col min-h-0">
+                        <Card className="flex min-h-0 flex-1 flex-col">
                             <CardHeader className="flex flex-row items-center justify-between py-3">
                                 <div className="flex items-center gap-2">
                                     <ShoppingCart className="h-5 w-5" />
@@ -681,7 +696,7 @@ export default function SaleCreate({
                                                                 {item.product.name} - {formatCurrency(item.unit_price)} Ks
                                                                 {/* Display Group Name if available */}
                                                                 {getProductDetails(item.product).groupName && (
-                                                                    <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-0 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                                                    <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-0 text-xs font-medium text-blue-700 ring-1 ring-blue-700/10 ring-inset">
                                                                         {getProductDetails(item.product).groupName}
                                                                     </span>
                                                                 )}
@@ -698,19 +713,19 @@ export default function SaleCreate({
                                                                     tabIndex={-1}
                                                                 >
                                                                     <Minus className="h-3 w-3" />
-                                                            </Button>
-                                                            <input
-                                                                type="number"
-                                                                min="1"
-                                                                value={item.quantity}
-                                                                onChange={(e) => {
-                                                                    const val = parseInt(e.target.value) || 0;
-                                                                    setQuantity(item.product_id, val);
-                                                                }}
-                                                                className="h-7 w-14 text-center font-mono border rounded [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                                                tabIndex={5}
-                                                            />
-                                                            <Button
+                                                                </Button>
+                                                                <input
+                                                                    type="number"
+                                                                    min="1"
+                                                                    value={item.quantity}
+                                                                    onChange={(e) => {
+                                                                        const val = parseInt(e.target.value) || 0;
+                                                                        setQuantity(item.product_id, val);
+                                                                    }}
+                                                                    className="h-7 w-14 [appearance:textfield] rounded border text-center font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                                    tabIndex={5}
+                                                                />
+                                                                <Button
                                                                     type="button"
                                                                     variant="outline"
                                                                     size="icon"
@@ -744,10 +759,9 @@ export default function SaleCreate({
                                 </ScrollArea>
                             </CardContent>
                         </Card>
-
                     </div>
                     {/* Right: Totals and Payment */}
-                    <div className="flex flex-col gap-4 h-full">
+                    <div className="flex h-full flex-col gap-4">
                         {/* Totals and Payment */}
                         <Card>
                             <CardContent className="space-y-3 pt-4">
@@ -781,10 +795,10 @@ export default function SaleCreate({
                                                         }
                                                     }
                                                 }}
-                                                className="h-8 w-16 text-right font-mono pr-6"
+                                                className="h-8 w-16 pr-6 text-right font-mono"
                                                 tabIndex={6}
                                             />
-                                            <span className="absolute right-2 top-1.5 text-xs text-muted-foreground">%</span>
+                                            <span className="text-muted-foreground absolute top-1.5 right-2 text-xs">%</span>
                                         </div>
                                         <Input
                                             ref={discountInputRef}
@@ -900,7 +914,14 @@ export default function SaleCreate({
                                     >
                                         Exact (E)
                                     </Button>
-                                    <Button type="button" variant="ghost" size="sm" onClick={() => setData('paid_amount', 0)} className="flex-1" tabIndex={-1}>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setData('paid_amount', 0)}
+                                        className="flex-1"
+                                        tabIndex={-1}
+                                    >
                                         Clear
                                     </Button>
                                 </div>
@@ -934,7 +955,9 @@ export default function SaleCreate({
                                     {processing ? 'Processing...' : `Complete Sale (F12) - ${formatCurrency(cartTotals.total)} Ks`}
                                 </Button>
                                 {/* Keyboard Shortcuts Help */}
-                                <div className="text-muted-foreground text-center text-xs">F1: Search • F2: Barcode • F8: Hold • E: Exact • Enter/F12: Complete</div>
+                                <div className="text-muted-foreground text-center text-xs">
+                                    F1: Search • F2: Barcode • F8: Hold • E: Exact • Enter/F12: Complete
+                                </div>
                             </CardContent>
                         </Card>
                     </div>

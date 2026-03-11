@@ -493,7 +493,7 @@ export default function SaleEdit({
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex h-full flex-col min-h-0">
+                    <Card className="flex flex-1 flex-col min-h-0">
                         <CardHeader className="flex flex-row items-center justify-between py-3">
                             <div className="flex items-center gap-2">
                                 <ShoppingCart className="h-5 w-5" />

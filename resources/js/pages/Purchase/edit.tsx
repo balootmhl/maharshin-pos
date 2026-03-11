@@ -507,7 +507,7 @@ export default function PurchaseEdit({
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex flex-1 flex-col">
+                    <Card className="flex flex-1 flex-col min-h-0">
                         <CardHeader className="flex flex-row items-center justify-between py-3">
                             <div className="flex items-center gap-2">
                                 <Package className="h-5 w-5" />
@@ -516,7 +516,7 @@ export default function PurchaseEdit({
                             </div>
                         </CardHeader>
                         <CardContent className="flex-1 overflow-hidden p-0">
-                            <ScrollArea className="h-[200px]">
+                            <ScrollArea className="h-full">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
