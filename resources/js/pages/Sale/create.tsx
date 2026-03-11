@@ -416,7 +416,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                     className="grid h-[calc(100vh-110px)] grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-[1fr_minmax(400px,450px)]"
                 >
                     {/* Left: Product Selection */}
-                    <div className="flex h-full flex-col gap-4">
+                    <div className="flex h-full flex-col gap-4 min-h-0 overflow-hidden">
                         {/* Keyboard-First Product Search */}
                         <div className="flex gap-4">
                             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -649,7 +649,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                         )}
 
                         {/* Cart Items */}
-                        <Card className="flex min-h-0 flex-1 flex-col">
+                        <Card className="flex h-0 grow min-h-0 flex-col">
                             <CardHeader className="flex flex-row items-center justify-between py-3">
                                 <div className="flex items-center gap-2">
                                     <ShoppingCart className="h-5 w-5" />
@@ -671,7 +671,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                     )}
                                 </div>
                             </CardHeader>
-                            <CardContent className="flex-1 overflow-y-auto p-0">
+                            <CardContent className="h-0 grow overflow-y-auto p-0">
                                     {cart.length === 0 ? (
                                         <div className="text-muted-foreground flex h-full items-center justify-center py-8">
                                             Cart is empty. Add products to start.

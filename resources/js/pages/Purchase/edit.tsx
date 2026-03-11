@@ -454,7 +454,7 @@ export default function PurchaseEdit({
                 </div>
 
                 {/* Right: Purchase Details and Cart */}
-                <div className="flex w-2/5 flex-col gap-4">
+                <div className="flex w-2/5 flex-col gap-4 min-h-0 overflow-hidden">
                     {/* Header */}
                     <Card>
                         <CardContent className="grid grid-cols-2 gap-4 pt-4">
@@ -507,7 +507,7 @@ export default function PurchaseEdit({
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex flex-1 flex-col min-h-0">
+                    <Card className="flex h-0 grow flex-col min-h-0">
                         <CardHeader className="flex flex-row items-center justify-between py-3">
                             <div className="flex items-center gap-2">
                                 <Package className="h-5 w-5" />
@@ -515,7 +515,7 @@ export default function PurchaseEdit({
                                 <Badge variant="secondary">{cart.length} items</Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto p-0">
+                        <CardContent className="h-0 grow overflow-y-auto p-0">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>

@@ -299,7 +299,7 @@ export default function SaleEdit({
             <Head title={`Edit ${sale.invoice_no}`} />
             <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-[1fr_minmax(400px,450px)] h-[calc(100vh-110px)] gap-4 p-4 overflow-hidden">
                 {/* Left: Product Selection */}
-                <div className="flex flex-col gap-4 h-full">
+                <div className="flex flex-col gap-4 h-full min-h-0 overflow-hidden">
                     {/* Keyboard-First Product Search */}
                     <div className="flex gap-4">
                         <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -493,7 +493,7 @@ export default function SaleEdit({
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex flex-1 flex-col min-h-0">
+                    <Card className="flex h-0 grow flex-col min-h-0">
                         <CardHeader className="flex flex-row items-center justify-between py-3">
                             <div className="flex items-center gap-2">
                                 <ShoppingCart className="h-5 w-5" />
@@ -501,7 +501,7 @@ export default function SaleEdit({
                                 <Badge variant="secondary">{cart.length} items</Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto p-0">
+                        <CardContent className="h-0 grow overflow-y-auto p-0">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                                         <TableRow>

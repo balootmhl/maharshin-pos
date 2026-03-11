@@ -529,7 +529,7 @@ export default function PurchaseCreate({
                 </div>
 
                 {/* Right: Purchase Details and Cart */}
-                <div className="flex w-2/5 flex-col gap-4">
+                <div className="flex w-2/5 flex-col gap-4 min-h-0 overflow-hidden">
                     {/* Header with Branch, Supplier, Date */}
                     <Card>
                         <CardContent className="grid grid-cols-2 gap-4 pt-4">
@@ -582,7 +582,7 @@ export default function PurchaseCreate({
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex flex-1 flex-col min-h-0">
+                    <Card className="flex h-0 grow flex-col min-h-0">
                         <CardHeader className="flex flex-row items-center justify-between py-3">
                             <div className="flex items-center gap-2">
                                 <Package className="h-5 w-5" />
@@ -596,7 +596,7 @@ export default function PurchaseCreate({
                                 </Button>
                             )}
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto p-0">
+                        <CardContent className="h-0 grow overflow-y-auto p-0">
                                 {cart.length === 0 ? (
                                     <div className="text-muted-foreground flex h-full items-center justify-center py-8">
                                         Add products to continue
