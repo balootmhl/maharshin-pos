@@ -68,23 +68,27 @@
 
 #### 5.1 Supported Gateways
 
-- **Local (Myanmar)**
-  - **Dinger**
-    - Channels: KBZPay, CBPay, etc.
-- **Global / International**
-  - **Stripe** (primary).
-  - **PayPal** (optional/backup).
+- **Primary (Myanmar)**
+  - **Manual Bank Transfer**
+    - The core method. Companies transfer funds to official checking accounts (e.g., KBZ, CB, AYA) and upload a screenshot/slip for manual verification by Super Admin.
+- **Secondary (Myanmar)**
+  - **MMQR**
+    - To be implemented if the new SDK/package is viable within the timeline. Considered a bonus feature.
+- **Future Integration (Placeholders Only)**
+  - **Dinger (Local), Stripe, PayPal (Global)**
+    - Only code structure and placeholder models provided for future readiness. No real API testing or integration required for the MVP phase.
 
 #### 5.2 Core Billing Features
 
 - **Tier-based subscription** (Job Portal & HRMS).
 - **Monthly & yearly plans** (discount for yearly is recommended).
-- **Automatic activation after payment**:
-  - On successful gateway callback/webhook.
+- **Manual Payment Verification Flow**:
+  - Requires a "Pending Verification" status where a Super Admin must review the uploaded slip before the plan becomes `active`.
+- **Feature Add-ons (One-Time Purchase)**:
+  - Sold separately to companies already on a paid plan (e.g., adding "Advance Loan Management" to a Silver plan).
+  - Billed as a one-time fee, permanently unlocking that specific feature module.
 - **Future scalability**:
-  - Ability to add:
-    - Add-ons.
-    - Bundled plans (Job Portal + HRMS).
+  - Ability to add bundled plans (Job Portal + HRMS) and activate automated gateway webhooks when business grows.
 - **Invoice System (Recommended)**
   - Generate downloadable invoices (PDF) for each successful payment.
   - Basic data:
@@ -112,32 +116,19 @@
        - `gateway` (dinger / stripe / paypal).
        - `status = pending`.
    - Initiate payment via selected gateway API.
-3. **Redirect to Payment Page**
-   - User is redirected to Dinger/Stripe/PayPal checkout.
-4. **Payment Callback / Webhook**
-   - Gateway notifies backend with payment result.
-   - Backend validates:
-     - HMAC/signature.
-     - Payment status.
-     - Amount & currency.
-   - Update:
-     - `payment_logs` with raw gateway data.
-     - `subscription_transactions.status = success` or `failed`.
-5. **Activate Subscription**
-   - On success:
+3. **Redirect to Payment Instructions / Gateway**
+   - User is shown the bank transfer details (KBZ, CB, AYA) and a form to upload their payment screenshot (if Manual).
+   - If MMQR, scan the generated code.
+4. **Payment Submission & Verification**
+   - **Manual**: User submits the screenshot. `subscription_transactions.status` becomes `pending_verification`.
+   - **Super Admin Action**: Admin reviews the slip in the dashboard and clicks "Approve" or "Reject".
+   - (For future Webhooks: The system would automatically notify the backend to approve).
+5. **Activate Subscription & Add-ons**
+   - On admin approval (or future webhook success):
+     - Update `subscription_transactions.status = success`.
      - Create or update `company_subscriptions`:
-       - Set:
-         - `plan_id`.
-         - `product_type` (job_portal / hrms).
-         - `start_date`.
-         - `expiry_date`.
-         - `status = active`.
-       - For Job Portal:
-         - `job_post_limit`.
-         - `cv_search_access` (bool).
-       - For HRMS:
-         - `max_employees`.
-         - `feature_flags` (JSON for module access).
+       - Set `status = active`, update `expiry_date`.
+     - **If Add-on Purchase**: Append the purchased feature to the company's `feature_flags` JSON or create a record in a `company_addons` table to permanently unlock it.
    - Send confirmation email and in-app notification.
 
 ---
@@ -190,15 +181,16 @@ One record per attempted subscription or renewal payment.
 - `id`.
 - `company_id`.
 - `subscription_id` (`company_subscriptions.id`, nullable if first payment).
-- `plan_id`.
-- `product_type`.
-- `billing_cycle`.
+- `plan_id` (nullable if paying for an add-on).
+- `item_type` (`subscription` / `addon`).
+- `item_name` (e.g., "Silver Plan Monthly", "Advance Loan Add-on").
 - `amount`.
 - `currency`.
-- `gateway` (`dinger` / `stripe` / `paypal`).
-- `gateway_transaction_id`.
-- `status` (`pending` / `success` / `failed`).
-- `failure_reason` (nullable).
+- `payment_method` (`manual_transfer` / `mmqr` / `placeholder_stripe` / `placeholder_dinger`).
+- `payment_proof_path` (nullable, file path to uploaded screenshot).
+- `gateway_transaction_id` (nullable, for MMQR or future gateways).
+- `status` (`pending_verification` / `success` / `failed` / `rejected`).
+- `admin_notes` (nullable, reason for rejection).
 - Timestamps.
 
 #### 6.4 `payment_logs`
