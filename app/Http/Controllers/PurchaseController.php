@@ -54,6 +54,8 @@ class PurchaseController extends Controller
 
         return Inertia::render('Purchase/index', [
             'purchases' => $purchases,
+            'edit_time_limit_enabled' => config('project.purchase_edit_time_limit_enabled', true),
+            'edit_time_limit_days' => config('project.purchase_edit_time_limit_days', 3),
         ]);
     }
 
@@ -173,8 +175,11 @@ class PurchaseController extends Controller
 
     public function edit(Request $request, Purchase $purchase): Response|RedirectResponse
     {
-        if ($purchase->created_at->diffInDays(now()) > 3) {
-            return redirect()->route('purchases.index')->with('error', 'Purchase cannot be edited after 3 days.');
+        $limitEnabled = config('project.purchase_edit_time_limit_enabled', true);
+        $limitDays = config('project.purchase_edit_time_limit_days', 3);
+
+        if ($limitEnabled && $purchase->created_at->diffInDays(now()) > $limitDays) {
+            return redirect()->route('purchases.index')->with('error', "Purchase cannot be edited after {$limitDays} days.");
         }
 
         // optimizing load - remove full product eager load, pass categories instead
@@ -190,8 +195,11 @@ class PurchaseController extends Controller
 
     public function update(PurchaseUpdateRequest $request, Purchase $purchase): RedirectResponse
     {
-        if ($purchase->created_at->diffInDays(now()) > 3) {
-            return redirect()->route('purchases.index')->with('error', 'Purchase cannot be edited after 3 days.');
+        $limitEnabled = config('project.purchase_edit_time_limit_enabled', true);
+        $limitDays = config('project.purchase_edit_time_limit_days', 3);
+
+        if ($limitEnabled && $purchase->created_at->diffInDays(now()) > $limitDays) {
+            return redirect()->route('purchases.index')->with('error', "Purchase cannot be edited after {$limitDays} days.");
         }
 
         $validated = $request->validated();
@@ -298,8 +306,11 @@ class PurchaseController extends Controller
 
     public function destroy(Request $request, Purchase $purchase): RedirectResponse
     {
-        if ($purchase->created_at->diffInDays(now()) > 3) {
-            return redirect()->route('purchases.index')->with('error', 'Purchase cannot be deleted after 3 days.');
+        $limitEnabled = config('project.purchase_edit_time_limit_enabled', true);
+        $limitDays = config('project.purchase_edit_time_limit_days', 3);
+
+        if ($limitEnabled && $purchase->created_at->diffInDays(now()) > $limitDays) {
+            return redirect()->route('purchases.index')->with('error', "Purchase cannot be deleted after {$limitDays} days.");
         }
 
         DB::transaction(function () use ($purchase) {

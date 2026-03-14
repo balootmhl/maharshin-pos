@@ -55,6 +55,8 @@ class SaleController extends Controller
 
         return Inertia::render('Sale/index', [
             'sales' => $sales,
+            'edit_time_limit_enabled' => config('project.sale_edit_time_limit_enabled', true),
+            'edit_time_limit_days' => config('project.sale_edit_time_limit_days', 3),
         ]);
     }
 

@@ -7,13 +7,12 @@ import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Category, Product, Supplier, Purchase } from '@/types';
+import { type BreadcrumbItem, Branch, Product, Supplier, Purchase } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Loader2, Minus, Package, Plus, Save, Trash2 } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -61,12 +60,10 @@ export default function PurchaseEdit({
     purchase,
     branches,
     suppliers,
-    categories,
 }: {
     purchase: Purchase;
     branches: Branch[];
     suppliers: Supplier[];
-    categories: Category[];
 }) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Purchases', href: route('purchases.index') },
@@ -77,7 +74,6 @@ export default function PurchaseEdit({
     const [searchQuery, setSearchQuery] = useState('');
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const barcodeInputRef = useRef<HTMLInputElement>(null);
     const paidAmountInputRef = useRef<HTMLInputElement>(null);
@@ -99,7 +95,7 @@ export default function PurchaseEdit({
     }, [purchase]);
 
     // Server-side product search
-    const { products: searchResults, isLoading: isSearching, search: searchProducts, searchByCategory, lookupBarcode } = useProductSearch({
+    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
         branchId: purchase.branch_id.toString(),
         context: 'purchase',
     });
@@ -282,9 +278,12 @@ export default function PurchaseEdit({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${purchase.purchase_no}`} />
-            <form onSubmit={submit} className="flex h-[calc(100vh-120px)] gap-4 p-4">
-                {/* Left: Product Selection */}
-                <div className="flex w-3/5 flex-col gap-4">
+            <form
+                onSubmit={submit}
+                className="grid h-[calc(100vh-110px)] grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-[1fr_minmax(400px,450px)]"
+            >
+                {/* Left: Product Selection and Cart */}
+                <div className="flex h-full flex-col gap-4 min-h-0 overflow-hidden">
                     {/* Search */}
                     <div className="flex gap-4">
                         <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -390,74 +389,9 @@ export default function PurchaseEdit({
                         />
                     </div>
 
-                    {/* Category Filter */}
-                    <div className="flex flex-wrap gap-2">
-                        <Button
-                            type="button"
-                            variant={selectedCategory === null ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => { setSelectedCategory(null); searchByCategory(null); }}
-                            tabIndex={-1}
-                        >
-                            All
-                        </Button>
-                        {categories.map((cat) => (
-                            <Button
-                                key={cat.id}
-                                type="button"
-                                variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedCategory(cat.id); searchByCategory(cat.id); }}
-                                tabIndex={-1}
-                            >
-                                {cat.name}
-                            </Button>
-                        ))}
-                    </div>
-
-                    {/* Product Grid */}
-                    <ScrollArea className="bg-card flex-1 rounded-lg border">
-                        <div className="grid grid-cols-4 gap-2 p-3">
-                            {isSearching && (
-                                <div className="col-span-4 flex items-center justify-center py-8">
-                                    <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-                                </div>
-                            )}
-                            {!isSearching && searchResults.map((product) => (
-                                <button
-                                    key={product.id}
-                                    type="button"
-                                    onClick={() => addToCart(product)}
-                                    tabIndex={-1}
-                                    className="bg-background hover:bg-accent hover:text-accent-foreground flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors"
-                                >
-                                    <span className="line-clamp-2 text-sm font-medium">{product.code}</span>
-                                    <span className="text-muted-foreground font-mono text-xs">{product.name}</span>
-                                    <div className="flex w-full items-center justify-between">
-                                        <span className="text-primary font-mono font-bold">{formatCurrency(getProductDetails(product).cost)}</span>
-                                        <div className="flex items-center gap-1">
-                                            <Badge variant="secondary" className="text-xs">
-                                                <Package className="mr-1 h-3 w-3" />
-                                                {getProductDetails(product).stock}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </button>
-                            ))}
-                             {!isSearching && searchResults.length === 0 && (
-                                <div className="text-muted-foreground col-span-4 py-8 text-center">
-                                    {selectedCategory !== null ? 'No products in this category' : 'Search or select a category to browse products'}
-                                </div>
-                            )}
-                        </div>
-                    </ScrollArea>
-                </div>
-
-                {/* Right: Purchase Details and Cart */}
-                <div className="flex w-2/5 flex-col gap-4 min-h-0 overflow-hidden">
                     {/* Header */}
                     <Card>
-                        <CardContent className="grid grid-cols-2 gap-4 pt-4">
+                        <CardContent className="grid grid-cols-2 gap-4 pt-4 lg:grid-cols-4">
                             <div className="space-y-2">
                                 <Label>Branch*</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
@@ -601,24 +535,35 @@ export default function PurchaseEdit({
                                 </Table>
                         </CardContent>
                     </Card>
+                </div>
 
+                {/* Right: Payment */}
+                <div className="flex flex-col gap-4 overflow-y-auto h-full pr-1">
                     {/* Totals */}
                     <Card>
-                        <CardContent className="space-y-3 pt-4">
-                            <div className="flex justify-between text-sm">
-                                <span>Subtotal</span>
-                                <span className="font-mono">{formatCurrency(cartTotals.subtotal)} Ks</span>
+                        <CardHeader className="py-3 items-center flex justify-between">
+                            <CardTitle className="text-lg">Payment</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 pt-0">
+                            <div className="space-y-2 rounded-lg bg-slate-50 p-4 dark:bg-slate-900 overflow-hidden">
+                                <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+                                    <span>Subtotal</span>
+                                    <span className="font-mono">{formatCurrency(cartTotals.subtotal)} Ks</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-600 dark:text-slate-400">Tax</span>
+                                    <span className="font-mono">{formatCurrency(cartTotals.taxAmount)} Ks</span>
+                                </div>
+                                <Separator className="my-2 bg-slate-200 dark:bg-slate-800" />
+                                <div className="flex items-end justify-between">
+                                    <span className="text-base font-medium text-slate-800 dark:text-slate-200">Total</span>
+                                    <span className="text-3xl text-primary font-mono font-bold tracking-tight">
+                                        <span className="text-xl text-primary/70 mr-1 font-sans font-normal">Ks</span>
+                                        {formatCurrency(cartTotals.total)}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex justify-between text-sm">
-                                <span>Tax</span>
-                                <span className="font-mono">{formatCurrency(cartTotals.taxAmount)} Ks</span>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between text-lg font-bold">
-                                <span>Total</span>
-                                <span className="text-primary font-mono">{formatCurrency(cartTotals.total)} Ks</span>
-                            </div>
-                            <Separator />
+
                             <div className="space-y-1">
                                 <Label className="text-xs">Amount Paid</Label>
                                 <Input
@@ -643,6 +588,29 @@ export default function PurchaseEdit({
                                     className="h-9 font-mono"
                                     tabIndex={8}
                                 />
+                            </div>
+                            {/* Quick Amount Buttons */}
+                            <div className="flex flex-wrap gap-2">
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setData('paid_amount', cartTotals.total)}
+                                    className="flex-1"
+                                    tabIndex={-1}
+                                >
+                                    Pay Full (E)
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setData('paid_amount', 0)}
+                                    className="flex-1"
+                                    tabIndex={-1}
+                                >
+                                    Clear
+                                </Button>
                             </div>
                             <div className="flex justify-between text-sm text-orange-600">
                                 {data.paid_amount > 0 && data.paid_amount < cartTotals.total && (

@@ -9,15 +9,14 @@ import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Category, Product, Supplier } from '@/types';
+import { type BreadcrumbItem, Branch, Product, Supplier } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Loader2, Minus, Package, Plus, Trash2, X } from 'lucide-react';
+import { Minus, Package, Plus, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type CartItem = {
@@ -77,12 +76,10 @@ const formatCurrency = (value: number) => {
 export default function PurchaseCreate({
     branches,
     suppliers,
-    categories,
     purchaseNo,
 }: {
     branches: Branch[];
     suppliers: Supplier[];
-    categories: Category[];
     purchaseNo: string;
 }) {
     const { flash } = usePage<{ flash: { completedPurchase?: CompletedPurchase } }>().props;
@@ -104,13 +101,12 @@ export default function PurchaseCreate({
     const [searchQuery, setSearchQuery] = useState('');
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const barcodeInputRef = useRef<HTMLInputElement>(null);
     const paidAmountInputRef = useRef<HTMLInputElement>(null);
 
     // Server-side product search
-    const { products: searchResults, isLoading: isSearching, search: searchProducts, searchByCategory, lookupBarcode } = useProductSearch({
+    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
         branchId: branches[0]?.id?.toString() || '',
         context: 'purchase',
     });
@@ -351,9 +347,12 @@ export default function PurchaseCreate({
         <>
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New Purchase" />
-            <form onSubmit={submit} className="flex h-[calc(100vh-120px)] gap-4 p-4">
-                {/* Left: Product Selection */}
-                <div className="flex w-3/5 flex-col gap-4">
+            <form
+                onSubmit={submit}
+                className="grid h-[calc(100vh-110px)] grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-[1fr_minmax(400px,450px)]"
+            >
+                {/* Left: Product Selection and Cart */}
+                <div className="flex h-full flex-col gap-4 min-h-0 overflow-hidden">
                     {/* Keyboard-First Product Search */}
                     <div className="flex gap-4">
                         <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -465,74 +464,9 @@ export default function PurchaseCreate({
                         />
                     </div>
 
-                    {/* Category Filter */}
-                    <div className="flex flex-wrap gap-2">
-                        <Button
-                            type="button"
-                            variant={selectedCategory === null ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => { setSelectedCategory(null); searchByCategory(null); }}
-                            tabIndex={-1}
-                        >
-                            All
-                        </Button>
-                        {categories.map((cat) => (
-                            <Button
-                                key={cat.id}
-                                type="button"
-                                variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => { setSelectedCategory(cat.id); searchByCategory(cat.id); }}
-                                tabIndex={-1}
-                            >
-                                {cat.name}
-                            </Button>
-                        ))}
-                    </div>
-
-                    {/* Product Grid */}
-                    <ScrollArea className="bg-card flex-1 rounded-lg border">
-                        <div className="grid grid-cols-4 gap-2 p-3">
-                            {isSearching && (
-                                <div className="col-span-4 flex items-center justify-center py-8">
-                                    <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-                                </div>
-                            )}
-                            {!isSearching && searchResults.map((product) => (
-                                <button
-                                    key={product.id}
-                                    type="button"
-                                    onClick={() => addToCart(product)}
-                                    tabIndex={-1}
-                                    className="bg-background hover:bg-accent hover:text-accent-foreground flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors"
-                                >
-                                    <span className="line-clamp-2 text-sm font-medium">{product.code}</span>
-                                    <span className="text-muted-foreground font-mono text-xs">{product.name}</span>
-                                    <div className="flex w-full items-center justify-between">
-                                        <span className="text-primary font-mono font-bold">{formatCurrency(getProductDetails(product).cost)}</span>
-                                        <div className="flex items-center gap-1">
-                                            <Badge variant="secondary" className="text-xs">
-                                                <Package className="mr-1 h-3 w-3" />
-                                                {getProductDetails(product).stock}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </button>
-                            ))}
-                            {!isSearching && searchResults.length === 0 && (
-                                <div className="text-muted-foreground col-span-4 py-8 text-center">
-                                    {selectedCategory !== null ? 'No products in this category' : 'Search or select a category to browse products'}
-                                </div>
-                            )}
-                        </div>
-                    </ScrollArea>
-                </div>
-
-                {/* Right: Purchase Details and Cart */}
-                <div className="flex w-2/5 flex-col gap-4 min-h-0 overflow-hidden">
                     {/* Header with Branch, Supplier, Date */}
                     <Card>
-                        <CardContent className="grid grid-cols-2 gap-4 pt-4">
+                        <CardContent className="grid grid-cols-2 gap-4 pt-4 lg:grid-cols-4">
                             <div className="space-y-2">
                                 <Label>Branch*</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
@@ -688,7 +622,10 @@ export default function PurchaseCreate({
                                 )}
                         </CardContent>
                     </Card>
+                </div>
 
+                {/* Right: Totals and Payment */}
+                <div className="flex h-full flex-col gap-4">
                     {/* Totals and Payment */}
                     <Card>
                         <CardContent className="space-y-3 pt-4">

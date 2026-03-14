@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { useDirectPrint } from '@/hooks/use-direct-print';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PaginatedData, Sale } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, Edit, Printer, Trash2, X } from 'lucide-react';
 
@@ -309,8 +309,14 @@ function SalesFilterPanel({ table, onClearFilters }: FilterPanelProps<Sale>) {
 
 const ActionsCell = ({ row }: { row: { original: Sale } }) => {
     const { printUrl } = useDirectPrint();
-    // Check if sale was created more than 3 days ago
-    const canEdit = row.original.created_at ? new Date(row.original.created_at) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) : false;
+    const { props } = usePage();
+    const editTimeLimitEnabled = props.edit_time_limit_enabled ?? true;
+    const editTimeLimitDays = props.edit_time_limit_days as number ?? 3;
+
+    // Check if sale edit time has passed
+    const canEdit = row.original.created_at ? (
+        !editTimeLimitEnabled || new Date(row.original.created_at) > new Date(Date.now() - editTimeLimitDays * 24 * 60 * 60 * 1000)
+    ) : false;
 
     return (
         <div className="flex items-center gap-1">
