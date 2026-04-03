@@ -37,7 +37,7 @@ export default function TodoShow({ todo, media, isDelete }: { todo: Todo; media:
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Detail - Todo" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Card className="md:max-w-xl">
+                <Card className="max-w-3xl mx-auto w-full">
                     <CardHeader>
                         <CardTitle>Info</CardTitle>
                     </CardHeader>

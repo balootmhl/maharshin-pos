@@ -33,7 +33,7 @@ export default function RoleShow({ role, isDelete }: { role: Role; isDelete: boo
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Detail - Role" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Card className="md:max-w-xl">
+                <Card className="max-w-3xl mx-auto w-full">
                     <CardHeader>
                         <CardTitle>Info</CardTitle>
                     </CardHeader>

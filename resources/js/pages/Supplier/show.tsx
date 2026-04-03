@@ -22,7 +22,7 @@ export default function SupplierShow({ supplier }: { supplier: Supplier }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={supplier.name} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Card className="md:max-w-2xl">
+                <Card className="max-w-4xl mx-auto w-full">
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>

@@ -77,7 +77,7 @@ export default function CustomerPaymentEdit({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Payment ${customerPayment.payment_no}`} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <form onSubmit={submit} className="md:max-w-xl">
+                <form onSubmit={submit} className="max-w-3xl mx-auto w-full">
                     <div className="space-y-6">
                         {/* Display orphaned errors at the top */}
                         {orphanedErrors.length > 0 && (

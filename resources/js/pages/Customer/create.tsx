@@ -57,7 +57,7 @@ export default function CustomerCreate() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Customer" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <form onSubmit={submit} className="md:max-w-xl">
+                <form onSubmit={submit} className="max-w-3xl mx-auto w-full">
                     <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid grid-flow-row gap-2">
