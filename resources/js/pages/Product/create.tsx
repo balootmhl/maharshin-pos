@@ -71,7 +71,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Product" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <form onSubmit={submit} className="md:max-w-2xl">
+                <form onSubmit={submit} className="max-w-4xl mx-auto w-full">
                     <div className="space-y-6">
                         <div className="grid grid-cols-4 gap-4">
                             <div className="grid grid-flow-row gap-2">
@@ -189,7 +189,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                 <InputError className="mt-2" message={errors.unit} />
                             </div>
                             <div className="grid grid-flow-row gap-2">
-                                <Label htmlFor="cost_price">Default Cost Price*</Label>
+                                <Label htmlFor="cost_price">Cost Price*</Label>
                                 <Input
                                     id="cost_price"
                                     type="number"
@@ -201,7 +201,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                 <InputError className="mt-2" message={errors.cost_price} />
                             </div>
                             <div className="grid grid-flow-row gap-2">
-                                <Label htmlFor="selling_price">Default Selling Price*</Label>
+                                <Label htmlFor="selling_price">Selling Price*</Label>
                                 <Input
                                     id="selling_price"
                                     type="number"

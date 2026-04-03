@@ -101,16 +101,16 @@ class ProductController extends Controller
         /** @var Product $product */
         $product = Product::create($data);
 
-        if (!empty($data['group_id'])) {
-            // Get all active branches and create default branch stock records with the chosen group
-            $branches = Branch::where('is_active', true)->get();
-            foreach ($branches as $branch) {
-                $product->branchStocks()->create([
-                    'branch_id' => $branch->id,
-                    'group_id' => $data['group_id'],
-                    'quantity' => 0,
-                ]);
-            }
+        // Always create default branch stock records for all active branches
+        $branches = Branch::where('is_active', true)->get();
+        foreach ($branches as $branch) {
+            $product->branchStocks()->create([
+                'branch_id' => $branch->id,
+                'group_id' => !empty($data['group_id']) ? $data['group_id'] : null,
+                'cost_price' => $data['cost_price'] ?? 0,
+                'selling_price' => $data['selling_price'] ?? 0,
+                'quantity' => 0,
+            ]);
         }
 
         $request->session()->flash('product.id', $product->id);
@@ -120,7 +120,7 @@ class ProductController extends Controller
 
     public function show(Request $request, Product $product): Response
     {
-        $product->load('category');
+        $product->load(['category', 'branchStocks.branch', 'branchStocks.group']);
 
         return Inertia::render('Product/show', [
             'product' => $product,
@@ -148,9 +148,21 @@ class ProductController extends Controller
         $product->update($data);
 
         // Update branch stocks with new group and prices if they exist in the request
+        // We accumulate the updates array to allow updating group and prices simultaneously across accessible branches
+        $branchStockUpdates = [];
         if ($request->has('group_id')) {
+            $branchStockUpdates['group_id'] = $data['group_id'];
+        }
+        if ($request->has('cost_price')) {
+            $branchStockUpdates['cost_price'] = $data['cost_price'];
+        }
+        if ($request->has('selling_price')) {
+            $branchStockUpdates['selling_price'] = $data['selling_price'];
+        }
+
+        if (!empty($branchStockUpdates)) {
             // This will respect the BranchScope if active, updating only for the current branch
-            $product->branchStocks()->update(['group_id' => $data['group_id']]);
+            $product->branchStocks()->update($branchStockUpdates);
         }
 
         $request->session()->flash('product.id', $product->id);
