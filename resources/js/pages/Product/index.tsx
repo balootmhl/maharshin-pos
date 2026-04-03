@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { Branch, BreadcrumbItem, LaravelPaginator, PaginatedData, Product, SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -83,16 +82,7 @@ const baseColumns: ColumnDef<Product>[] = [
             );
         },
     },
-    {
-        accessorKey: 'cost_price',
-        header: () => <div className="text-right">Cost</div>,
-        cell: ({ row }) => <div className="text-right font-mono tabular-nums">{formatCurrency(Number(row.getValue('cost_price')))} Ks</div>,
-    },
-    {
-        accessorKey: 'selling_price',
-        header: () => <div className="text-right">Selling Price</div>,
-        cell: ({ row }) => <div className="text-right font-mono tabular-nums font-medium">{formatCurrency(Number(row.getValue('selling_price')))} Ks</div>,
-    },
+    // Base prices removed, as we now rely on BranchStock prices
 ];
 
 // Post-branch columns (status and actions)
@@ -120,62 +110,80 @@ const endColumns: ColumnDef<Product>[] = [
     // },
 ];
 
-// Generate branch-specific columns (stock/group + cost/price in same cell)
+// Generate branch-specific columns (Stock, Group, Cost, Selling Price)
 const createBranchColumns = (branches: Branch[]): ColumnDef<Product>[] => {
     return branches.map((branch) => ({
-        id: `branch_${branch.id}_stock`,
-        header: () => (
-            <div className="text-center">
-                <div className="font-semibold">{branch.name}</div>
-                <div className="text-muted-foreground text-xs">Stock / Group / Price</div>
-            </div>
-        ),
-        cell: ({ row }) => {
-            const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
-            const quantity = branchStock?.quantity ?? 0;
-            const groupName = branchStock?.group?.name;
-            const isLowStock = row.original.low_stock_alert && quantity <= row.original.low_stock_alert;
-            const isOutOfStock = quantity === 0;
+        id: `branch_${branch.id}`,
+        header: () => <div className="text-center font-bold">{branch.name}</div>,
+        columns: [
+            {
+                id: `branch_${branch.id}_stock`,
+                header: () => <div className="text-center text-xs text-muted-foreground font-normal">Stock</div>,
+                cell: ({ row }) => {
+                    const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
+                    const quantity = branchStock?.quantity ?? 0;
+                    const isLowStock = row.original.low_stock_alert && quantity <= row.original.low_stock_alert;
+                    const isOutOfStock = quantity === 0;
 
-            // Branch-specific prices
-            const branchCost = branchStock?.cost_price;
-            const branchSell = branchStock?.selling_price;
-            const hasBranchPrice = branchCost !== null && branchCost !== undefined
-                || branchSell !== null && branchSell !== undefined;
-
-            return (
-                <div className="text-center">
-                    <div className={`inline-flex items-center gap-1 font-mono font-medium tabular-nums ${isOutOfStock ? 'text-red-500' : isLowStock ? 'text-orange-500' : 'text-green-600'}`}>
-                        {quantity}
-                        {isOutOfStock && (
-                            <Badge variant="destructive" className="text-[10px] px-1 py-0">
-                                Out
-                            </Badge>
-                        )}
-                        {!isOutOfStock && isLowStock && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0 border-orange-400 text-orange-500">
-                                Low
-                            </Badge>
-                        )}
-                        {groupName && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span className="text-muted-foreground cursor-help text-xs font-normal">/ {groupName}</span>
-                                </TooltipTrigger>
-                                <TooltipContent>{groupName}</TooltipContent>
-                            </Tooltip>
-                        )}
-                    </div>
-                    {hasBranchPrice && (
-                        <div className="text-muted-foreground mt-0.5 font-mono text-[10px] tabular-nums">
-                            {branchCost != null && <span>Cost:{formatCurrency(Number(branchCost))}</span>}
-                            {branchCost != null && branchSell != null && <span> / </span>}
-                            {branchSell != null && <span className="font-medium">Selling:{formatCurrency(Number(branchSell))}</span>}
+                    return (
+                        <div className="text-center">
+                            <div className={`inline-flex items-center gap-1 font-mono font-medium tabular-nums ${isOutOfStock ? 'text-red-500' : isLowStock ? 'text-orange-500' : 'text-green-600'}`}>
+                                {quantity}
+                                {isOutOfStock && (
+                                    <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                                        Out
+                                    </Badge>
+                                )}
+                                {!isOutOfStock && isLowStock && (
+                                    <Badge variant="outline" className="text-[10px] px-1 py-0 border-orange-400 text-orange-500">
+                                        Low
+                                    </Badge>
+                                )}
+                            </div>
                         </div>
-                    )}
-                </div>
-            );
-        },
+                    );
+                },
+            },
+            {
+                id: `branch_${branch.id}_group`,
+                header: () => <div className="text-center text-xs text-muted-foreground font-normal">Group</div>,
+                cell: ({ row }) => {
+                    const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
+                    const groupName = branchStock?.group?.name;
+                    return (
+                        <div className="text-center text-muted-foreground text-sm">
+                            {groupName || '-'}
+                        </div>
+                    );
+                },
+            },
+            {
+                id: `branch_${branch.id}_cost`,
+                header: () => <div className="text-right text-xs text-muted-foreground font-normal">Cost Price</div>,
+                cell: ({ row }) => {
+                    const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
+                    const cost = branchStock?.cost_price;
+                    return (
+                        <div className="text-right font-mono tabular-nums text-muted-foreground">
+                            {cost != null ? `${formatCurrency(Number(cost))} Ks` : '-'}
+                        </div>
+                    );
+                },
+            },
+            {
+                id: `branch_${branch.id}_selling`,
+                header: () => <div className="text-right text-xs text-muted-foreground font-normal">Selling Price</div>,
+                cell: ({ row }) => {
+                    const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
+                    const selling = branchStock?.selling_price;
+                    return (
+                        <div className="text-right font-mono tabular-nums font-medium text-foreground">
+                            {selling != null ? `${formatCurrency(Number(selling))} Ks` : '-'}
+                        </div>
+                    );
+                },
+            }
+        ]
     }));
 };
 
