@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CustomerPaymentUpdateRequest extends FormRequest
 {
@@ -20,18 +21,14 @@ class CustomerPaymentUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_no' => ['required', 'string', 'max:50', 'unique:customer_payments,payment_no'],
+            // Removed payment_no since it's not being updated through the form
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
-            'payment_date' => ['required', 'date'],
-            'amount' => ['required', 'numeric', 'between:-9999999999999.99,9999999999999.99'],
+            'payment_date' => ['required', 'date_format:Y-m-d'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['required', 'string', 'max:50'],
             'reference_no' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string'],
-            'created_by' => ['nullable'],
-            'created_at' => ['required'],
-            'updated_at' => ['required'],
-            'creator_id' => ['required', 'integer', 'exists:Users,id'],
         ];
     }
 }

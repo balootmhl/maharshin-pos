@@ -22,7 +22,7 @@ class CustomerPaymentStoreRequest extends FormRequest
         return [
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
-            'payment_date' => ['required', 'date'],
+            'payment_date' => ['required', 'date_format:Y-m-d'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'payment_method' => ['required', 'string', 'max:50'],
             'reference_no' => ['nullable', 'string', 'max:100'],

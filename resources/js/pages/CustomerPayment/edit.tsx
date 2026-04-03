@@ -41,10 +41,21 @@ export default function CustomerPaymentEdit({
     customers: Customer[];
     branches: Branch[];
 }) {
+    // The backend BaseModel serializes dates as Y/m/d by default
+    // We must replace / with - because HTML5 date inputs strictly require YYYY-MM-DD
+    let formattedDate = '';
+    try {
+        if (customerPayment.payment_date) {
+            formattedDate = customerPayment.payment_date.replace(/\//g, '-').substring(0, 10);
+        }
+    } catch (e) {
+        console.error('Date parsing error:', e);
+    }
+
     const { data, setData, patch, errors, processing } = useForm<PaymentForm>({
         customer_id: String(customerPayment.customer_id),
         branch_id: String(customerPayment.branch_id),
-        payment_date: customerPayment.payment_date,
+        payment_date: formattedDate,
         amount: String(customerPayment.amount),
         payment_method: customerPayment.payment_method,
         reference_no: customerPayment.reference_no || '',
@@ -58,12 +69,30 @@ export default function CustomerPaymentEdit({
         });
     };
 
+    // Filter out errors that don't match any form field (to prevent "silent" errors)
+    const formFieldKeys = ['customer_id', 'branch_id', 'payment_date', 'amount', 'payment_method', 'reference_no', 'notes'];
+    const orphanedErrors = Object.keys(errors).filter((key) => !formFieldKeys.includes(key));
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Payment ${customerPayment.payment_no}`} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <form onSubmit={submit} className="md:max-w-xl">
                     <div className="space-y-6">
+                        {/* Display orphaned errors at the top */}
+                        {orphanedErrors.length > 0 && (
+                            <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/10 dark:text-red-400">
+                                <p className="font-bold">Please check the following errors:</p>
+                                <ul className="mt-1 list-disc pl-5">
+                                    {orphanedErrors.map((key) => (
+                                        <li key={key}>
+                                            <span className="capitalize">{key.replace('_', ' ')}</span>: {(errors as Record<string, string | undefined>)[key]}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid grid-flow-row gap-2">
                                 <Label htmlFor="customer_id">Customer*</Label>

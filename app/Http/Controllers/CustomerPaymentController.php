@@ -129,16 +129,60 @@ class CustomerPaymentController extends Controller
 
     public function update(CustomerPaymentUpdateRequest $request, CustomerPayment $customerPayment): RedirectResponse
     {
-        $customerPayment->update($request->validated());
+        $validated = $request->validated();
+        
+        DB::transaction(function () use ($validated, $customerPayment) {
+            // 1. Revert old amount from old customer balance
+            $oldCustomer = Customer::find($customerPayment->customer_id);
+            if ($oldCustomer) {
+                $oldCustomer->increment('current_balance', $customerPayment->amount);
+            }
 
-        $request->session()->flash('customerPayment.id', $customerPayment->id);
+            // 2. Update the payment
+            $customerPayment->update($validated);
+
+            // 3. Apply new amount to new customer balance
+            $newCustomer = Customer::find($validated['customer_id']);
+            if ($newCustomer) {
+                $newCustomer->decrement('current_balance', $validated['amount']);
+            }
+
+            // 4. Update the related credit ledger entry
+            $ledger = CustomerCreditLedger::where('reference_type', CustomerPayment::class)
+                ->where('reference_id', $customerPayment->id)
+                ->first();
+
+            if ($ledger) {
+                $ledger->update([
+                    'customer_id' => $validated['customer_id'],
+                    'branch_id' => $validated['branch_id'],
+                    'transaction_date' => $validated['payment_date'],
+                    'credit' => $validated['amount'],
+                    'balance' => $newCustomer->fresh()->current_balance,
+                    'description' => "Payment received: {$customerPayment->payment_no}",
+                ]);
+            }
+        });
 
         return redirect()->route('customer-payments.index')->with('success', 'Payment updated successfully.');
     }
 
     public function destroy(Request $request, CustomerPayment $customerPayment): RedirectResponse
     {
-        $customerPayment->delete();
+        DB::transaction(function () use ($customerPayment) {
+            // Revert customer balance
+            $customer = Customer::find($customerPayment->customer_id);
+            if ($customer) {
+                $customer->increment('current_balance', $customerPayment->amount);
+            }
+
+            // Delete the related credit ledger entry
+            CustomerCreditLedger::where('reference_type', CustomerPayment::class)
+                ->where('reference_id', $customerPayment->id)
+                ->delete();
+
+            $customerPayment->delete();
+        });
 
         return redirect()->route('customer-payments.index')->with('success', 'Payment deleted successfully.');
     }
