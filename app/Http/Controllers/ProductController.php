@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Exports\ProductsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -47,6 +49,34 @@ class ProductController extends Controller
             'branches' => $branches,
             'categories' => $categories, // Passed for filter
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        $products = QueryBuilder::for(Product::class)
+            ->with(['category', 'branchStocks.branch', 'branchStocks.group'])
+            ->allowedFilters([
+                AllowedFilter::callback('global', function ($query, $value) {
+                    $query->where(function ($q) use ($value) {
+                        $q->where('code', 'like', "%{$value}%")
+                          ->orWhere('name', 'like', "%{$value}%");
+                    });
+                }),
+                AllowedFilter::exact('category.name'),
+                AllowedFilter::exact('is_active'),
+            ])
+            ->allowedSorts(['name', 'code', 'selling_price', 'cost_price', 'is_active', 'created_at'])
+            ->defaultSort('-created_at')
+            ->get();
+
+        $user = Auth::user();
+        $branches = Branch::where('is_active', true)->get(['id', 'name', 'code']);
+        
+        $visibleBranches = $user->is_super_admin 
+            ? $branches 
+            : $branches->filter(fn($b) => $b->id === $user->branch_id);
+
+        return Excel::download(new ProductsExport($products, $visibleBranches), 'products_export_' . now()->format('YmdHis') . '.xlsx');
     }
 
     public function create(Request $request): Response

@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Branch, BreadcrumbItem, LaravelPaginator, PaginatedData, Product, SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, X } from 'lucide-react';
+import { ArrowUpDown, Download, X } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -295,7 +295,15 @@ export default function ProductIndex({ products, branches, categories }: Product
             <Head title="Products" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex flex-row justify-between">
-                    <CreateBtn route={route('products.create')} />
+                    <div className="flex gap-2">
+                        <CreateBtn route={route('products.create')} />
+                        <Button variant="outline" asChild>
+                            <a href={`${route('products.export')}${window.location.search}`}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Export
+                            </a>
+                        </Button>
+                    </div>
                 </div>
                 <DataTable
                     data={products}
