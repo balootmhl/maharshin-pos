@@ -18,10 +18,10 @@
                 margin: 0;
             @elseif ($format === 'a5')
                 size: A5;
-                margin: 10mm;
+                margin: 4mm;
             @else
                 size: A4;
-                margin: 10mm;
+                margin: 4mm;
             @endif
         }
 
@@ -47,7 +47,7 @@
         .invoice-container {
             max-width: {{ $format === 'thermal' ? '72mm' : ($format === 'a5' ? '148mm' : '210mm') }};
             margin: 0 auto;
-            padding: {{ $format === 'thermal' ? '5mm' : ($format === 'a5' ? '10mm' : '15mm') }};
+            padding: {{ $format === 'thermal' ? '5mm' : ($format === 'a5' ? '5mm' : '7mm') }};
         }
 
         /* Header */
@@ -64,19 +64,32 @@
         }
 
         .company-info {
-            width: {{ $format === 'thermal' ? '100%' : 'auto' }};
+            width: 100%;
+            display: flex;
+            flex-direction: {{ $format === 'thermal' ? 'column' : 'row' }};
+            align-items: center;
+            justify-content: {{ $format === 'thermal' ? 'center' : 'flex-start' }};
+            gap: {{ $format === 'thermal' ? '5px' : '20px' }};
             margin-bottom: {{ $format === 'thermal' ? '10px' : '0' }};
+            text-align: {{ $format === 'thermal' ? 'center' : 'left' }};
+        }
+
+        .company-text {
+            display: flex;
+            flex-direction: column;
         }
 
         .company-info h1 {
-            font-size: {{ $format === 'thermal' ? '16px' : ($format === 'a5' ? '20px' : '28px') }};
+            font-size: {{ $format === 'thermal' ? '16px' : ($format === 'a5' ? '16px' : '22px') }};
             color: #1E3A5F;
             margin-bottom: 5px;
+            text-transform: uppercase;
         }
 
         .company-info p {
             font-size: {{ $format === 'thermal' ? '9px' : ($format === 'a5' ? '12px' : '13px') }};
             color: #666;
+            line-height: 1.5;
         }
 
         .invoice-title {
@@ -139,7 +152,7 @@
         .items-table th {
             background: {{ $format === 'thermal' ? 'transparent' : '#1E3A5F' }};
             color: {{ $format === 'thermal' ? '#000' : 'white' }};
-            padding: {{ $format === 'thermal' ? '5px 0' : ($format === 'a5' ? '8px 6px' : '10px 8px') }};
+            padding: {{ $format === 'thermal' ? '5px 0' : ($format === 'a5' ? '8px 3px' : '10px 4px') }};
             text-align: left;
             font-size: {{ $format === 'thermal' ? '9px' : ($format === 'a5' ? '12px' : '13px') }};
             text-transform: uppercase;
@@ -152,8 +165,8 @@
             text-align: right;
         }
 
-        .items-table th:nth-child(2),
-        .items-table td:nth-child(2),
+        /* .items-table th:nth-child(2),
+        .items-table td:nth-child(2), */
         .items-table th:nth-child(3),
         .items-table td:nth-child(3) {
             text-align: center;
@@ -166,7 +179,7 @@
 
         .items-table th:nth-child(4),
         .items-table td:nth-child(4) {
-            text-align: center;
+            text-align: right;
             width: 1%;
             white-space: nowrap;
             padding-left: 2px;
@@ -178,7 +191,7 @@
         }
 
         .items-table td {
-            padding: {{ $format === 'thermal' ? '5px 0' : ($format === 'a5' ? '8px 6px' : '10px 8px') }};
+            padding: {{ $format === 'thermal' ? '3px 0' : ($format === 'a5' ? '4px 3px' : '5px 4px') }};
             border-bottom: {{ $format === 'thermal' ? 'none' : '1px solid #eee' }};
             font-size: {{ $format === 'thermal' ? '9px' : ($format === 'a5' ? '12px' : '13px') }};
         }
@@ -190,6 +203,12 @@
         .product-code {
             color: #888;
             font-size: {{ $format === 'thermal' ? '8px' : ($format === 'a5' ? '10px' : '11px') }};
+        }
+
+        .font-mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+"Courier New", monospace;
+            /* font-weight: bold; */
         }
 
         /* Totals */
@@ -212,7 +231,9 @@
 
         .totals-table tr td:last-child {
             text-align: right;
-            font-family: 'Courier New', monospace;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+"Courier New", monospace;
+            /* font-weight: bold; */
         }
 
         .totals-table .total-row {
@@ -292,27 +313,22 @@
         <!-- Header -->
         <div class="invoice-header">
             <div class="company-info">
-                <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 80px; margin-bottom: 5px;">
-                <h1>Zabyuaungpyae</h1>
-                <p><strong>{{ $sale->branch?->name ?? 'Bayintnaung Showroom' }}</strong></p>
-                <p>{{ $sale->branch?->address ?? '' }}</p>
-                <p>{{ $sale->branch?->phone ?? '' }}</p>
+                <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 150px;">
+                <div class="company-text">
+                    <h1>Zabyuaungpyae</h1>
+                    <p><strong>{{ $sale->branch?->name ?? 'Bayintnaung Showroom' }}</strong></p>
+                    <p>{{ $sale->branch?->address ?? '' }}</p>
+                    <p>{{ $sale->branch?->phone ?? '' }}</p>
+                </div>
             </div>
-            <div class="invoice-title">
+            {{-- <div class="invoice-title">
                 <h2>INVOICE</h2>
                 <div class="invoice-no">{{ $sale->invoice_no }}</div>
-            </div>
+            </div> --}}
         </div>
 
         <!-- Details -->
         <div class="invoice-details">
-            <div class="detail-section">
-                <h3>Bill To</h3>
-                <p><strong>{{ $sale->customer?->name ?? 'Walk-in Customer' }}</strong></p>
-                @if ($sale->customer?->phone)
-                    <p>{{ $sale->customer->phone }}</p>
-                @endif
-            </div>
             <div class="detail-section" style="text-align: right;">
                 <h3>Invoice Details</h3>
                 <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($sale->sale_date)->format('d M Y') }}</p>
@@ -323,6 +339,19 @@
                     </span>
                 </p>
             </div>
+            <div class="detail-section">
+                <h3>Bill To</h3>
+                <p><strong>{{ $sale->customer?->name ?? 'Walk-in Customer' }}</strong></p>
+                @if ($sale->customer?->phone)
+                    <p>{{ $sale->customer->phone }}</p>
+                @endif
+            </div>
+            <div class="detail-section">
+                <div class="invoice-title">
+                    <h2>INVOICE</h2>
+                    <div class="invoice-no">{{ $sale->invoice_no }}</div>
+                </div>
+            </div>
         </div>
 
         <!-- Items Table -->
@@ -330,6 +359,7 @@
             <thead>
                 <tr>
                     <th>Item</th>
+                    <th></th>
                     <th>Group</th>
                     <th>Price</th>
                     <th>Qty</th>
@@ -342,13 +372,16 @@
                     <tr>
                         <td>
                             {{ $item->product?->code ?? '' }}
-                            <div class="product-code">{{ $item->product?->name ?? 'Unknown Product' }}</div>
+                            {{-- <div class="product-code">{{ $item->product?->name ?? 'Unknown Product' }}</div> --}}
+                        </td>
+                        <td>
+                            {{ $item->product?->name ?? 'Unknown Product' }}
                         </td>
                         <td>{{ $item->product?->branchStocks->where('branch_id', $sale->branch_id)->first()?->group?->name ?? '-' }}</td>
-                        <td>{{ number_format($item->unit_price, 0) }}</td>
-                        <td style="text-align: center;">{{ $item->quantity }}</td>
+                        <td class="font-mono">{{ number_format($item->unit_price, 0) }}</td>
+                        <td class="font-mono">{{ $item->quantity }}</td>
                         <td style="text-align: left; padding-left: 2px;"><span style="font-size: 1.4em;">&#9744;</span></td>
-                        <td style="text-align: right;">{{ number_format($item->subtotal, 0) }}</td>
+                        <td class="font-mono" style="text-align: right;">{{ number_format($item->subtotal, 0) }}</td>
                     </tr>
                 @endforeach
             </tbody>

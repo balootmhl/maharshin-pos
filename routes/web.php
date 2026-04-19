@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ProductSearchController;
+use Illuminate\Http\Request;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchStockController;
 use App\Http\Controllers\CategoryController;
@@ -117,6 +118,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Product Search API (JSON endpoints for POS & Purchase)
     Route::get('api/products/search', [ProductSearchController::class, 'search'])->name('api.products.search');
     Route::get('api/products/barcode-lookup', [ProductSearchController::class, 'barcodeLookup'])->name('api.products.barcode-lookup');
+
+    // Debug & Layout Preview Routes
+    Route::prefix('debug')->group(function () {
+        Route::get('invoice', function (Request $request) {
+            $sale = \App\Models\Sale::latest()->first();
+            if (!$sale) return "No sales found in database for preview. Please create a sale first.";
+            
+            $sale->load(['branch', 'customer', 'saleItems.product', 'createdBy']);
+            return view('print.invoice', [
+                'sale' => $sale,
+                'format' => $request->query('format', 'a4'),
+            ]);
+        })->name('debug.invoice');
+
+        Route::get('po', function (Request $request) {
+            $purchase = \App\Models\Purchase::latest()->first();
+            if (!$purchase) return "No purchases found in database for preview. Please create a purchase PO first.";
+            
+            $purchase->load(['branch', 'supplier', 'purchaseItems.product', 'createdBy']);
+            return view('print.purchase_order', [
+                'purchase' => $purchase,
+                'format' => $request->query('format', 'a4'),
+            ]);
+        })->name('debug.po');
+    });
 
 });
 
