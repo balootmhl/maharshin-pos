@@ -118,6 +118,10 @@ export const navMain: NavGroup[] = [
                 title: 'Low Stock Report',
                 url: route('reports.low-stock'),
             },
+            {
+                title: 'Daily Profit Report',
+                url: route('reports.daily-profit'),
+            },
         ],
     },
     {

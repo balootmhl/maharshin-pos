@@ -113,6 +113,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('sales', [ReportController::class, 'salesReport'])->name('sales');
         Route::get('low-stock', [ReportController::class, 'lowStockReport'])->name('low-stock');
+        Route::get('daily-profit', [ReportController::class, 'dailyProfitReport'])->name('daily-profit');
     });
 
     // Product Search API (JSON endpoints for POS & Purchase)

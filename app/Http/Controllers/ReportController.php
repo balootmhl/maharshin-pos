@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\BranchStock;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -186,5 +187,100 @@ class ReportController extends Controller
             'today_cash' => $todaySales->total_cash ?? 0,
             'percent_change' => round($percentChange, 1),
         ];
+    }
+
+    /**
+     * Daily Profit Report
+     * Shows each sale invoice and its line items with profit calculated as:
+     * profit_per_unit = sale_items.unit_price - branch_stocks.cost_price
+     * item_profit     = profit_per_unit * sale_items.quantity
+     */
+    public function dailyProfitReport(Request $request): Response
+    {
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $branchId = $request->get('branch_id');
+
+        // Base sale query for the selected date
+        $saleQuery = Sale::withoutGlobalScopes()
+            ->whereDate('sale_date', $date)
+            ->whereNull('deleted_at')
+            ->with(['customer:id,name', 'branch:id,name']);
+
+        if ($branchId) {
+            $saleQuery->where('branch_id', $branchId);
+        }
+
+        $sales = $saleQuery->get();
+        $saleIds = $sales->pluck('id');
+
+        // Load sale items with product info and branch_stock cost_price via raw join
+        $rawItems = DB::table('sale_items as si')
+            ->join('sales as s', 'si.sale_id', '=', 's.id')
+            ->join('products as p', 'si.product_id', '=', 'p.id')
+            ->leftJoin(DB::raw('(SELECT product_id, branch_id, MAX(cost_price) as cost_price FROM branch_stocks WHERE deleted_at IS NULL GROUP BY product_id, branch_id) as bs'), function ($join) {
+                $join->on('bs.product_id', '=', 'si.product_id')
+                     ->on('bs.branch_id', '=', 's.branch_id');
+            })
+            ->whereIn('si.sale_id', $saleIds)
+            ->select([
+                'si.id',
+                'si.sale_id',
+                'si.product_id',
+                'si.quantity',
+                'si.unit_price',
+                'si.subtotal',
+                'p.name as product_name',
+                'p.code as product_code',
+                DB::raw('COALESCE(bs.cost_price, p.cost_price, 0) as cost_price'),
+                DB::raw('(si.unit_price - COALESCE(bs.cost_price, p.cost_price, 0)) as profit_per_unit'),
+                DB::raw('(si.unit_price - COALESCE(bs.cost_price, p.cost_price, 0)) * si.quantity as item_profit'),
+            ])
+            ->get()
+            ->groupBy('sale_id');
+
+        // Build structured invoice list
+        $invoices = $sales->map(function ($sale) use ($rawItems) {
+            $items = collect($rawItems->get($sale->id, []));
+            $invoiceProfit = $items->sum('item_profit');
+
+            return [
+                'id'             => $sale->id,
+                'invoice_no'     => $sale->invoice_no,
+                'customer_name'  => $sale->customer?->name,
+                'branch_name'    => $sale->branch?->name,
+                'sale_date'      => $sale->sale_date->format('Y-m-d'),
+                'payment_status' => $sale->payment_status,
+                'total_amount'   => (float) $sale->total_amount,
+                'invoice_profit' => (float) $invoiceProfit,
+                'items'          => $items->map(fn ($item) => [
+                    'product_name'   => $item->product_name,
+                    'product_code'   => $item->product_code,
+                    'quantity'       => (float) $item->quantity,
+                    'unit_price'     => (float) $item->unit_price,
+                    'cost_price'     => (float) $item->cost_price,
+                    'profit_per_unit'=> (float) $item->profit_per_unit,
+                    'item_profit'    => (float) $item->item_profit,
+                    'subtotal'       => (float) $item->subtotal,
+                ])->values(),
+            ];
+        })->values();
+
+        // Overall summary
+        $totalRevenue = $invoices->sum('total_amount');
+        $totalProfit  = $invoices->sum('invoice_profit');
+
+        return Inertia::render('Report/DailyProfitReport', [
+            'branches' => Branch::where('is_active', true)->get(['id', 'name']),
+            'filters'  => [
+                'date'      => $date,
+                'branch_id' => $branchId,
+            ],
+            'summary' => [
+                'total_invoices' => $invoices->count(),
+                'total_revenue'  => $totalRevenue,
+                'total_profit'   => $totalProfit,
+            ],
+            'invoices' => $invoices,
+        ]);
     }
 }
