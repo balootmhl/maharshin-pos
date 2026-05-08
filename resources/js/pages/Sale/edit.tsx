@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -423,7 +424,7 @@ export default function SaleEdit({
 
                     {/* Header with Branch, Customer, and Price Type */}
                     <Card>
-                        <CardContent className="grid grid-cols-3 gap-4 pt-4">
+                        <CardContent className="grid grid-cols-3 gap-4 pt-0">
                             <div className="space-y-2">
                                 <Label>Branch</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
@@ -488,6 +489,17 @@ export default function SaleEdit({
                                         <SelectItem value="cost_price">Cost Price</SelectItem>
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className="col-span-3 space-y-2">
+                                <Label>Notes</Label>
+                                <Textarea
+                                    placeholder="Add sale notes..."
+                                    value={data.notes}
+                                    onChange={(e) => setData('notes', e.target.value)}
+                                    className="min-h-[60px]"
+                                    tabIndex={5}
+                                />
+                                <InputError message={errors.notes} />
                             </div>
                         </CardContent>
                     </Card>
@@ -737,7 +749,7 @@ export default function SaleEdit({
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-4 pt-4">
+                            <div className="grid grid-cols-2 gap-4 pt-0">
                                 <Button asChild variant="outline" className="w-full">
                                     <Link href={route('sales.index')}>
                                         <ArrowLeft className="mr-2 h-4 w-4" /> Back

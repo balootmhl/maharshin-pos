@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -544,7 +545,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
 
                         {/* Header with Branch, Customer, and Price Type */}
                         <Card>
-                            <CardContent className="grid grid-cols-3 gap-4 pt-4">
+                            <CardContent className="grid grid-cols-3 gap-4 pt-0">
                                 <div className="space-y-2">
                                     <Label>Branch</Label>
                                     <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
@@ -617,6 +618,17 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                <div className="col-span-3 space-y-2">
+                                    <Label>Notes</Label>
+                                    <Textarea
+                                        placeholder="Add sale notes..."
+                                        value={data.notes}
+                                        onChange={(e) => setData('notes', e.target.value)}
+                                        className="min-h-[60px]"
+                                        tabIndex={5}
+                                    />
+                                    <InputError message={errors.notes} />
+                                </div>
                             </CardContent>
                         </Card>
 
@@ -650,7 +662,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
 
                         {/* Cart Items */}
                         <Card className="flex h-0 grow min-h-0 flex-col">
-                            <CardHeader className="flex flex-row items-center justify-between py-3">
+                            <CardHeader className="flex flex-row items-center justify-between py-0">
                                 <div className="flex items-center gap-2">
                                     <ShoppingCart className="h-5 w-5" />
                                     <CardTitle className="text-lg">Cart</CardTitle>
@@ -762,7 +774,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                     <div className="flex h-full flex-col gap-4">
                         {/* Totals and Payment */}
                         <Card>
-                            <CardContent className="space-y-3 pt-4">
+                            <CardContent className="space-y-3 pt-0">
                                 <div className="flex justify-between text-sm">
                                     <span>Subtotal</span>
                                     <span className="font-mono">{formatCurrency(cartTotals.subtotal)} Ks</span>
