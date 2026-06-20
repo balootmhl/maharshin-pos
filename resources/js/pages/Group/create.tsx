@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem, Branch, SharedData } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 type GroupForm = {
@@ -30,10 +30,16 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function GroupCreate({ branches }: { branches: Branch[] }) {
+    const { auth } = usePage<SharedData>().props;
+
+    const defaultBranchId = auth.user.is_super_admin
+        ? (branches[0]?.id?.toString() || '')
+        : (auth.user.branch_id?.toString() || '');
+
     const { data, setData, post, reset, errors, processing } = useForm<GroupForm>({
         code: '',
         name: '',
-        branch_id: branches[0]?.id?.toString() || '',
+        branch_id: defaultBranchId,
         description: '',
         is_active: true,
     });
@@ -81,7 +87,7 @@ export default function GroupCreate({ branches }: { branches: Branch[] }) {
                         </div>
                         <div className="grid grid-flow-row gap-2">
                             <Label htmlFor="branch_id">Branch*</Label>
-                            <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
+                            <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select branch" />
                                 </SelectTrigger>

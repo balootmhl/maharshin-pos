@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Product, Supplier } from '@/types';
+import { type BreadcrumbItem, Branch, Product, Supplier, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Minus, Package, Plus, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -82,7 +82,7 @@ export default function PurchaseCreate({
     suppliers: Supplier[];
     purchaseNo: string;
 }) {
-    const { flash } = usePage<{ flash: { completedPurchase?: CompletedPurchase } }>().props;
+    const { auth, flash } = usePage<SharedData & { flash: { completedPurchase?: CompletedPurchase } }>().props;
 
     // Success dialog state
     const [successDialogOpen, setSuccessDialogOpen] = useState(false);
@@ -105,14 +105,12 @@ export default function PurchaseCreate({
     const barcodeInputRef = useRef<HTMLInputElement>(null);
     const paidAmountInputRef = useRef<HTMLInputElement>(null);
 
-    // Server-side product search
-    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
-        branchId: branches[0]?.id?.toString() || '',
-        context: 'purchase',
-    });
+    const defaultBranchId = auth.user.is_super_admin
+        ? (branches[0]?.id?.toString() || '')
+        : (auth.user.branch_id?.toString() || '');
 
     const { data, setData, post, errors, processing, reset } = useForm<PurchaseForm>({
-        branch_id: branches[0]?.id?.toString() || '',
+        branch_id: defaultBranchId,
         supplier_id: 'none',
         purchase_date: today,
         subtotal: 0,
@@ -122,6 +120,12 @@ export default function PurchaseCreate({
         paid_amount: 0,
         notes: '',
         items: [],
+    });
+
+    // Server-side product search
+    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
+        branchId: data.branch_id,
+        context: 'purchase',
     });
 
     // Helper to get product details based on selected branch
@@ -469,7 +473,7 @@ export default function PurchaseCreate({
                         <CardContent className="grid grid-cols-2 gap-4 pt-4 lg:grid-cols-4">
                             <div className="space-y-2">
                                 <Label>Branch*</Label>
-                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
+                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                     <SelectTrigger tabIndex={3}>
                                         <SelectValue placeholder="Select branch" />
                                     </SelectTrigger>

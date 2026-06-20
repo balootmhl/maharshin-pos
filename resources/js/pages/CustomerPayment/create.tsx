@@ -5,8 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Customer } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem, Branch, Customer, SharedData } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 type PaymentForm = {
@@ -35,9 +35,15 @@ const paymentMethods = ['Cash', 'Bank Transfer', 'Mobile Banking', 'Check', 'Oth
 export default function CustomerPaymentCreate({ customers = [], branches = [] }: { customers: Customer[]; branches: Branch[] }) {
     const today = new Date().toISOString().split('T')[0];
 
+    const { auth } = usePage<SharedData>().props;
+
+    const defaultBranchId = auth.user.is_super_admin
+        ? (branches[0]?.id?.toString() || '')
+        : (auth.user.branch_id?.toString() || '');
+
     const { data, setData, post, reset, errors, processing } = useForm<PaymentForm>({
         customer_id: '',
-        branch_id: '',
+        branch_id: defaultBranchId,
         payment_date: today,
         amount: '',
         payment_method: 'Cash',
@@ -80,7 +86,7 @@ export default function CustomerPaymentCreate({ customers = [], branches = [] }:
                             </div>
                             <div className="grid grid-flow-row gap-2">
                                 <Label htmlFor="branch_id">Branch*</Label>
-                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
+                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select branch" />
                                     </SelectTrigger>

@@ -97,10 +97,10 @@ export default function UserCreate({ roles, branches }: { roles: string[]; branc
                                 <InputError className="mt-2" message={errors.main_role} />
                             </div>
                             <div className="grid grid-flow-row gap-2">
-                                <Label htmlFor="branch_id">Branch</Label>
+                                <Label htmlFor="branch_id">Branch{data.main_role !== 'god' ? '*' : ''}</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select branch (optional)" />
+                                        <SelectValue placeholder={data.main_role !== 'god' ? "Select branch" : "Select branch (optional)"} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {branches.map((branch) => (

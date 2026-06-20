@@ -5,8 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import QuickAdjustDialog from '@/pages/StockAdjustment/QuickAdjustDialog';
-import { Branch, BreadcrumbItem, Category, Product } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { Branch, BreadcrumbItem, Category, Product, SharedData } from '@/types';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Edit2, Save, Search } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -40,6 +40,7 @@ export default function ProductPricing({
     filters: { search?: string; category_id?: string };
     adjustmentReasons: Record<string, string>;
 }) {
+    const { auth } = usePage<SharedData>().props;
     const [search, setSearch] = useState(filters.search || '');
     const [categoryFilter, setCategoryFilter] = useState<string>(filters.category_id || 'all');
     const [changes, setChanges] = useState<Map<number, PriceChange>>(new Map());
@@ -181,7 +182,7 @@ export default function ProductPricing({
 
                 {/* Filters */}
                 <div className="flex flex-wrap items-center gap-3">
-                    <Select value={String(selectedBranchId)} onValueChange={handleBranchChange}>
+                    <Select value={String(selectedBranchId)} onValueChange={handleBranchChange} disabled={!auth.user.is_super_admin}>
                         <SelectTrigger className="w-[250px]">
                             <SelectValue placeholder="Select branch" />
                         </SelectTrigger>

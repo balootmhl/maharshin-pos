@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Customer, Product, Sale } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem, Branch, Customer, Product, Sale, SharedData } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, Loader2, Minus, Package, Plus, ShoppingCart, Trash2, ArrowLeft, Save } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -77,6 +77,8 @@ export default function SaleEdit({
         { title: `Edit ${sale.invoice_no}`, href: '#' },
     ];
 
+    const { auth } = usePage<SharedData>().props;
+
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchOpen, setSearchOpen] = useState(false);
@@ -107,12 +109,6 @@ export default function SaleEdit({
         }
     }, [sale]);
 
-    // Server-side product search
-    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
-        branchId: sale.branch_id.toString(), // Use sale branch initially
-        context: 'sale',
-    });
-
     const { data, setData, put, errors, processing } = useForm<SaleForm>({
         invoice_no: sale.invoice_no,
         branch_id: sale.branch_id.toString(),
@@ -130,6 +126,12 @@ export default function SaleEdit({
         price_type: sale.price_type || 'selling_price',
         items: [],
         creator_id: sale.created_by,
+    });
+
+    // Server-side product search
+    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
+        branchId: data.branch_id,
+        context: 'sale',
     });
 
     // Helper to get product details based on selected branch
@@ -427,7 +429,7 @@ export default function SaleEdit({
                         <CardContent className="grid grid-cols-3 gap-4 pt-0">
                             <div className="space-y-2">
                                 <Label>Branch</Label>
-                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
+                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                     <SelectTrigger tabIndex={3}>
                                         <SelectValue placeholder="Select branch" />
                                     </SelectTrigger>

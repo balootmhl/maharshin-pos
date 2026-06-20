@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useDirectPrint } from '@/hooks/use-direct-print';
 import { useProductSearch } from '@/hooks/use-product-search';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Customer, Product } from '@/types';
+import { type BreadcrumbItem, Branch, Customer, Product, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, Minus, Package, Pause, Play, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -87,8 +87,8 @@ type CompletedSale = {
 };
 
 export default function SaleCreate({ branches, customers }: { branches: Branch[]; customers: Customer[]; invoiceNo: string }) {
-    // Get flash data for completed sale
-    const { flash } = usePage<{ flash: { completedSale?: CompletedSale } }>().props;
+    // Get flash and auth data
+    const { auth, flash } = usePage<SharedData & { flash: { completedSale?: CompletedSale } }>().props;
 
     // Success dialog state
     const [successDialogOpen, setSuccessDialogOpen] = useState(false);
@@ -114,18 +114,22 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
     const discountInputRef = useRef<HTMLInputElement>(null);
     const paidAmountInputRef = useRef<HTMLInputElement>(null);
 
+    const defaultBranchId = auth.user.is_super_admin
+        ? (branches[0]?.id?.toString() || '')
+        : (auth.user.branch_id?.toString() || '');
+
     // Server-side product search
     const {
         products: searchResults,
         search: searchProducts,
         lookupBarcode,
     } = useProductSearch({
-        branchId: branches[0]?.id?.toString() || '',
+        branchId: defaultBranchId,
         context: 'sale',
     });
 
     const { data, setData, post, errors, processing, reset } = useForm<SaleForm>({
-        branch_id: branches[0]?.id?.toString() || '',
+        branch_id: defaultBranchId,
         customer_id: 'walk-in',
         sale_date: today,
         subtotal: 0,
@@ -548,7 +552,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                             <CardContent className="grid grid-cols-3 gap-4 pt-0">
                                 <div className="space-y-2">
                                     <Label>Branch</Label>
-                                    <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
+                                    <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                         <SelectTrigger tabIndex={3}>
                                             <SelectValue placeholder="Select branch" />
                                         </SelectTrigger>

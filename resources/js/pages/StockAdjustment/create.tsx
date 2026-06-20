@@ -5,8 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Product } from '@/types';
-import { Head, router, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem, Branch, Product, SharedData } from '@/types';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 type Reasons = Record<string, string>;
@@ -29,8 +29,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function StockAdjustmentCreate({ branches, products, reasons }: { branches: Branch[]; products: Product[]; reasons: Reasons }) {
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
+    const { auth } = usePage<SharedData>().props;
+
+    const defaultBranchId = auth.user.is_super_admin
+        ? (branches[0]?.id?.toString() || '')
+        : (auth.user.branch_id?.toString() || '');
+
     const { data, setData, post, processing, errors } = useForm({
-        branch_id: branches[0]?.id?.toString() || '',
+        branch_id: defaultBranchId,
         product_id: '',
         adjustment_date: new Date().toISOString().split('T')[0],
         adjustment_type: 'add',
@@ -75,7 +81,7 @@ export default function StockAdjustmentCreate({ branches, products, reasons }: {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="branch_id">Branch*</Label>
-                                    <Select value={data.branch_id} onValueChange={(value) => setData('branch_id', value)}>
+                                    <Select value={data.branch_id} onValueChange={(value) => setData('branch_id', value)} disabled={!auth.user.is_super_admin}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select branch" />
                                         </SelectTrigger>

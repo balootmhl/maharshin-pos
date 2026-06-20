@@ -12,8 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Product, Supplier, Purchase } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem, Branch, Product, Supplier, Purchase, SharedData } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Loader2, Minus, Package, Plus, Save, Trash2 } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -70,6 +70,8 @@ export default function PurchaseEdit({
         { title: `Edit ${purchase.purchase_no}`, href: '#' },
     ];
 
+    const { auth } = usePage<SharedData>().props;
+
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchOpen, setSearchOpen] = useState(false);
@@ -94,12 +96,6 @@ export default function PurchaseEdit({
         }
     }, [purchase]);
 
-    // Server-side product search
-    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
-        branchId: purchase.branch_id.toString(),
-        context: 'purchase',
-    });
-
     const { data, setData, put, errors, processing } = useForm<PurchaseForm>({
         purchase_no: purchase.purchase_no,
         branch_id: purchase.branch_id.toString(),
@@ -113,6 +109,12 @@ export default function PurchaseEdit({
         notes: purchase.notes || '',
         items: [],
         creator_id: purchase.created_by,
+    });
+
+    // Server-side product search
+    const { products: searchResults, search: searchProducts, lookupBarcode } = useProductSearch({
+        branchId: data.branch_id,
+        context: 'purchase',
     });
 
     // Helper to get product details based on selected branch
@@ -394,7 +396,7 @@ export default function PurchaseEdit({
                         <CardContent className="grid grid-cols-2 gap-4 pt-4 lg:grid-cols-4">
                             <div className="space-y-2">
                                 <Label>Branch*</Label>
-                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
+                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                     <SelectTrigger tabIndex={3}>
                                         <SelectValue placeholder="Select branch" />
                                     </SelectTrigger>

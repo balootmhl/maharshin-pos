@@ -5,8 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Customer, CustomerPayment } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem, Branch, Customer, CustomerPayment, SharedData } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 type PaymentForm = {
@@ -41,6 +41,8 @@ export default function CustomerPaymentEdit({
     customers: Customer[];
     branches: Branch[];
 }) {
+    const { auth } = usePage<SharedData>().props;
+
     // The backend BaseModel serializes dates as Y/m/d by default
     // We must replace / with - because HTML5 date inputs strictly require YYYY-MM-DD
     let formattedDate = '';
@@ -112,7 +114,7 @@ export default function CustomerPaymentEdit({
                             </div>
                             <div className="grid grid-flow-row gap-2">
                                 <Label htmlFor="branch_id">Branch*</Label>
-                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
+                                <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select branch" />
                                     </SelectTrigger>
