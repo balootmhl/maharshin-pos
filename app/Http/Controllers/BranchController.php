@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BranchStoreRequest;
 use App\Http\Requests\BranchUpdateRequest;
 use App\Models\Branch;
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -42,6 +43,18 @@ class BranchController extends Controller
     public function store(BranchStoreRequest $request): RedirectResponse
     {
         $branch = Branch::create($request->validated());
+
+        // Create default branch stock records for all existing products for the new branch
+        $products = Product::all();
+        foreach ($products as $product) {
+            $product->branchStocks()->create([
+                'branch_id' => $branch->id,
+                'group_id' => null,
+                'cost_price' => $product->cost_price,
+                'selling_price' => $product->selling_price,
+                'quantity' => 0,
+            ]);
+        }
 
         $request->session()->flash('branch.id', $branch->id);
 

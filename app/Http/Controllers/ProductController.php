@@ -161,8 +161,17 @@ class ProductController extends Controller
         }
 
         if (!empty($branchStockUpdates)) {
-            // This will respect the BranchScope if active, updating only for the current branch
-            $product->branchStocks()->update($branchStockUpdates);
+            $user = Auth::user();
+            if ($user && !$user->is_super_admin && $user->branch_id) {
+                // If it is a branch-scoped user, ensure the stock record exists and update it
+                $product->branchStocks()->updateOrCreate(
+                    ['branch_id' => $user->branch_id],
+                    $branchStockUpdates
+                );
+            } else {
+                // For super admins, update existing branch stock records
+                $product->branchStocks()->update($branchStockUpdates);
+            }
         }
 
         $request->session()->flash('product.id', $product->id);
