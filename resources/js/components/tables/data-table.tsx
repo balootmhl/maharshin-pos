@@ -35,10 +35,9 @@ import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Fi
 import React, { useCallback, useEffect, useState } from 'react';
 
 // Simple debounce implementation to avoid adding lodash dependency
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+function debounce<Args extends unknown[], R>(func: (...args: Args) => R, wait: number): (...args: Args) => void {
     let timeout: ReturnType<typeof setTimeout>;
-    return (...args: Parameters<T>) => {
+    return (...args: Args) => {
         clearTimeout(timeout);
         timeout = setTimeout(() => func(...args), wait);
     };
@@ -118,8 +117,7 @@ export function DataTable<TData>({
     // We check for 'meta' (API Resource) or 'current_page' (Standard Paginator)
     const isServerSide = !Array.isArray(data) && ('meta' in data || 'current_page' in data);
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tableData = isServerSide ? (data as any).data : (data as TData[]);
+    const tableData = isServerSide ? (data as PaginatedData<TData> | LaravelPaginator<TData>).data : (data as TData[]);
     
     // Extract meta: if data has 'meta' property, use it. Otherwise, data IS the meta (LaravelPaginator).
      
@@ -306,11 +304,9 @@ export function DataTable<TData>({
 
              // Apply updates if there are changes
              if (hasChanges) {
-                 const paramsToUpdate = { ...filterParams };
-                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                 keysToDelete.forEach(k => (paramsToUpdate as any)[k] = '');
-                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                 (paramsToUpdate as any)['page'] = 1; // Reset to page 1
+                 const paramsToUpdate: Record<string, string | number | undefined> = { ...filterParams };
+                 keysToDelete.forEach(k => paramsToUpdate[k] = '');
+                 paramsToUpdate['page'] = 1; // Reset to page 1
                  
                  updateServerParams(paramsToUpdate);
              }
