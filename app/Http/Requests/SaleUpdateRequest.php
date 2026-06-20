@@ -23,6 +23,10 @@ class SaleUpdateRequest extends FormRequest
         if ($this->customer_id === 'walk-in' || $this->customer_id === '') {
             $this->merge(['customer_id' => null]);
         }
+
+        if ($this->user() && !$this->user()->is_super_admin) {
+            $this->merge(['branch_id' => $this->user()->branch_id]);
+        }
     }
 
     /**

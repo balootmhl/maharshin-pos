@@ -15,6 +15,16 @@ class SaleReturnStoreRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->user() && !$this->user()->is_super_admin) {
+            $this->merge(['branch_id' => $this->user()->branch_id]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      */
     public function rules(): array

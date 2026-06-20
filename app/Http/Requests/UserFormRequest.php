@@ -39,7 +39,11 @@ class UserFormRequest extends FormRequest
                 ? ['nullable', Password::defaults()]
                 : ['required', Password::defaults()],
             'main_role' => ['required', 'string'],
-            'branch_id' => ['nullable', 'exists:branches,id'],
+            'branch_id' => [
+                Rule::requiredIf(fn () => $this->input('main_role') !== config('project.super_admin', 'god')),
+                'nullable',
+                'exists:branches,id',
+            ],
         ];
     }
 }

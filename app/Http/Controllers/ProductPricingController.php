@@ -75,7 +75,9 @@ class ProductPricingController extends Controller
             'prices.*.selling_price' => 'nullable|numeric|min:0',
         ]);
 
-        $branchId = $request->input('branch_id');
+        $branchId = $request->user()->is_super_admin
+            ? $request->input('branch_id')
+            : $request->user()->branch_id;
 
         foreach ($request->input('prices') as $priceData) {
             BranchStock::withoutGlobalScopes()

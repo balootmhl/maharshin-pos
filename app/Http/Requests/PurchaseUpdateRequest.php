@@ -23,6 +23,10 @@ class PurchaseUpdateRequest extends FormRequest
         if ($this->supplier_id === 'none' || $this->supplier_id === '') {
             $this->merge(['supplier_id' => null]);
         }
+
+        if ($this->user() && !$this->user()->is_super_admin) {
+            $this->merge(['branch_id' => $this->user()->branch_id]);
+        }
     }
 
     /**
