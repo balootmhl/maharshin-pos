@@ -74,6 +74,8 @@ export default function UserCreate({ roles, branches }: { roles: string[]; branc
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
                                 required
+                                pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                                title="Please enter a valid email address with a dot in the domain (e.g. user@example.com)"
                                 placeholder="moemoe@mail.com"
                             />
                             <InputError className="mt-2" message={errors.email} />

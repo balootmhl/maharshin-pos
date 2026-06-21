@@ -30,6 +30,7 @@ class UserFormRequest extends FormRequest
                 'required',
                 'lowercase',
                 'email',
+                'regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/',
                 'max:255',
                 $userId
                     ? Rule::unique(User::class)->ignore($userId)
