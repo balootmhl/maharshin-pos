@@ -52,18 +52,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('secret', function () {
             return Inertia::render('secret');
         })->name('secret');
+
+        Route::get('playground', PlaygroundController::class)->name('playground');
+        Route::resource('users', UserController::class);
+        Route::resource('roles', RoleController::class);
+        Route::resource('branches', BranchController::class);
     });
-
-    Route::get('playground', PlaygroundController::class)->name('playground');
-
-    Route::resource('users', UserController::class);
-
-    Route::resource('roles', RoleController::class);
 
     Route::get('todos/export', [TodoController::class, 'export'])->name('todos.export');
     Route::resource('todos', TodoController::class);
-
-    Route::resource('branches', BranchController::class);
 
     Route::resource('categories', CategoryController::class);
 
@@ -108,7 +105,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('stock-history', StockHistoryController::class)->only('index');
 
     require __DIR__.'/settings.php';
-    Route::resource('settings', SettingController::class)->only('index', 'update');
+
+    Route::group(['middleware' => ['role:god']], function () {
+        Route::resource('settings', SettingController::class)->only('index', 'update');
+    });
 
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
