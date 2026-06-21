@@ -24,7 +24,7 @@ class CategoryFactory extends Factory
             'code' => fake()->regexify('[A-Za-z0-9]{50}'),
             'name' => fake()->name(),
             'description' => fake()->text(),
-            'parent_id' => Category::factory(),
+            'parent_id' => null,
             'is_active' => fake()->boolean(),
         ];
     }

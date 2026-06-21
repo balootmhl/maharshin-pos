@@ -107,6 +107,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('stock-history', StockHistoryController::class)->only('index');
 
+    require __DIR__.'/settings.php';
     Route::resource('settings', SettingController::class)->only('index', 'update');
 
     // Reports
@@ -149,5 +150,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::impersonate();
 
-require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

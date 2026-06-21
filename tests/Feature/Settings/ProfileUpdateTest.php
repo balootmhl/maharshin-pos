@@ -15,6 +15,7 @@ test('profile page is displayed', function () {
 });
 
 test('profile information can be updated', function () {
+    $this->withoutExceptionHandling();
     $user = User::factory()->create();
 
     $response = $this
