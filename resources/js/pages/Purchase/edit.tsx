@@ -282,10 +282,10 @@ export default function PurchaseEdit({
             <Head title={`Edit ${purchase.purchase_no}`} />
             <form
                 onSubmit={submit}
-                className="grid h-[calc(100vh-110px)] grid-cols-1 gap-2 overflow-hidden p-2 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_minmax(400px,450px)]"
+                className="grid h-auto lg:h-[calc(100vh-110px)] grid-cols-1 gap-2 lg:overflow-hidden p-2 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_minmax(400px,450px)]"
             >
                 {/* Left: Product Selection and Cart */}
-                <div className="flex h-full flex-col gap-2 min-h-0 overflow-hidden">
+                <div className="flex h-auto lg:h-full flex-col gap-2 lg:min-h-0 lg:overflow-hidden">
                     {/* Search */}
                     <div className="flex gap-4">
                         <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -443,7 +443,7 @@ export default function PurchaseEdit({
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex h-0 grow flex-col min-h-0 py-2 gap-2">
+                    <Card className="flex h-auto min-h-[300px] lg:h-0 lg:grow lg:min-h-0 flex-col py-2 gap-2">
                         <CardHeader className="flex flex-row items-center justify-between py-0 px-3">
                             <div className="flex items-center gap-2">
                                 <Package className="h-5 w-5" />
@@ -451,7 +451,7 @@ export default function PurchaseEdit({
                                 <Badge variant="secondary">{cart.length} items</Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="h-0 grow overflow-y-auto p-2">
+                        <CardContent className="h-auto lg:h-0 lg:grow lg:overflow-y-auto p-2">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -540,7 +540,7 @@ export default function PurchaseEdit({
                 </div>
 
                 {/* Right: Payment */}
-                <div className="flex flex-col gap-2 overflow-y-auto h-full pr-1">
+                <div className="flex flex-col gap-2 lg:overflow-y-auto h-auto lg:h-full pr-1">
                     {/* Totals */}
                     <Card className="gap-1 py-3">
                         <CardHeader className="py-0 px-3 items-center flex justify-between">

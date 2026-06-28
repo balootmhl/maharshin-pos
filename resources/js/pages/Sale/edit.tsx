@@ -300,9 +300,9 @@ export default function SaleEdit({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${sale.invoice_no}`} />
-            <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_minmax(400px,450px)] h-[calc(100vh-110px)] gap-2 p-2 overflow-hidden">
+            <form onSubmit={submit} className="grid grid-cols-1 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_minmax(400px,450px)] h-auto lg:h-[calc(100vh-110px)] gap-2 p-2 lg:overflow-hidden">
                 {/* Left: Product Selection */}
-                <div className="flex flex-col gap-2 h-full min-h-0 overflow-hidden">
+                <div className="flex flex-col gap-2 h-auto lg:h-full lg:min-h-0 lg:overflow-hidden">
                     {/* Keyboard-First Product Search */}
                     <div className="flex gap-4">
                         <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -507,7 +507,7 @@ export default function SaleEdit({
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex h-0 grow flex-col min-h-0 py-2 gap-2">
+                    <Card className="flex h-auto min-h-[300px] lg:h-0 lg:grow lg:min-h-0 flex-col py-2 gap-2">
                         <CardHeader className="flex flex-row items-center justify-between py-0 px-3">
                             <div className="flex items-center gap-2">
                                 <ShoppingCart className="h-5 w-5" />
@@ -515,7 +515,7 @@ export default function SaleEdit({
                                 <Badge variant="secondary">{cart.length} items</Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="h-0 grow overflow-y-auto p-2">
+                        <CardContent className="h-auto lg:h-0 lg:grow lg:overflow-y-auto p-2">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                                         <TableRow>
@@ -603,7 +603,7 @@ export default function SaleEdit({
                 </div>
 
                 {/* Right: Payment */}
-                <div className="flex flex-col gap-2 overflow-y-auto h-full pr-1">
+                <div className="flex flex-col gap-2 lg:overflow-y-auto h-auto lg:h-full pr-1">
                     <Card className="gap-1 py-3">
                         <CardHeader className="py-0 px-3 items-center flex justify-between">
                             <CardTitle className="text-lg">Payment</CardTitle>
