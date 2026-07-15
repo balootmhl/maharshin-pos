@@ -109,6 +109,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [heldSales, setHeldSales] = useState<HeldSale[]>([]);
+    const [showNotes, setShowNotes] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const barcodeInputRef = useRef<HTMLInputElement>(null);
     const discountInputRef = useRef<HTMLInputElement>(null);
@@ -549,7 +550,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
 
                         {/* Header with Branch, Customer, and Price Type */}
                         <Card className="py-2">
-                            <CardContent className="grid grid-cols-2 xl:grid-cols-3 gap-1 px-3">
+                            <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-2 px-3">
                                 <div className="space-y-1">
                                     <Label>Branch</Label>
                                     <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
@@ -622,17 +623,41 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="col-span-full space-y-2">
-                                    <Label>Notes</Label>
-                                    <Textarea
-                                        placeholder="Add sale notes..."
-                                        value={data.notes}
-                                        onChange={(e) => setData('notes', e.target.value)}
-                                        className="min-h-[60px]"
-                                        tabIndex={5}
-                                    />
-                                    <InputError message={errors.notes} />
-                                </div>
+                                {showNotes ? (
+                                    <div className="col-span-full space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <Label>Notes</Label>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowNotes(false);
+                                                    setData('notes', '');
+                                                }}
+                                                className="text-xs text-destructive hover:underline"
+                                            >
+                                                Remove Notes
+                                            </button>
+                                        </div>
+                                        <Textarea
+                                            placeholder="Add sale notes..."
+                                            value={data.notes}
+                                            onChange={(e) => setData('notes', e.target.value)}
+                                            className="min-h-[60px]"
+                                            tabIndex={5}
+                                        />
+                                        <InputError message={errors.notes} />
+                                    </div>
+                                ) : (
+                                    <div className="col-span-full">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNotes(true)}
+                                            className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
+                                        >
+                                            + Add Notes
+                                        </button>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
 

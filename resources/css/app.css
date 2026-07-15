@@ -203,7 +203,7 @@
 
 @layer base {
     html {
-        font-size: 18px; /* Scales up all rem-based sizes globally */
+        font-size: 14px; /* Scales up all rem-based sizes globally */
     }
     * {
         @apply border-border outline-ring/50;

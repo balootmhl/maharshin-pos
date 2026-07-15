@@ -393,7 +393,7 @@ export default function PurchaseEdit({
 
                     {/* Header */}
                     <Card className="py-1">
-                        <CardContent className="grid grid-cols-2 gap-1 pt-0 xl:grid-cols-4 px-3">
+                        <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-1 pt-0 px-3">
                             <div className="space-y-2">
                                 <Label>Branch*</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>

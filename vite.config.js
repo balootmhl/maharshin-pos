@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import {
@@ -17,5 +18,10 @@ export default defineConfig({
     ],
     esbuild: {
         jsx: 'automatic',
+    },
+    test: {
+        globals: true,
+        environment: 'jsdom',
+        setupFiles: 'resources/js/tests/setup.ts',
     },
 });
