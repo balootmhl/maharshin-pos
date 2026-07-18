@@ -20,7 +20,7 @@ class CategoryUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:50', 'unique:categories,code'],
+            'code' => ['required', 'string', 'max:50', 'unique:categories,code,' . $this->route('category')->id],
             'name' => ['required', 'string'],
             'description' => ['nullable', 'string'],
             'parent_id' => ['nullable', 'integer', 'exists:categories,id'],

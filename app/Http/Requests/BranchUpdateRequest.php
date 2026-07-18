@@ -20,7 +20,7 @@ class BranchUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'max:50', 'unique:branches,code'],
+            'code' => ['required', 'string', 'max:50', 'unique:branches,code,' . $this->route('branch')->id],
             'name' => ['required', 'string'],
             'address' => ['nullable', 'string'],
             'phone' => ['nullable', 'string', 'max:50'],

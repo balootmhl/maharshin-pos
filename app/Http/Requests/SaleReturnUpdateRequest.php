@@ -30,7 +30,7 @@ class SaleReturnUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'return_no' => ['required', 'string', 'max:50', 'unique:sale_returns,return_no'],
+            'return_no' => ['required', 'string', 'max:50', 'unique:sale_returns,return_no,' . $this->route('sale_return')->id],
             'sale_id' => ['required', 'integer', 'exists:sales,id'],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'return_date' => ['required', 'date'],

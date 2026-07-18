@@ -20,7 +20,7 @@ class SettingUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'key' => ['required', 'string', 'max:100', 'unique:settings,key'],
+            'key' => ['required', 'string', 'max:100', 'unique:settings,key,' . $this->route('setting')->id],
             'value' => ['nullable', 'string'],
         ];
     }
