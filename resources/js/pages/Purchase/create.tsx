@@ -16,7 +16,7 @@ import { useProductSearch } from '@/hooks/use-product-search';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, Branch, Product, SharedData, Supplier } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Minus, Package, Plus, Trash2, X } from 'lucide-react';
+import { Barcode, Minus, Package, Plus, Search, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type CartItem = {
@@ -360,6 +360,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                                 <PopoverAnchor asChild>
                                     <div className="relative flex-1">
+                                    <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2" />
                                         <Input
                                             ref={searchInputRef}
                                             placeholder="Search products (F1)... ↑↓ to navigate, Enter to add"
@@ -401,7 +402,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                             }}
                                             autoFocus
                                             tabIndex={1}
-                                            className="h-10"
+                                            className="h-10 pl-9 font-medium"
                                         />
                                     </div>
                                 </PopoverAnchor>
@@ -457,20 +458,23 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                     </Command>
                                 </PopoverContent>
                             </Popover>
-                            <Input
-                                ref={barcodeInputRef}
-                                placeholder="Scan barcode (F2)..."
-                                onKeyDown={handleBarcodeInput}
-                                className="w-48"
-                                tabIndex={2}
-                            />
+                            <div className="relative w-48">
+                                <Barcode className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                                <Input
+                                    ref={barcodeInputRef}
+                                    placeholder="Scan barcode (F2)..."
+                                    onKeyDown={handleBarcodeInput}
+                                    className="h-10 w-full pl-9"
+                                    tabIndex={2}
+                                />
+                            </div>
                         </div>
 
                         {/* Header with Branch, Supplier, Date */}
-                        <Card className="py-1">
+                        <Card className="border-slate-200 py-1 shadow-xs dark:border-slate-800">
                             <CardContent className="grid grid-cols-2 gap-1 px-3 pt-0 lg:grid-cols-4">
-                                <div className="space-y-2">
-                                    <Label>Branch*</Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Branch*</Label>
                                     <Select
                                         value={data.branch_id}
                                         onValueChange={(v) => setData('branch_id', v)}
@@ -489,8 +493,8 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                     </Select>
                                     <InputError message={errors.branch_id} />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Supplier</Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Supplier</Label>
                                     <Select value={data.supplier_id} onValueChange={(v) => setData('supplier_id', v)}>
                                         <SelectTrigger tabIndex={4}>
                                             <SelectValue placeholder="Select supplier" />
@@ -505,8 +509,8 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Purchase Date</Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Purchase Date</Label>
                                     <Input
                                         type="date"
                                         value={data.purchase_date}
@@ -514,20 +518,20 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                         tabIndex={5}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>PO Number</Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">PO Number</Label>
                                     <Input value={purchaseNo} disabled className="font-mono" />
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Cart Items */}
-                        <Card className="flex h-auto min-h-[300px] flex-col gap-2 py-2 lg:h-0 lg:min-h-0 lg:grow">
+                        <Card className="flex h-auto min-h-[300px] flex-col gap-2 border-slate-200 py-2 shadow-xs dark:border-slate-800 lg:h-0 lg:min-h-0 lg:grow">
                             <CardHeader className="flex flex-row items-center justify-between px-3 py-0">
                                 <div className="flex items-center gap-2">
-                                    <Package className="h-5 w-5" />
-                                    <CardTitle className="text-lg">Items</CardTitle>
-                                    <Badge variant="secondary">{cart.length} items</Badge>
+                                    <Package className="h-5 w-5 text-indigo-500" />
+                                    <CardTitle className="text-lg font-bold">Items</CardTitle>
+                                    <Badge variant="secondary" className="font-mono">{cart.length} items</Badge>
                                 </div>
                                 {cart.length > 0 && (
                                     <Button type="button" variant="ghost" size="sm" onClick={clearCart} tabIndex={-1}>
@@ -538,23 +542,26 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                             </CardHeader>
                             <CardContent className="h-auto p-2 lg:h-0 lg:grow lg:overflow-y-auto">
                                 {cart.length === 0 ? (
-                                    <div className="text-muted-foreground flex h-full items-center justify-center py-8">Add products to continue</div>
+                                    <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 py-8">
+                                        <Package className="h-10 w-10 opacity-20" />
+                                        <span className="text-sm">Add products to continue</span>
+                                    </div>
                                 ) : (
                                     <Table>
                                         <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Product</TableHead>
-                                                <TableHead className="w-28 text-center">Qty</TableHead>
-                                                <TableHead className="w-28">Unit Cost</TableHead>
-                                                <TableHead className="text-right">Total</TableHead>
+                                            <TableRow className="bg-muted/40">
+                                                <TableHead className="font-semibold">Product</TableHead>
+                                                <TableHead className="w-28 text-center font-semibold">Qty</TableHead>
+                                                <TableHead className="w-28 font-semibold">Unit Cost</TableHead>
+                                                <TableHead className="text-right font-semibold">Total</TableHead>
                                                 <TableHead className="w-10"></TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {cart.map((item) => (
-                                                <TableRow key={item.product_id}>
+                                                <TableRow key={item.product_id} className="hover:bg-muted/30 transition-colors">
                                                     <TableCell>
-                                                        <div className="font-small font-mono">{item.product.code}</div>
+                                                        <div className="font-mono text-sm font-semibold">{item.product.code}</div>
                                                         <div className="text-muted-foreground text-xs">{item.product.name}</div>
                                                     </TableCell>
                                                     <TableCell>
@@ -602,7 +609,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                                             tabIndex={7}
                                                         />
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono font-medium">
+                                                    <TableCell className="text-right font-mono font-semibold text-foreground">
                                                         {formatCurrency(item.subtotal)}
                                                     </TableCell>
                                                     <TableCell>
@@ -629,24 +636,24 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                     {/* Right: Totals and Payment */}
                     <div className="flex h-auto flex-col gap-2 lg:h-full">
                         {/* Totals and Payment */}
-                        <Card className="gap-1 py-3">
+                        <Card className="gap-1 border-slate-200 py-3 shadow-xs dark:border-slate-800">
                             <CardContent className="space-y-3 px-3">
                                 <div className="flex justify-between text-sm">
-                                    <span>Subtotal</span>
-                                    <span className="font-mono">{formatCurrency(cartTotals.subtotal)} Ks</span>
+                                    <span className="text-muted-foreground">Subtotal</span>
+                                    <span className="font-mono font-medium">{formatCurrency(cartTotals.subtotal)} Ks</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span>Tax</span>
-                                    <span className="font-mono">{formatCurrency(cartTotals.taxAmount)} Ks</span>
+                                    <span className="text-muted-foreground">Tax</span>
+                                    <span className="font-mono font-medium">{formatCurrency(cartTotals.taxAmount)} Ks</span>
                                 </div>
                                 <Separator />
                                 <div className="flex justify-between text-lg font-bold">
                                     <span>Total</span>
-                                    <span className="text-primary font-mono">{formatCurrency(cartTotals.total)} Ks</span>
+                                    <span className="font-mono text-indigo-600 dark:text-indigo-400">{formatCurrency(cartTotals.total)} Ks</span>
                                 </div>
                                 <Separator />
                                 <div className="space-y-1">
-                                    <Label className="text-xs">Amount Paid</Label>
+                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amount Paid</Label>
                                     <Input
                                         ref={paidAmountInputRef}
                                         type="text"
@@ -703,7 +710,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                     </div>
                                 )}
                                 <div className="space-y-1">
-                                    <Label className="text-xs">Notes</Label>
+                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes</Label>
                                     <Textarea
                                         value={data.notes}
                                         onChange={(e) => setData('notes', e.target.value)}
@@ -716,15 +723,15 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                 <Button
                                     id="complete-purchase-btn"
                                     type="submit"
-                                    className="h-12 w-full text-lg"
+                                    className="h-12 w-full bg-indigo-600 text-base font-bold tracking-wide hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50"
                                     disabled={processing || cart.length === 0}
                                     tabIndex={10}
                                 >
-                                    {processing ? 'Processing...' : `Record Purchase (F12) - ${formatCurrency(cartTotals.total)} Ks`}
+                                    {processing ? 'Processing...' : `Record Purchase (F12) — ${formatCurrency(cartTotals.total)} Ks`}
                                 </Button>
                                 {/* Keyboard Shortcuts Help */}
-                                <div className="text-muted-foreground text-center text-xs">
-                                    F1: Search • F2: Barcode • E: Pay Full • Enter/F12: Complete
+                                <div className="text-muted-foreground/70 text-center text-[10px] tracking-wide">
+                                    F1: Search &nbsp;·&nbsp; F2: Barcode &nbsp;·&nbsp; E: Pay Full &nbsp;·&nbsp; Enter/F12: Complete
                                 </div>
                             </CardContent>
                         </Card>

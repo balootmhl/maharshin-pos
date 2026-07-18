@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, Branch, Customer, Product, Sale, SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, Loader2, Minus, Package, Plus, Save, ShoppingCart, Trash2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Barcode, Loader2, Minus, Package, Plus, Save, Search, ShoppingCart, Trash2 } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type CartItem = {
@@ -317,6 +317,7 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                         <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                             <PopoverAnchor asChild>
                                 <div className="relative flex-1">
+                                    <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2" />
                                     <Input
                                         ref={searchInputRef}
                                         placeholder="Search products (F1)... ↑↓ to navigate, Enter to add"
@@ -359,7 +360,7 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                         }}
                                         autoFocus
                                         tabIndex={1}
-                                        className="h-10"
+                                        className="h-10 pl-9 font-medium"
                                     />
                                 </div>
                             </PopoverAnchor>
@@ -424,20 +425,23 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                 </Command>
                             </PopoverContent>
                         </Popover>
-                        <Input
-                            ref={barcodeInputRef}
-                            placeholder="Scan barcode (F2)..."
-                            onKeyDown={handleBarcodeInput}
-                            className="w-48"
-                            tabIndex={2}
-                        />
+                        <div className="relative w-48">
+                                <Barcode className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                                <Input
+                                    ref={barcodeInputRef}
+                                    placeholder="Scan barcode (F2)..."
+                                    onKeyDown={handleBarcodeInput}
+                                    className="h-10 w-full pl-9"
+                                    tabIndex={2}
+                                />
+                            </div>
                     </div>
 
                     {/* Header with Branch, Customer, and Price Type */}
-                    <Card className="py-2">
+                    <Card className="border-slate-200 py-2 shadow-xs dark:border-slate-800">
                         <CardContent className="grid grid-cols-1 gap-2 px-3 sm:grid-cols-3">
-                            <div className="space-y-2">
-                                <Label>Branch</Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Branch</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                     <SelectTrigger tabIndex={3}>
                                         <SelectValue placeholder="Select branch" />
@@ -452,8 +456,8 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                 </Select>
                                 <InputError message={errors.branch_id} />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Customer</Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customer</Label>
                                 <Select value={data.customer_id} onValueChange={(v) => setData('customer_id', v)}>
                                     <SelectTrigger tabIndex={4}>
                                         <SelectValue placeholder="Walk-in customer" />
@@ -468,8 +472,8 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Price Type</Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Price Type</Label>
                                 <Select
                                     value={data.price_type}
                                     onValueChange={(v) => {
@@ -547,21 +551,21 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex h-auto min-h-[300px] flex-col gap-2 py-2 lg:h-0 lg:min-h-0 lg:grow">
+                    <Card className="flex h-auto min-h-[300px] flex-col gap-2 border-slate-200 py-2 shadow-xs dark:border-slate-800 lg:h-0 lg:min-h-0 lg:grow">
                         <CardHeader className="flex flex-row items-center justify-between px-3 py-0">
                             <div className="flex items-center gap-2">
-                                <ShoppingCart className="h-5 w-5" />
-                                <CardTitle className="text-lg">Cart (Edit Mode)</CardTitle>
-                                <Badge variant="secondary">{cart.length} items</Badge>
+                                <ShoppingCart className="h-5 w-5 text-indigo-500" />
+                                <CardTitle className="text-lg font-bold">Cart (Edit Mode)</CardTitle>
+                                <Badge variant="secondary" className="font-mono">{cart.length} items</Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="h-auto p-2 lg:h-0 lg:grow lg:overflow-y-auto">
                             <Table>
                                 <TableHeader className="bg-background sticky top-0 z-10 shadow-sm">
-                                    <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead className="w-28 text-center">Qty</TableHead>
-                                        <TableHead className="text-right">Total</TableHead>
+                                    <TableRow className="bg-muted/40">
+                                        <TableHead className="font-semibold">Product</TableHead>
+                                        <TableHead className="w-28 text-center font-semibold">Qty</TableHead>
+                                        <TableHead className="text-right font-semibold">Total</TableHead>
                                         <TableHead className="w-10"></TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -574,13 +578,13 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                         </TableRow>
                                     ) : (
                                         cart.map((item) => (
-                                            <TableRow key={item.product_id} className="group">
+                                            <TableRow key={item.product_id} className="group hover:bg-muted/30 transition-colors">
                                                 <TableCell>
-                                                    <div className="line-clamp-1 font-medium">{item.product.name}</div>
+                                                    <div className="line-clamp-1 font-mono text-sm font-semibold">{item.product.name}</div>
                                                     <div className="text-muted-foreground flex gap-2 text-xs">
-                                                        <span>{item.product.code}</span>
-                                                        {item.product.barcode && <span>• {item.product.barcode}</span>}
-                                                        <span>• @ {formatCurrency(item.unit_price)} Ks</span>
+                                                        <span className="font-medium">{item.product.code}</span>
+                                                        {item.product.barcode && <span>· {item.product.barcode}</span>}
+                                                        <span className="font-mono text-indigo-600 dark:text-indigo-400">· @ {formatCurrency(item.unit_price)} Ks</span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -618,7 +622,7 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                                         </Button>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono font-medium">{formatCurrency(item.subtotal)}</TableCell>
+                                                <TableCell className="text-right font-mono font-semibold text-foreground">{formatCurrency(item.subtotal)}</TableCell>
                                                 <TableCell>
                                                     <Button
                                                         type="button"
@@ -642,7 +646,7 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
 
                 {/* Right: Payment */}
                 <div className="flex h-auto flex-col gap-2 pr-1 lg:h-full lg:overflow-y-auto">
-                    <Card className="gap-1 py-3">
+                    <Card className="gap-1 border-slate-200 py-3 shadow-xs dark:border-slate-800">
                         <CardHeader className="flex items-center justify-between px-3 py-0">
                             <CardTitle className="text-lg">Payment</CardTitle>
                         </CardHeader>
@@ -711,8 +715,8 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                 <Separator className="my-2 bg-slate-200 dark:bg-slate-800" />
                                 <div className="flex items-end justify-between">
                                     <span className="text-base font-medium text-slate-800 dark:text-slate-200">Total</span>
-                                    <span className="text-primary font-mono text-3xl font-bold tracking-tight">
-                                        <span className="text-primary/70 mr-1 font-sans text-xl font-normal">Ks</span>
+                                    <span className="font-mono text-3xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400">
+                                        <span className="mr-1 font-sans text-xl font-normal text-indigo-400 dark:text-indigo-600">Ks</span>
                                         {formatCurrency(cartTotals.total)}
                                     </span>
                                 </div>

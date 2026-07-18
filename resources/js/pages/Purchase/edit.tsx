@@ -14,7 +14,7 @@ import { useProductSearch } from '@/hooks/use-product-search';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, Branch, Product, Purchase, SharedData, Supplier } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, Loader2, Minus, Package, Plus, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Barcode, Loader2, Minus, Package, Plus, Save, Search, Trash2 } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type CartItem = {
@@ -292,6 +292,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                         <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                             <PopoverAnchor asChild>
                                 <div className="relative flex-1">
+                                    <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2" />
                                     <Input
                                         ref={searchInputRef}
                                         placeholder="Search products (F1)..."
@@ -332,7 +333,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                         }}
                                         autoFocus
                                         tabIndex={1}
-                                        className="h-10"
+                                        className="h-10 pl-9 font-medium"
                                     />
                                 </div>
                             </PopoverAnchor>
@@ -383,20 +384,23 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                 </Command>
                             </PopoverContent>
                         </Popover>
-                        <Input
-                            ref={barcodeInputRef}
-                            placeholder="Scan barcode (F2)..."
-                            onKeyDown={handleBarcodeInput}
-                            className="w-48"
-                            tabIndex={2}
-                        />
+                        <div className="relative w-48">
+                                <Barcode className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                                <Input
+                                    ref={barcodeInputRef}
+                                    placeholder="Scan barcode (F2)..."
+                                    onKeyDown={handleBarcodeInput}
+                                    className="h-10 w-full pl-9"
+                                    tabIndex={2}
+                                />
+                            </div>
                     </div>
 
                     {/* Header */}
-                    <Card className="py-1">
+                    <Card className="border-slate-200 py-1 shadow-xs dark:border-slate-800">
                         <CardContent className="grid grid-cols-2 gap-1 px-3 pt-0 lg:grid-cols-4">
-                            <div className="space-y-2">
-                                <Label>Branch*</Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Branch*</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                     <SelectTrigger tabIndex={3}>
                                         <SelectValue placeholder="Select branch" />
@@ -411,8 +415,8 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                 </Select>
                                 <InputError message={errors.branch_id} />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Supplier</Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Supplier</Label>
                                 <Select value={data.supplier_id} onValueChange={(v) => setData('supplier_id', v)}>
                                     <SelectTrigger tabIndex={4}>
                                         <SelectValue placeholder="Select supplier" />
@@ -427,8 +431,8 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Purchase Date</Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Purchase Date</Label>
                                 <Input
                                     type="date"
                                     value={data.purchase_date}
@@ -436,38 +440,38 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                     tabIndex={5}
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label>PO Number</Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">PO Number</Label>
                                 <Input value={data.purchase_no} disabled className="font-mono" />
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex h-auto min-h-[300px] flex-col gap-2 py-2 lg:h-0 lg:min-h-0 lg:grow">
+                    <Card className="flex h-auto min-h-[300px] flex-col gap-2 border-slate-200 py-2 shadow-xs dark:border-slate-800 lg:h-0 lg:min-h-0 lg:grow">
                         <CardHeader className="flex flex-row items-center justify-between px-3 py-0">
                             <div className="flex items-center gap-2">
-                                <Package className="h-5 w-5" />
-                                <CardTitle className="text-lg">Items (Edit)</CardTitle>
-                                <Badge variant="secondary">{cart.length} items</Badge>
+                                <Package className="h-5 w-5 text-indigo-500" />
+                                <CardTitle className="text-lg font-bold">Items (Edit)</CardTitle>
+                                <Badge variant="secondary" className="font-mono">{cart.length} items</Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="h-auto p-2 lg:h-0 lg:grow lg:overflow-y-auto">
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead className="w-28 text-center">Qty</TableHead>
-                                        <TableHead className="w-28">Unit Cost</TableHead>
-                                        <TableHead className="text-right">Total</TableHead>
+                                    <TableRow className="bg-muted/40">
+                                        <TableHead className="font-semibold">Product</TableHead>
+                                        <TableHead className="w-28 text-center font-semibold">Qty</TableHead>
+                                        <TableHead className="w-28 font-semibold">Unit Cost</TableHead>
+                                        <TableHead className="text-right font-semibold">Total</TableHead>
                                         <TableHead className="w-10"></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {cart.map((item) => (
-                                        <TableRow key={item.product_id}>
+                                        <TableRow key={item.product_id} className="hover:bg-muted/30 transition-colors">
                                             <TableCell>
-                                                <div className="font-small font-mono">{item.product.code}</div>
+                                                <div className="font-mono text-sm font-semibold">{item.product.code}</div>
                                                 <div className="text-muted-foreground text-xs">{item.product.name}</div>
                                             </TableCell>
                                             <TableCell>
@@ -515,7 +519,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                                     tabIndex={7}
                                                 />
                                             </TableCell>
-                                            <TableCell className="text-right font-mono font-medium">{formatCurrency(item.subtotal)}</TableCell>
+                                            <TableCell className="text-right font-mono font-semibold text-foreground">{formatCurrency(item.subtotal)}</TableCell>
                                             <TableCell>
                                                 <Button
                                                     type="button"
@@ -539,7 +543,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                 {/* Right: Payment */}
                 <div className="flex h-auto flex-col gap-2 pr-1 lg:h-full lg:overflow-y-auto">
                     {/* Totals */}
-                    <Card className="gap-1 py-3">
+                    <Card className="gap-1 border-slate-200 py-3 shadow-xs dark:border-slate-800">
                         <CardHeader className="flex items-center justify-between px-3 py-0">
                             <CardTitle className="text-lg">Payment</CardTitle>
                         </CardHeader>
@@ -547,24 +551,24 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                             <div className="space-y-2 overflow-hidden rounded-lg bg-slate-50 p-4 dark:bg-slate-900">
                                 <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                                     <span>Subtotal</span>
-                                    <span className="font-mono">{formatCurrency(cartTotals.subtotal)} Ks</span>
+                                    <span className="font-mono font-medium">{formatCurrency(cartTotals.subtotal)} Ks</span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
                                     <span className="text-slate-600 dark:text-slate-400">Tax</span>
-                                    <span className="font-mono">{formatCurrency(cartTotals.taxAmount)} Ks</span>
+                                    <span className="font-mono font-medium">{formatCurrency(cartTotals.taxAmount)} Ks</span>
                                 </div>
                                 <Separator className="my-2 bg-slate-200 dark:bg-slate-800" />
                                 <div className="flex items-end justify-between">
                                     <span className="text-base font-medium text-slate-800 dark:text-slate-200">Total</span>
-                                    <span className="text-primary font-mono text-3xl font-bold tracking-tight">
-                                        <span className="text-primary/70 mr-1 font-sans text-xl font-normal">Ks</span>
+                                    <span className="font-mono text-3xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400">
+                                        <span className="mr-1 font-sans text-xl font-normal text-indigo-400 dark:text-indigo-600">Ks</span>
                                         {formatCurrency(cartTotals.total)}
                                     </span>
                                 </div>
                             </div>
 
                             <div className="space-y-1">
-                                <Label className="text-xs">Amount Paid</Label>
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amount Paid</Label>
                                 <Input
                                     ref={paidAmountInputRef}
                                     type="text"
@@ -620,7 +624,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                 )}
                             </div>
                             <div className="space-y-1">
-                                <Label className="text-xs">Notes</Label>
+                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes</Label>
                                 <Textarea
                                     value={data.notes}
                                     onChange={(e) => setData('notes', e.target.value)}
