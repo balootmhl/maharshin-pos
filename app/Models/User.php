@@ -105,12 +105,12 @@ class User extends Authenticatable
 
     public function canImpersonate()
     {
-        return $this->is_super_admin;
+        return $this->hasRole(config('project.super_admin'));
     }
 
     public function canBeImpersonated()
     {
-        return !$this->is_super_admin;
+        return !$this->hasRole(config('project.super_admin'));
     }
 
     /**
