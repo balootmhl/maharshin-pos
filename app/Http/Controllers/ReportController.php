@@ -197,8 +197,13 @@ class ReportController extends Controller
      */
     public function dailyProfitReport(Request $request): Response
     {
+        $user = $request->user();
         $date = $request->get('date', now()->format('Y-m-d'));
         $branchId = $request->get('branch_id');
+
+        if (!$user->is_super_admin) {
+            $branchId = $user->branch_id;
+        }
 
         // Base sale query for the selected date
         $saleQuery = Sale::withoutGlobalScopes()
@@ -208,6 +213,8 @@ class ReportController extends Controller
 
         if ($branchId) {
             $saleQuery->where('branch_id', $branchId);
+        } elseif (!$user->is_super_admin) {
+            $saleQuery->where('branch_id', null);
         }
 
         $sales = $saleQuery->get();
@@ -241,7 +248,7 @@ class ReportController extends Controller
         // Build structured invoice list
         $invoices = $sales->map(function ($sale) use ($rawItems) {
             $items = collect($rawItems->get($sale->id, []));
-            $invoiceProfit = $items->sum('item_profit');
+            $invoiceProfit = $items->sum('item_profit') - (float) $sale->discount_amount;
 
             return [
                 'id'             => $sale->id,
@@ -250,6 +257,9 @@ class ReportController extends Controller
                 'branch_name'    => $sale->branch?->name,
                 'sale_date'      => $sale->sale_date->format('Y-m-d'),
                 'payment_status' => $sale->payment_status,
+                'subtotal'       => (float) $sale->subtotal,
+                'discount_amount'=> (float) $sale->discount_amount,
+                'tax_amount'     => (float) $sale->tax_amount,
                 'total_amount'   => (float) $sale->total_amount,
                 'invoice_profit' => (float) $invoiceProfit,
                 'items'          => $items->map(fn ($item) => [
@@ -266,17 +276,25 @@ class ReportController extends Controller
         })->values();
 
         // Overall summary
-        $totalRevenue = $invoices->sum('total_amount');
-        $totalProfit  = $invoices->sum('invoice_profit');
+        $totalSubtotal = $invoices->sum('subtotal');
+        $totalDiscount = $invoices->sum('discount_amount');
+        $totalTax      = $invoices->sum('tax_amount');
+        $totalRevenue  = $invoices->sum('total_amount');
+        $totalProfit   = $invoices->sum('invoice_profit');
 
         return Inertia::render('Report/DailyProfitReport', [
-            'branches' => Branch::where('is_active', true)->get(['id', 'name']),
+            'branches' => $user->is_super_admin
+                ? Branch::where('is_active', true)->get(['id', 'name'])
+                : Branch::where('is_active', true)->where('id', $user->branch_id)->get(['id', 'name']),
             'filters'  => [
                 'date'      => $date,
                 'branch_id' => $branchId,
             ],
             'summary' => [
                 'total_invoices' => $invoices->count(),
+                'total_subtotal' => $totalSubtotal,
+                'total_discount' => $totalDiscount,
+                'total_tax'      => $totalTax,
                 'total_revenue'  => $totalRevenue,
                 'total_profit'   => $totalProfit,
             ],

@@ -145,7 +145,7 @@ export default function ProductPricing({
     const handleBranchChange = (branchId: string) => {
         router.get(
             route('products.pricing'),
-            { 
+            {
                 branch_id: branchId,
                 search: search,
                 category_id: categoryFilter === 'all' ? null : categoryFilter,
@@ -170,9 +170,7 @@ export default function ProductPricing({
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <h2 className="text-xl font-semibold">Product Pricing</h2>
-                        <p className="text-muted-foreground text-sm">
-                            Set branch-specific prices. Empty fields use the product's default price.
-                        </p>
+                        <p className="text-muted-foreground text-sm">Set branch-specific prices. Empty fields use the product's default price.</p>
                     </div>
                     <Button onClick={handleSave} disabled={changes.size === 0 || processing}>
                         <Save className="mr-2 h-4 w-4" />
@@ -183,7 +181,7 @@ export default function ProductPricing({
                 {/* Filters */}
                 <div className="flex flex-wrap items-center gap-3">
                     <Select value={String(selectedBranchId)} onValueChange={handleBranchChange} disabled={!auth.user.is_super_admin}>
-                        <SelectTrigger className="w-[250px]">
+                        <SelectTrigger className="w-fit min-w-[200px] gap-2">
                             <SelectValue placeholder="Select branch" />
                         </SelectTrigger>
                         <SelectContent>
@@ -206,7 +204,7 @@ export default function ProductPricing({
                     </div>
 
                     <Select value={categoryFilter} onValueChange={handleCategoryChange}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-fit min-w-[150px] gap-2">
                             <SelectValue placeholder="All Categories" />
                         </SelectTrigger>
                         <SelectContent>
@@ -219,9 +217,7 @@ export default function ProductPricing({
                         </SelectContent>
                     </Select>
 
-                    <span className="text-muted-foreground ml-auto text-sm">
-                        {filteredProducts.length} products
-                    </span>
+                    <span className="text-muted-foreground ml-auto text-sm">{filteredProducts.length} products</span>
                 </div>
 
                 {/* Table */}
@@ -264,19 +260,14 @@ export default function ProductPricing({
                                     const bs = getBranchStock(product);
 
                                     return (
-
                                         <TableRow
                                             key={product.id}
                                             className={`${index % 2 === 1 ? 'bg-muted/30' : ''} ${hasChange ? 'bg-yellow-50 dark:bg-yellow-950/20' : ''}`}
                                         >
-                                            <TableCell className="font-mono font-bold text-sm">{product.code}</TableCell>
-                                            <TableCell className="text-xs font-small">{product.name}</TableCell>
-                                            <TableCell className="text-muted-foreground text-xs">
-                                                {bs?.group?.name}
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground text-xs">
-                                                {product.category?.name}
-                                            </TableCell>
+                                            <TableCell className="font-mono text-sm font-bold">{product.code}</TableCell>
+                                            <TableCell className="font-small text-xs">{product.name}</TableCell>
+                                            <TableCell className="text-muted-foreground text-xs">{bs?.group?.name}</TableCell>
+                                            <TableCell className="text-muted-foreground text-xs">{product.category?.name}</TableCell>
                                             <TableCell className="text-right font-mono text-sm">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <span>{bs?.quantity ?? 0}</span>
@@ -306,9 +297,7 @@ export default function ProductPricing({
                                                     step="0.01"
                                                     placeholder={String(product.cost_price)}
                                                     value={branchCost ?? ''}
-                                                    onChange={(e) =>
-                                                        handlePriceChange(product.id, 'cost_price', e.target.value)
-                                                    }
+                                                    onChange={(e) => handlePriceChange(product.id, 'cost_price', e.target.value)}
                                                     className="ml-auto h-8 w-[120px] text-right font-mono text-sm"
                                                 />
                                             </TableCell>
@@ -318,9 +307,7 @@ export default function ProductPricing({
                                                     step="0.01"
                                                     placeholder={String(product.selling_price)}
                                                     value={branchSell ?? ''}
-                                                    onChange={(e) =>
-                                                        handlePriceChange(product.id, 'selling_price', e.target.value)
-                                                    }
+                                                    onChange={(e) => handlePriceChange(product.id, 'selling_price', e.target.value)}
                                                     className="ml-auto h-8 w-[120px] text-right font-mono text-sm"
                                                 />
                                             </TableCell>
@@ -334,9 +321,7 @@ export default function ProductPricing({
 
                 {changes.size > 0 && (
                     <div className="bg-primary/10 border-primary/20 flex items-center justify-between rounded-lg border p-3">
-                        <span className="text-sm font-medium">
-                            {changes.size} product(s) modified — unsaved changes
-                        </span>
+                        <span className="text-sm font-medium">{changes.size} product(s) modified — unsaved changes</span>
                         <Button size="sm" onClick={handleSave} disabled={processing}>
                             <Save className="mr-2 h-4 w-4" />
                             Save Changes

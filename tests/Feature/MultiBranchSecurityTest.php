@@ -36,11 +36,13 @@ class MultiBranchSecurityTest extends TestCase
         $branchB = Branch::factory()->create(['is_active' => true]);
 
         // 2. Create users
+        /** @var User $managerA */
         $managerA = User::factory()->create([
             'branch_id' => $branchA->id,
         ]);
         $managerA->assignRole('manager');
 
+        /** @var User $godUser */
         $godUser = User::factory()->create([
             'branch_id' => null,
         ]);
@@ -103,6 +105,7 @@ class MultiBranchSecurityTest extends TestCase
         $branchA = Branch::factory()->create(['is_active' => true]);
         $branchB = Branch::factory()->create(['is_active' => true]);
 
+        /** @var User $managerA */
         $managerA = User::factory()->create([
             'branch_id' => $branchA->id,
         ]);
@@ -156,5 +159,104 @@ class MultiBranchSecurityTest extends TestCase
         $sale = Sale::withoutGlobalScopes()->where('invoice_no', 'like', 'INV-%')->first();
         $this->assertNotNull($sale);
         $this->assertEquals($branchA->id, $sale->branch_id, "The saved branch_id should be Branch A, overriding the submitted Branch B.");
+    }
+
+    public function test_daily_profit_report_is_restricted_by_branch_for_non_god_users()
+    {
+        $this->withoutExceptionHandling();
+
+        $branchA = Branch::factory()->create(['is_active' => true]);
+        $branchB = Branch::factory()->create(['is_active' => true]);
+
+        /** @var User $managerA */
+        $managerA = User::factory()->create([
+            'branch_id' => $branchA->id,
+        ]);
+        $managerA->assignRole('manager');
+
+        /** @var User $godUser */
+        $godUser = User::factory()->create([
+            'branch_id' => null,
+        ]);
+        $godUser->assignRole('god');
+
+        // Create a sale for Branch A and a sale for Branch B
+        Sale::withoutEvents(function () use ($branchA, $branchB, $managerA) {
+            Sale::create([
+                'invoice_no' => 'INV-A001',
+                'branch_id' => $branchA->id,
+                'sale_date' => now()->toDateString(),
+                'subtotal' => 100,
+                'tax_amount' => 0,
+                'discount_amount' => 0,
+                'total_amount' => 100,
+                'payment_status' => 'paid',
+                'paid_amount' => 100,
+                'credit_amount' => 0,
+                'created_by' => $managerA->id,
+            ]);
+
+            Sale::create([
+                'invoice_no' => 'INV-B001',
+                'branch_id' => $branchB->id,
+                'sale_date' => now()->toDateString(),
+                'subtotal' => 200,
+                'tax_amount' => 0,
+                'discount_amount' => 0,
+                'total_amount' => 200,
+                'payment_status' => 'paid',
+                'paid_amount' => 200,
+                'credit_amount' => 0,
+                'created_by' => $managerA->id,
+            ]);
+        });
+
+        // 1. Act as Manager A - should see only Branch A sale data in report
+        $this->actingAs($managerA);
+        $response = $this->get(route('reports.daily-profit'));
+        $response->assertOk();
+
+        $pageProps = $response->original->getData()['page']['props'];
+        $invoices = $pageProps['invoices'];
+        $branchesProp = $pageProps['branches'];
+
+        // Manager A should only see 1 branch in the selection list
+        $this->assertCount(1, $branchesProp);
+        $this->assertEquals($branchA->id, $branchesProp[0]['id']);
+
+        // Manager A should only see Branch A's sale
+        $this->assertCount(1, $invoices);
+        $this->assertEquals('INV-A001', $invoices[0]['invoice_no']);
+
+        // Try to query Branch B's data - should still be restricted to Branch A
+        $responseWithFilter = $this->get(route('reports.daily-profit', ['branch_id' => $branchB->id]));
+        $responseWithFilter->assertOk();
+        $filteredPageProps = $responseWithFilter->original->getData()['page']['props'];
+        $filteredInvoices = $filteredPageProps['invoices'];
+        $this->assertCount(1, $filteredInvoices);
+        $this->assertEquals('INV-A001', $filteredInvoices[0]['invoice_no']);
+
+        // 2. Act as God User - should see all active branches in the list, and can view all or specific branch data
+        $this->actingAs($godUser);
+        $responseGod = $this->get(route('reports.daily-profit'));
+        $responseGod->assertOk();
+
+        $godProps = $responseGod->original->getData()['page']['props'];
+        $godBranchesProp = $godProps['branches'];
+        $godInvoices = $godProps['invoices'];
+
+        // God user should see all active branches
+        $this->assertCount(2, $godBranchesProp);
+
+        // Without branch filter, should see both sales
+        $this->assertCount(2, $godInvoices);
+
+        // Filtering by Branch B should show only Branch B's sale
+        $responseGodWithFilter = $this->get(route('reports.daily-profit', ['branch_id' => $branchB->id]));
+        $responseGodWithFilter->assertOk();
+        $godFilteredProps = $responseGodWithFilter->original->getData()['page']['props'];
+        $godFilteredInvoices = $godFilteredProps['invoices'];
+        $this->assertCount(1, $godFilteredInvoices);
+        $this->assertEquals('INV-B001', $godFilteredInvoices[0]['invoice_no']);
     }
 }

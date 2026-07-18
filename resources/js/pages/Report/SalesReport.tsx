@@ -95,7 +95,7 @@ export default function SalesReport({
                         <div className="space-y-1">
                             <Label className="text-xs">Branch</Label>
                             <Select value={branchId} onValueChange={setBranchId}>
-                                <SelectTrigger className="w-40">
+                                <SelectTrigger className="w-fit min-w-[180px] gap-2">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

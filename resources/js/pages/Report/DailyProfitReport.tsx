@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch } from '@/types';
-import { Head, router } from '@inertiajs/react';
+import { type BreadcrumbItem, Branch, SharedData } from '@/types';
+import { Head, router, usePage } from '@inertiajs/react';
 import { ChevronDown, ChevronRight, DollarSign, Receipt, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -31,6 +31,9 @@ type Invoice = {
     branch_name: string | null;
     sale_date: string;
     payment_status: string;
+    subtotal: number;
+    discount_amount: number;
+    tax_amount: number;
     total_amount: number;
     invoice_profit: number;
     items: InvoiceItem[];
@@ -38,17 +41,18 @@ type Invoice = {
 
 type Summary = {
     total_invoices: number;
+    total_subtotal: number;
+    total_discount: number;
+    total_tax: number;
     total_revenue: number;
     total_profit: number;
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 
-const profitColor = (value: number) =>
-    value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-muted-foreground';
+const profitColor = (value: number) => (value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-muted-foreground');
 
 const profitMargin = (profit: number, revenue: number) => {
     if (!revenue) return '0%';
@@ -57,10 +61,14 @@ const profitMargin = (profit: number, revenue: number) => {
 
 const statusVariant = (status: string): 'default' | 'outline' | 'destructive' | 'secondary' => {
     switch (status) {
-        case 'paid':    return 'default';
-        case 'partial': return 'outline';
-        case 'unpaid':  return 'destructive';
-        default:        return 'secondary';
+        case 'paid':
+            return 'default';
+        case 'partial':
+            return 'outline';
+        case 'unpaid':
+            return 'destructive';
+        default:
+            return 'secondary';
     }
 };
 
@@ -80,18 +88,21 @@ export default function DailyProfitReport({
     invoices,
 }: {
     branches: Branch[];
-    filters: { date: string; branch_id?: string };
+    filters: { date: string; branch_id?: string | number };
     summary: Summary;
     invoices: Invoice[];
 }) {
+    const { auth } = usePage<SharedData>().props;
+    const isSuperAdmin = auth.user.is_super_admin;
+
     const [date, setDate] = useState(filters.date);
-    const [branchId, setBranchId] = useState(filters.branch_id || 'all');
+    const [branchId, setBranchId] = useState(filters.branch_id ? filters.branch_id.toString() : 'all');
     const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
     // Sync local state with props when filters change (e.g. via browser back/forward or external links)
     useEffect(() => {
         setDate(filters.date);
-        setBranchId(filters.branch_id || 'all');
+        setBranchId(filters.branch_id ? filters.branch_id.toString() : 'all');
     }, [filters]);
 
     const applyFilters = () => {
@@ -124,28 +135,21 @@ export default function DailyProfitReport({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Daily Profit Report" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-
                 {/* ── Filter Bar ──────────────────────────────────────────── */}
                 <Card>
                     <CardContent className="flex flex-wrap items-end gap-4 pt-4">
                         <div className="space-y-1">
                             <Label className="text-xs">Date</Label>
-                            <Input
-                                id="profit-date-filter"
-                                type="date"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                                className="w-44"
-                            />
+                            <Input id="profit-date-filter" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-44" />
                         </div>
                         <div className="space-y-1">
                             <Label className="text-xs">Branch</Label>
-                            <Select value={branchId} onValueChange={setBranchId}>
-                                <SelectTrigger id="profit-branch-filter" className="w-44">
+                            <Select value={branchId} onValueChange={setBranchId} disabled={!isSuperAdmin}>
+                                <SelectTrigger id="profit-branch-filter" className="w-fit min-w-[180px] gap-2">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Branches</SelectItem>
+                                    {isSuperAdmin && <SelectItem value="all">All Branches</SelectItem>}
                                     {branches.map((b) => (
                                         <SelectItem key={b.id} value={b.id.toString()}>
                                             {b.name}
@@ -180,7 +184,12 @@ export default function DailyProfitReport({
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{formatCurrency(summary.total_revenue)} Ks</div>
-                            <p className="text-muted-foreground text-xs">Gross sales amount</p>
+                            <div className="text-muted-foreground mt-1 flex flex-col gap-0.5 text-xs">
+                                <span>Gross Subtotal: {formatCurrency(summary.total_subtotal)} Ks</span>
+                                {summary.total_discount > 0 && (
+                                    <span className="font-medium text-red-500">Total Discount: -{formatCurrency(summary.total_discount)} Ks</span>
+                                )}
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -190,12 +199,8 @@ export default function DailyProfitReport({
                             <TrendingUp className="text-muted-foreground h-4 w-4" />
                         </CardHeader>
                         <CardContent>
-                            <div className={`text-2xl font-bold ${profitColor(summary.total_profit)}`}>
-                                {formatCurrency(summary.total_profit)} Ks
-                            </div>
-                            <p className="text-muted-foreground text-xs">
-                                Margin: {profitMargin(summary.total_profit, summary.total_revenue)}
-                            </p>
+                            <div className={`text-2xl font-bold ${profitColor(summary.total_profit)}`}>{formatCurrency(summary.total_profit)} Ks</div>
+                            <p className="text-muted-foreground text-xs">Margin: {profitMargin(summary.total_profit, summary.total_revenue)}</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -222,7 +227,9 @@ export default function DailyProfitReport({
                                     <TableHead>Customer</TableHead>
                                     <TableHead>Branch</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Revenue</TableHead>
+                                    <TableHead className="text-right">Subtotal</TableHead>
+                                    <TableHead className="text-right">Discount</TableHead>
+                                    <TableHead className="text-right">Net Revenue</TableHead>
                                     <TableHead className="text-right">Profit</TableHead>
                                     <TableHead className="text-right">Margin</TableHead>
                                 </TableRow>
@@ -230,7 +237,7 @@ export default function DailyProfitReport({
                             <TableBody>
                                 {invoices.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={8} className="text-muted-foreground py-10 text-center">
+                                        <TableCell colSpan={10} className="text-muted-foreground py-10 text-center">
                                             No sales found for {filters.date}
                                         </TableCell>
                                     </TableRow>
@@ -243,39 +250,29 @@ export default function DailyProfitReport({
                                             {/* ── Invoice row ── */}
                                             <TableRow
                                                 key={`inv-${invoice.id}`}
-                                                className="cursor-pointer hover:bg-muted/50"
+                                                className="hover:bg-muted/50 cursor-pointer"
                                                 onClick={() => toggleExpand(invoice.id)}
                                             >
                                                 <TableCell className="text-muted-foreground">
-                                                    {isOpen ? (
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    ) : (
-                                                        <ChevronRight className="h-4 w-4" />
-                                                    )}
+                                                    {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                                 </TableCell>
-                                                <TableCell className="font-mono font-semibold">
-                                                    {invoice.invoice_no}
-                                                </TableCell>
+                                                <TableCell className="font-mono font-semibold">{invoice.invoice_no}</TableCell>
                                                 <TableCell>{invoice.customer_name ?? '—'}</TableCell>
-                                                <TableCell className="text-muted-foreground text-xs">
-                                                    {invoice.branch_name ?? '—'}
-                                                </TableCell>
+                                                <TableCell className="text-muted-foreground text-xs">{invoice.branch_name ?? '—'}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={statusVariant(invoice.payment_status)}>
-                                                        {invoice.payment_status}
-                                                    </Badge>
+                                                    <Badge variant={statusVariant(invoice.payment_status)}>{invoice.payment_status}</Badge>
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono">
+                                                <TableCell className="text-right font-mono">{formatCurrency(invoice.subtotal)} Ks</TableCell>
+                                                <TableCell className="text-right font-mono font-medium text-red-500">
+                                                    {invoice.discount_amount > 0 ? `-${formatCurrency(invoice.discount_amount)} Ks` : '—'}
+                                                </TableCell>
+                                                <TableCell className="text-right font-mono font-semibold">
                                                     {formatCurrency(invoice.total_amount)} Ks
                                                 </TableCell>
-                                                <TableCell
-                                                    className={`text-right font-mono font-semibold ${profitColor(invoice.invoice_profit)}`}
-                                                >
+                                                <TableCell className={`text-right font-mono font-semibold ${profitColor(invoice.invoice_profit)}`}>
                                                     {formatCurrency(invoice.invoice_profit)} Ks
                                                 </TableCell>
-                                                <TableCell
-                                                    className={`text-right text-xs ${profitColor(invoice.invoice_profit)}`}
-                                                >
+                                                <TableCell className={`text-right text-xs ${profitColor(invoice.invoice_profit)}`}>
                                                     {profitMargin(invoice.invoice_profit, invoice.total_amount)}
                                                 </TableCell>
                                             </TableRow>
@@ -283,17 +280,17 @@ export default function DailyProfitReport({
                                             {/* ── Line items (expanded) ── */}
                                             {isOpen &&
                                                 invoice.items.map((item, idx) => (
-                                                    <TableRow
-                                                        key={`item-${invoice.id}-${idx}`}
-                                                        className="bg-muted/30 text-sm"
-                                                    >
+                                                    <TableRow key={`item-${invoice.id}-${idx}`} className="bg-muted/30 text-sm">
                                                         <TableCell />
                                                         <TableCell colSpan={2}>
                                                             <div className="flex items-center gap-2 pl-4">
                                                                 <span className="bg-background rounded border px-1 font-mono text-xs">
                                                                     {item.product_code}
                                                                 </span>
-                                                                <span className="text-muted-foreground truncate max-w-[200px]" title={item.product_name}>
+                                                                <span
+                                                                    className="text-muted-foreground max-w-[200px] truncate"
+                                                                    title={item.product_name}
+                                                                >
                                                                     {item.product_name}
                                                                 </span>
                                                             </div>
@@ -308,13 +305,13 @@ export default function DailyProfitReport({
                                                             <div className="flex flex-col">
                                                                 <span>Cost: {formatCurrency(item.cost_price)}</span>
                                                                 {item.cost_price === 0 && (
-                                                                    <span className="text-amber-500 text-[10px] flex items-center gap-1">
+                                                                    <span className="flex items-center gap-1 text-[10px] text-amber-500">
                                                                         <TrendingUp className="h-3 w-3" /> No cost found
                                                                     </span>
                                                                 )}
                                                             </div>
                                                         </TableCell>
-                                                        <TableCell className="text-right font-mono text-xs">
+                                                        <TableCell className="text-right font-mono text-xs" colSpan={3}>
                                                             {formatCurrency(item.subtotal)} Ks
                                                         </TableCell>
                                                         <TableCell

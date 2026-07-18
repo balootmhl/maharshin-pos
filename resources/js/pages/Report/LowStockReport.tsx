@@ -63,7 +63,7 @@ export default function LowStockReport({
                     </div>
                     <div className="flex items-center gap-2">
                         <Select value={branchId} onValueChange={setBranchId}>
-                            <SelectTrigger className="w-48">
+                            <SelectTrigger className="w-fit min-w-[180px] gap-2">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -134,7 +134,7 @@ export default function LowStockReport({
                                 {lowStockItems.map((item) => (
                                     <TableRow key={item.id}>
                                         <TableCell>
-                                            <div className="font-mono font-bold text-xs">{item.product_code}</div>
+                                            <div className="font-mono text-xs font-bold">{item.product_code}</div>
                                             <div className="text-muted-foreground text-xs">{item.product_name}</div>
                                         </TableCell>
                                         <TableCell>{item.branch}</TableCell>
