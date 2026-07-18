@@ -105,12 +105,12 @@ class User extends Authenticatable
 
     public function canImpersonate()
     {
-        return $this->is_super_admin || $this->hasRole('manager');
+        return $this->is_super_admin;
     }
 
     public function canBeImpersonated()
     {
-        return $this->hasRole('user');
+        return !$this->is_super_admin;
     }
 
     /**
