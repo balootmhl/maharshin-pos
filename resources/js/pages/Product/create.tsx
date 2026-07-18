@@ -12,19 +12,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, Category, Group } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    ArrowLeft,
-    Check,
-    ChevronsUpDown,
-    Coins,
-    FileText,
-    FolderOpen,
-    Layers,
-    Package,
-    Percent,
-    Tag,
-} from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Check, ChevronsUpDown, Coins, FileText, FolderOpen, Layers, Package, Percent, Tag } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 type ProductForm = {
@@ -86,7 +74,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
             <div className="w-full space-y-6 p-4 pb-12">
                 {/* Header Actions */}
                 <div className="flex items-center justify-between">
-                    <Button variant="ghost" asChild className="gap-2 text-muted-foreground hover:text-foreground p-0">
+                    <Button variant="ghost" asChild className="text-muted-foreground hover:text-foreground gap-2 p-0">
                         <Link href={route('products.index')}>
                             <ArrowLeft className="h-4 w-4" />
                             Back to Products
@@ -122,7 +110,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                     autoFocus={true}
                                                     className="pl-9"
                                                 />
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-muted-foreground">
+                                                <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 font-mono text-xs font-bold">
                                                     #
                                                 </span>
                                             </div>
@@ -141,7 +129,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                     placeholder="1234567890123"
                                                     className="pl-9"
                                                 />
-                                                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Tag className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                             </div>
                                             <InputError className="mt-1" message={errors.barcode} />
                                         </div>
@@ -165,7 +153,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
-                                                <FolderOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                                <FolderOpen className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                             </div>
                                             <InputError className="mt-1" message={errors.category_id} />
                                         </div>
@@ -183,11 +171,13 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                             aria-expanded={openGroup}
                                                             style={{ paddingLeft: '2.25rem' }}
                                                             className={cn(
-                                                                'w-full justify-between font-normal pr-3',
+                                                                'w-full justify-between pr-3 font-normal',
                                                                 !data.group_id && 'text-muted-foreground',
                                                             )}
                                                         >
-                                                            {data.group_id ? groups.find((group) => String(group.id) === data.group_id)?.name : 'Select group...'}
+                                                            {data.group_id
+                                                                ? groups.find((group) => String(group.id) === data.group_id)?.name
+                                                                : 'Select group...'}
                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                         </Button>
                                                     </PopoverTrigger>
@@ -202,7 +192,10 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                                             key={group.id}
                                                                             value={group.name}
                                                                             onSelect={() => {
-                                                                                setData('group_id', String(group.id) === data.group_id ? '' : String(group.id));
+                                                                                setData(
+                                                                                    'group_id',
+                                                                                    String(group.id) === data.group_id ? '' : String(group.id),
+                                                                                );
                                                                                 setOpenGroup(false);
                                                                             }}
                                                                         >
@@ -220,7 +213,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                         </Command>
                                                     </PopoverContent>
                                                 </Popover>
-                                                <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                                <Layers className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                             </div>
                                             <InputError className="mt-1" message={errors.group_id} />
                                         </div>
@@ -251,9 +244,9 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                 onChange={(e) => setData('description', e.target.value)}
                                                 placeholder="Describe item attributes, usage guidelines, and features"
                                                 rows={3}
-                                                className="pl-9 pt-2.5"
+                                                className="pt-2.5 pl-9"
                                             />
-                                            <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                            <FileText className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
                                         </div>
                                         <InputError className="mt-1" message={errors.description} />
                                     </div>
@@ -269,7 +262,9 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                         <Coins className="h-5 w-5 text-amber-500" />
                                         Pricing & Stock Alerts
                                     </CardTitle>
-                                    <CardDescription>Control standard cost structures, selling prices, tax policies, and inventory thresholds.</CardDescription>
+                                    <CardDescription>
+                                        Control standard cost structures, selling prices, tax policies, and inventory thresholds.
+                                    </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-5">
                                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -286,7 +281,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                     placeholder="pcs"
                                                     className="pl-9"
                                                 />
-                                                <Package className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Package className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                             </div>
                                             <InputError className="mt-1" message={errors.unit} />
                                         </div>
@@ -304,7 +299,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                     onChange={(e) => setData('tax_rate', e.target.value)}
                                                     className="pl-9"
                                                 />
-                                                <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Percent className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                             </div>
                                             <InputError className="mt-1" message={errors.tax_rate} />
                                         </div>
@@ -325,7 +320,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                     required
                                                     className="pl-9"
                                                 />
-                                                <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Coins className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                             </div>
                                             <InputError className="mt-1" message={errors.cost_price} />
                                         </div>
@@ -344,7 +339,7 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                     required
                                                     className="pl-9"
                                                 />
-                                                <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Coins className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                             </div>
                                             <InputError className="mt-1" message={errors.selling_price} />
                                         </div>
@@ -362,22 +357,26 @@ export default function ProductCreate({ categories, groups }: { categories: Cate
                                                 onChange={(e) => setData('low_stock_alert', e.target.value)}
                                                 className="pl-9"
                                             />
-                                            <AlertTriangle className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <AlertTriangle className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                         </div>
                                         <InputError className="mt-1" message={errors.low_stock_alert} />
                                     </div>
 
                                     <div className="flex items-center space-x-3 rounded-lg border border-slate-100 p-3 dark:border-slate-800">
-                                        <Switch id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />
+                                        <Switch
+                                            id="is_active"
+                                            checked={data.is_active}
+                                            onCheckedChange={(checked) => setData('is_active', checked)}
+                                        />
                                         <div className="space-y-0.5">
                                             <Label htmlFor="is_active" className="cursor-pointer text-sm font-semibold">
                                                 Active Listing
                                             </Label>
-                                            <p className="text-[10px] text-muted-foreground">Inactive items will be hidden from cash registers.</p>
+                                            <p className="text-muted-foreground text-[10px]">Inactive items will be hidden from cash registers.</p>
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-end gap-3 border-t pt-5 mt-2">
+                                    <div className="mt-2 flex justify-end gap-3 border-t pt-5">
                                         <Button variant="outline" asChild>
                                             <Link href={route('products.index')}>Cancel</Link>
                                         </Button>
