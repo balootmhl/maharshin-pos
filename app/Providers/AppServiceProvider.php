@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Lab404\Impersonate\Events\LeaveImpersonation;
+use Lab404\Impersonate\Events\TakeImpersonation;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,11 +29,11 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole(config('project.super_admin')) ? true : null;
         });
 
-        \Illuminate\Support\Facades\Event::listen(\Lab404\Impersonate\Events\TakeImpersonable::class, function ($event) {
+        \Illuminate\Support\Facades\Event::listen(TakeImpersonation::class, function ($event) {
             session()->flash('success', "Impersonating {$event->impersonated->name}.");
         });
 
-        \Illuminate\Support\Facades\Event::listen(\Lab404\Impersonate\Events\LeaveImpersonable::class, function ($event) {
+        \Illuminate\Support\Facades\Event::listen(LeaveImpersonation::class, function ($event) {
             session()->flash('success', "Returned to your original account ({$event->impersonator->name}).");
         });
     }
