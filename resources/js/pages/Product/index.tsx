@@ -4,13 +4,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import { Branch, BreadcrumbItem, LaravelPaginator, PaginatedData, Product, SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, Download, X } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
+import { ArrowUpDown, Download, Info, X } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -76,7 +78,9 @@ const baseColumns: ColumnDef<Product>[] = [
         cell: ({ row }) => {
             const categoryName = row.original.category?.name;
             return categoryName ? (
-                <Badge variant="outline" className="font-normal">{categoryName}</Badge>
+                <Badge variant="outline" className="font-normal">
+                    {categoryName}
+                </Badge>
             ) : (
                 <span className="text-muted-foreground">-</span>
             );
@@ -110,81 +114,75 @@ const endColumns: ColumnDef<Product>[] = [
     // },
 ];
 
-// Generate branch-specific columns (Stock, Group, Cost, Selling Price)
-const createBranchColumns = (branches: Branch[]): ColumnDef<Product>[] => {
-    return branches.map((branch) => ({
-        id: `branch_${branch.id}`,
-        header: () => <div className="text-center font-bold">{branch.name}</div>,
-        columns: [
-            {
-                id: `branch_${branch.id}_stock`,
-                header: () => <div className="text-center text-xs text-muted-foreground font-normal">Stock</div>,
-                cell: ({ row }) => {
-                    const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
-                    const quantity = branchStock?.quantity ?? 0;
-                    const isLowStock = row.original.low_stock_alert && quantity <= row.original.low_stock_alert;
-                    const isOutOfStock = quantity === 0;
+// Generate branch-specific columns (Stock, Group, Cost, Selling Price) for a single branch
+const createBranchColumns = (branch: Branch): ColumnDef<Product>[] => {
+    return [
+        {
+            id: `branch_${branch.id}_stock`,
+            header: () => <div className="text-center font-bold">Stock</div>,
+            cell: ({ row }) => {
+                const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
+                const quantity = branchStock?.quantity ?? 0;
+                const isLowStock = row.original.low_stock_alert && quantity <= row.original.low_stock_alert;
+                const isOutOfStock = quantity === 0;
 
-                    return (
-                        <div className="text-center">
-                            <div className={`inline-flex items-center gap-1 font-mono font-medium tabular-nums ${isOutOfStock ? 'text-red-500' : isLowStock ? 'text-orange-500' : 'text-green-600'}`}>
-                                {quantity}
-                                {isOutOfStock && (
-                                    <Badge variant="destructive" className="text-[10px] px-1 py-0">
-                                        Out
-                                    </Badge>
-                                )}
-                                {!isOutOfStock && isLowStock && (
-                                    <Badge variant="outline" className="text-[10px] px-1 py-0 border-orange-400 text-orange-500">
-                                        Low
-                                    </Badge>
-                                )}
-                            </div>
+                return (
+                    <div className="text-center">
+                        <div
+                            className={`inline-flex items-center gap-1 font-mono font-medium tabular-nums ${isOutOfStock ? 'text-red-500' : isLowStock ? 'text-orange-500' : 'text-green-600'}`}
+                        >
+                            {quantity}
+                            {isOutOfStock && (
+                                <Badge variant="destructive" className="px-1 py-0 text-[10px]">
+                                    Out
+                                </Badge>
+                            )}
+                            {!isOutOfStock && isLowStock && (
+                                <Badge variant="outline" className="border-orange-400 px-1 py-0 text-[10px] text-orange-500">
+                                    Low
+                                </Badge>
+                            )}
                         </div>
-                    );
-                },
+                    </div>
+                );
             },
-            {
-                id: `branch_${branch.id}_group`,
-                header: () => <div className="text-center text-xs text-muted-foreground font-normal">Group</div>,
-                cell: ({ row }) => {
-                    const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
-                    const groupName = branchStock?.group?.name;
-                    return (
-                        <div className="text-center text-muted-foreground text-sm">
-                            {groupName || '-'}
-                        </div>
-                    );
-                },
+        },
+        {
+            id: `branch_${branch.id}_group`,
+            header: () => <div className="text-center font-bold">Group</div>,
+            cell: ({ row }) => {
+                const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
+                const groupName = branchStock?.group?.name;
+                return <div className="text-muted-foreground text-center text-sm">{groupName || '-'}</div>;
             },
-            {
-                id: `branch_${branch.id}_cost`,
-                header: () => <div className="text-right text-xs text-muted-foreground font-normal">Cost Price</div>,
-                cell: ({ row }) => {
-                    const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
-                    const cost = branchStock?.cost_price;
-                    return (
-                        <div className="text-right font-mono tabular-nums text-muted-foreground">
-                            {cost != null ? `${formatCurrency(Number(cost))} Ks` : '-'}
-                        </div>
-                    );
-                },
+        },
+        {
+            id: `branch_${branch.id}_cost`,
+            header: () => <div className="text-right font-bold">Cost Price</div>,
+            cell: ({ row }) => {
+                const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
+                const cost = branchStock?.cost_price;
+                return (
+                    <div className="text-muted-foreground text-right font-mono tabular-nums">
+                        {cost != null ? `${formatCurrency(Number(cost))} Ks` : '-'}
+                    </div>
+                );
             },
-            {
-                id: `branch_${branch.id}_selling`,
-                header: () => <div className="text-right text-xs text-muted-foreground font-normal">Selling Price</div>,
-                cell: ({ row }) => {
-                    const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
-                    const selling = branchStock?.selling_price;
-                    return (
-                        <div className="text-right font-mono tabular-nums font-medium text-foreground">
-                            {selling != null ? `${formatCurrency(Number(selling))} Ks` : '-'}
-                        </div>
-                    );
-                },
-            }
-        ]
-    }));
+        },
+        {
+            id: `branch_${branch.id}_selling`,
+            header: () => <div className="text-right font-bold">Selling Price</div>,
+            cell: ({ row }) => {
+                const branchStock = row.original.branch_stocks?.find((bs) => bs.branch_id === branch.id);
+                const selling = branchStock?.selling_price;
+                return (
+                    <div className="text-foreground text-right font-mono font-medium tabular-nums">
+                        {selling != null ? `${formatCurrency(Number(selling))} Ks` : '-'}
+                    </div>
+                );
+            },
+        },
+    ];
 };
 
 interface ProductIndexProps {
@@ -197,6 +195,8 @@ export default function ProductIndex({ products, branches, categories }: Product
     const { auth } = usePage<SharedData>().props;
     const user = auth.user;
 
+    const [selectedBranchId, setSelectedBranchId] = useState<number | 'all'>(user.is_super_admin ? 'all' : (user.branch_id ?? 'all'));
+
     // Non-superadmin sees only their branch; superadmin sees all
     const visibleBranches = useMemo(() => {
         if (user.is_super_admin) return branches;
@@ -204,105 +204,176 @@ export default function ProductIndex({ products, branches, categories }: Product
     }, [branches, user]);
 
     const columns = useMemo(() => {
-        const branchColumns = createBranchColumns(visibleBranches);
-        return [...baseColumns, ...branchColumns, ...endColumns];
-    }, [visibleBranches]);
+        if (selectedBranchId === 'all') {
+            const summaryColumn: ColumnDef<Product> = {
+                id: 'branch_summary',
+                header: () => <div className="font-bold">Branch Stocks & Prices</div>,
+                cell: ({ row }) => {
+                    const branchStocks = row.original.branch_stocks || [];
+                    const totalStock = branchStocks.reduce((sum, bs) => sum + (bs.quantity ?? 0), 0);
 
-    // Global search: searches both code and name. 
+                    return (
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono font-semibold">{totalStock}</span>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 p-0 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                        <Info className="h-3.5 w-3.5 text-blue-500" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 p-3" align="center">
+                                    <div className="space-y-3">
+                                        <h4 className="text-foreground border-b pb-1.5 text-sm font-semibold">Branch Stock Details</h4>
+                                        <div className="space-y-2 text-xs">
+                                            {visibleBranches.map((branch) => {
+                                                const bs = branchStocks.find((b) => b.branch_id === branch.id);
+                                                const qty = bs?.quantity ?? 0;
+                                                const cost = bs?.cost_price;
+                                                const sell = bs?.selling_price;
+                                                const group = bs?.group?.name;
+                                                const isLow = row.original.low_stock_alert && qty <= row.original.low_stock_alert;
+                                                const isOut = qty === 0;
+
+                                                return (
+                                                    <div key={branch.id} className="flex flex-col gap-1 border-b pb-1.5 last:border-0 last:pb-0">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-foreground font-semibold">{branch.name}</span>
+                                                            <Badge
+                                                                variant={isOut ? 'destructive' : isLow ? 'outline' : 'secondary'}
+                                                                className={!isOut && isLow ? 'border-orange-300 text-orange-500' : ''}
+                                                            >
+                                                                {qty} {isOut ? 'Out' : isLow ? 'Low' : 'OK'}
+                                                            </Badge>
+                                                        </div>
+                                                        <div className="text-muted-foreground mt-0.5 flex justify-between">
+                                                            <span>Cost: {cost != null ? `${formatCurrency(Number(cost))} Ks` : '-'}</span>
+                                                            <span>Sell: {sell != null ? `${formatCurrency(Number(sell))} Ks` : '-'}</span>
+                                                        </div>
+                                                        {group && (
+                                                            <div className="text-muted-foreground mt-0.5 text-[10px] italic">Group: {group}</div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                    );
+                },
+            };
+            return [...baseColumns, summaryColumn, ...endColumns];
+        } else {
+            const singleBranch = visibleBranches.find((b) => b.id === selectedBranchId);
+            if (!singleBranch) return [...baseColumns, ...endColumns];
+            const branchColumns = createBranchColumns(singleBranch);
+            return [...baseColumns, ...branchColumns, ...endColumns];
+        }
+    }, [selectedBranchId, visibleBranches]);
+
+    // Global search: searches both code and name.
     // We keep this purely to satisfy DataTable 'search' mode trigger, even if server-side handles logic.
     const globalFilterFn = useMemo(() => {
-        return () => true; 
+        return () => true;
     }, []);
 
-    const FilterPanel = useCallback((props: FilterPanelProps<Product>) => {
-        const { table, onClearFilters } = props;
-        
-        // Category filter
-        const categoryColumn = table.getColumn('category.name');
-        const categoryFilter = (categoryColumn?.getFilterValue() as string[]) || [];
+    const FilterPanel = useCallback(
+        (props: FilterPanelProps<Product>) => {
+            const { table, onClearFilters } = props;
 
-        const toggleCategory = (name: string) => {
-            const current = [...categoryFilter];
-            const index = current.indexOf(name);
-            if (index === -1) {
-                current.push(name);
-            } else {
-                current.splice(index, 1);
-            }
-            categoryColumn?.setFilterValue(current.length > 0 ? current : undefined);
-        };
+            // Category filter
+            const categoryColumn = table.getColumn('category.name');
+            const categoryFilter = (categoryColumn?.getFilterValue() as string[]) || [];
 
-        // Status filter
-        const statusColumn = table.getColumn('is_active');
-        const statusFilterRaw = statusColumn?.getFilterValue();
-        const statusFilter = Array.isArray(statusFilterRaw) ? statusFilterRaw : [];
+            const toggleCategory = (name: string) => {
+                const current = [...categoryFilter];
+                const index = current.indexOf(name);
+                if (index === -1) {
+                    current.push(name);
+                } else {
+                    current.splice(index, 1);
+                }
+                categoryColumn?.setFilterValue(current.length > 0 ? current : undefined);
+            };
 
-        const toggleStatus = (val: string) => {
-            const current = [...(statusFilter as string[])];
-            const index = current.indexOf(val);
-            if (index === -1) {
-                current.push(val);
-            } else {
-                current.splice(index, 1);
-            }
-            statusColumn?.setFilterValue(current.length > 0 ? current : undefined);
-        };
+            // Status filter
+            const statusColumn = table.getColumn('is_active');
+            const statusFilterRaw = statusColumn?.getFilterValue();
+            const statusFilter = Array.isArray(statusFilterRaw) ? statusFilterRaw : [];
 
-        const hasActiveFilters = categoryFilter.length > 0 || statusFilter.length > 0;
+            const toggleStatus = (val: string) => {
+                const current = [...(statusFilter as string[])];
+                const index = current.indexOf(val);
+                if (index === -1) {
+                    current.push(val);
+                } else {
+                    current.splice(index, 1);
+                }
+                statusColumn?.setFilterValue(current.length > 0 ? current : undefined);
+            };
 
-        return (
-            <div className="space-y-4">
-                {hasActiveFilters && (
-                    <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
-                        <X className="mr-2 h-4 w-4" />
-                        Clear all filters
-                    </Button>
-                )}
+            const hasActiveFilters = categoryFilter.length > 0 || statusFilter.length > 0;
 
-                {/* Category Filter */}
-                <div className="space-y-3">
-                    <Label className="text-sm font-medium">Category</Label>
-                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
-                        {categories.map((name) => (
-                            <div key={name} className="flex items-center space-x-2">
-                                <Checkbox
-                                    id={`cat-${name}`}
-                                    checked={categoryFilter.includes(name)}
-                                    onCheckedChange={() => toggleCategory(name)}
-                                />
-                                <Label htmlFor={`cat-${name}`} className="cursor-pointer text-sm font-normal">
-                                    {name}
+            return (
+                <div className="space-y-4">
+                    {hasActiveFilters && (
+                        <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
+                            <X className="mr-2 h-4 w-4" />
+                            Clear all filters
+                        </Button>
+                    )}
+
+                    {/* Category Filter */}
+                    <div className="space-y-3">
+                        <Label className="text-sm font-medium">Category</Label>
+                        <div className="max-h-[150px] space-y-2 overflow-y-auto">
+                            {categories.map((name) => (
+                                <div key={name} className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id={`cat-${name}`}
+                                        checked={categoryFilter.includes(name)}
+                                        onCheckedChange={() => toggleCategory(name)}
+                                    />
+                                    <Label htmlFor={`cat-${name}`} className="cursor-pointer text-sm font-normal">
+                                        {name}
+                                    </Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Status Filter */}
+                    <div className="space-y-3">
+                        <Label className="text-sm font-medium">Status</Label>
+                        <div className="space-y-2">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="status-active" checked={statusFilter.includes('1')} onCheckedChange={() => toggleStatus('1')} />
+                                <Label htmlFor="status-active" className="cursor-pointer text-sm font-normal">
+                                    Active
                                 </Label>
                             </div>
-                        ))}
-                    </div>
-                </div>
-
-                <Separator />
-
-                {/* Status Filter */}
-                <div className="space-y-3">
-                    <Label className="text-sm font-medium">Status</Label>
-                    <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="status-active" checked={statusFilter.includes('1')} onCheckedChange={() => toggleStatus('1')} />
-                            <Label htmlFor="status-active" className="cursor-pointer text-sm font-normal">Active</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Checkbox id="status-inactive" checked={statusFilter.includes('0')} onCheckedChange={() => toggleStatus('0')} />
-                            <Label htmlFor="status-inactive" className="cursor-pointer text-sm font-normal">Inactive</Label>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox id="status-inactive" checked={statusFilter.includes('0')} onCheckedChange={() => toggleStatus('0')} />
+                                <Label htmlFor="status-inactive" className="cursor-pointer text-sm font-normal">
+                                    Inactive
+                                </Label>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        );
-    }, [categories]);
+            );
+        },
+        [categories],
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Products" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex flex-row justify-between">
+                <div className="flex flex-row items-center justify-between gap-4">
                     <div className="flex gap-2">
                         <CreateBtn route={route('products.create')} />
                         <Button variant="outline" asChild>
@@ -312,6 +383,30 @@ export default function ProductIndex({ products, branches, categories }: Product
                             </a>
                         </Button>
                     </div>
+
+                    {user.is_super_admin && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground text-sm font-medium">View branch:</span>
+                            <Select
+                                value={String(selectedBranchId)}
+                                onValueChange={(val) => {
+                                    setSelectedBranchId(val === 'all' ? 'all' : Number(val));
+                                }}
+                            >
+                                <SelectTrigger className="h-9 w-fit min-w-[200px] gap-2">
+                                    <SelectValue placeholder="Select Branch" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Branches (Summary)</SelectItem>
+                                    {branches.map((branch) => (
+                                        <SelectItem key={branch.id} value={String(branch.id)}>
+                                            {branch.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                 </div>
                 <DataTable
                     data={products}
