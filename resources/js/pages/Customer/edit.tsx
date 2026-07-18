@@ -70,7 +70,7 @@ export default function CustomerEdit({ customer }: { customer: Customer }) {
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                         {/* Left Card: Customer Profile */}
                         <div className="space-y-6 lg:col-span-7">
-                            <Card className="flex h-full flex-col justify-between border border-slate-200 shadow-xs dark:border-slate-800">
+                            <Card className="flex h-full flex-col border border-slate-200 shadow-xs dark:border-slate-800">
                                 <CardHeader className="pb-6">
                                     <CardTitle className="flex items-center gap-2 text-xl font-bold">
                                         <Contact className="h-5 w-5 text-indigo-500" />
@@ -176,7 +176,7 @@ export default function CustomerEdit({ customer }: { customer: Customer }) {
 
                         {/* Right Card: Financials & Address */}
                         <div className="space-y-6 lg:col-span-5">
-                            <Card className="flex h-full flex-col justify-between border border-slate-200 shadow-xs dark:border-slate-800">
+                            <Card className="flex h-full flex-col border border-slate-200 shadow-xs dark:border-slate-800">
                                 <CardHeader className="pb-6">
                                     <CardTitle className="flex items-center gap-2 text-xl font-bold">
                                         <Coins className="h-5 w-5 text-amber-500" />
@@ -184,7 +184,7 @@ export default function CustomerEdit({ customer }: { customer: Customer }) {
                                     </CardTitle>
                                     <CardDescription>Manage customer billing credentials, credit rules, and current balance.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-5">
+                                <CardContent className="flex-1 space-y-5">
                                     <div className="space-y-2">
                                         <Label htmlFor="credit_limit" className="font-semibold">
                                             Credit Limit (Ks)
