@@ -1,17 +1,11 @@
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { LaravelPaginator, PaginatedData } from '@/types';
 import { Link, router } from '@inertiajs/react';
 import {
@@ -31,7 +25,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Filter, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, Filter, Pencil } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 
 // Simple debounce implementation to avoid adding lodash dependency
@@ -51,35 +45,43 @@ type ActionsProp = {
 
 export function DataTableActions({ routePrefix, routeParam, canEdit = true }: ActionsProp) {
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem asChild>
-                    <Link href={route(`${routePrefix}.show`, routeParam)}>View</Link>
-                </DropdownMenuItem>
-                {canEdit && (
-                    <DropdownMenuItem asChild>
-                        <Link href={route(`${routePrefix}.edit`, routeParam)}>Edit</Link>
-                    </DropdownMenuItem>
-                )}
-                <DropdownMenuItem className="hidden" asChild>
-                    <Link
-                        href={route(`${routePrefix}.show`, {
-                            ...routeParam,
-                            delete: true,
-                        })}
+        <div className="flex items-center gap-1.5">
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg border border-slate-200 text-slate-600 shadow-xs transition-all duration-200 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-800 dark:text-slate-400 dark:hover:border-blue-800/80 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
+                        asChild
                     >
-                        Delete
-                    </Link>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+                        <Link href={route(`${routePrefix}.show`, routeParam)}>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">View</span>
+                        </Link>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>View</TooltipContent>
+            </Tooltip>
+
+            {canEdit && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg border border-slate-200 text-amber-600 shadow-xs transition-all duration-200 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700 dark:border-slate-800 dark:text-amber-500 dark:hover:border-amber-800/80 dark:hover:bg-amber-950/30 dark:hover:text-amber-400"
+                            asChild
+                        >
+                            <Link href={route(`${routePrefix}.edit`, routeParam)}>
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Edit</TooltipContent>
+                </Tooltip>
+            )}
+        </div>
     );
 }
 
@@ -116,11 +118,11 @@ export function DataTable<TData>({
     // Determine if we are in server-side mode
     // We check for 'meta' (API Resource) or 'current_page' (Standard Paginator)
     const isServerSide = !Array.isArray(data) && ('meta' in data || 'current_page' in data);
-    
+
     const tableData = isServerSide ? (data as PaginatedData<TData> | LaravelPaginator<TData>).data : (data as TData[]);
-    
+
     // Extract meta: if data has 'meta' property, use it. Otherwise, data IS the meta (LaravelPaginator).
-     
+
     const meta = isServerSide ? ('meta' in data ? (data as PaginatedData<TData>).meta : (data as LaravelPaginator<TData>)) : null;
 
     // State
@@ -156,31 +158,28 @@ export function DataTable<TData>({
     }, [isServerSide, meta]);
 
     // Handle Server-Side parameter updates
-    const updateServerParams = useCallback(
-        (newParams: Record<string, string | number | undefined>) => {
-            const currentQuery = new URLSearchParams(window.location.search);
-            Object.entries(newParams).forEach(([key, value]) => {
-                if (value === undefined || value === null || value === '') {
-                    currentQuery.delete(key);
-                } else {
-                    currentQuery.set(key, String(value));
-                }
-            });
-            
-            // Convert to object for Inertia
-            const queryObj: Record<string, string> = {};
-            currentQuery.forEach((val, key) => {
-                queryObj[key] = val;
-            });
+    const updateServerParams = useCallback((newParams: Record<string, string | number | undefined>) => {
+        const currentQuery = new URLSearchParams(window.location.search);
+        Object.entries(newParams).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '') {
+                currentQuery.delete(key);
+            } else {
+                currentQuery.set(key, String(value));
+            }
+        });
 
-            router.get(window.location.pathname, queryObj, {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            });
-        },
-        []
-    );
+        // Convert to object for Inertia
+        const queryObj: Record<string, string> = {};
+        currentQuery.forEach((val, key) => {
+            queryObj[key] = val;
+        });
+
+        router.get(window.location.pathname, queryObj, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    }, []);
 
     // Server-side change handlers
     const onPaginationChange = (updater: Updater<PaginationState>) => {
@@ -198,10 +197,10 @@ export function DataTable<TData>({
     const onSortingChange = (updater: Updater<SortingState>) => {
         const nextState = typeof updater === 'function' ? updater(sorting) : updater;
         setSorting(nextState);
-        
+
         if (isServerSide) {
-           const sortParam = nextState.map((sort) => (sort.desc ? `-${sort.id}` : sort.id)).join(',');
-           updateServerParams({ sort: sortParam || undefined });
+            const sortParam = nextState.map((sort) => (sort.desc ? `-${sort.id}` : sort.id)).join(',');
+            updateServerParams({ sort: sortParam || undefined });
         }
     };
 
@@ -209,7 +208,7 @@ export function DataTable<TData>({
         const nextState = typeof updater === 'function' ? updater(columnFilters) : updater;
         setColumnFilters(nextState);
     };
-    
+
     // Debounced global search
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const debouncedSearch = useCallback(
@@ -218,7 +217,7 @@ export function DataTable<TData>({
                 updateServerParams({ 'filter[global]': value || undefined, page: 1 });
             }
         }, 500),
-        [isServerSide, updateServerParams]
+        [isServerSide, updateServerParams],
     );
 
     const onGlobalFilterChange = (value: string) => {
@@ -259,80 +258,78 @@ export function DataTable<TData>({
         manualFiltering: isServerSide,
         globalFilterFn: globalFilterFnAdapter,
     });
-    
+
     // Check if we need to sync column filters for server-side
     useEffect(() => {
         if (!isServerSide) return;
-        
+
         const timeoutId = setTimeout(() => {
-             const filterParams: Record<string, string | number | undefined> = {};
-             
-             columnFilters.forEach((filter) => {
-                 const value = filter.value;
-                 if (value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)) {
-                     if (typeof value === 'object' && !Array.isArray(value)) {
-                         Object.entries(value).forEach(([subKey, subValue]) => {
-                             if (subValue !== undefined && subValue !== '') {
-                                 filterParams[`filter[${filter.id}_${subKey}]`] = String(subValue);
-                             }
-                         });
-                     } else {
-                         const val = Array.isArray(value) ? value.join(',') : String(value);
-                         filterParams[`filter[${filter.id}]`] = val;
-                     }
-                 }
-             });
-             
-             // We also need to clear filters that were removed. 
-             const currentUrlParams = new URLSearchParams(window.location.search);
-             const keysToDelete: string[] = [];
-             currentUrlParams.forEach((_, key) => {
-                 if (key.startsWith('filter[') && key !== 'filter[global]') {
-                     if (!(key in filterParams)) {
-                         keysToDelete.push(key);
-                     }
-                 }
-             });
+            const filterParams: Record<string, string | number | undefined> = {};
 
-             // Check if there are ACTUAL differences between URL and our new state to avoid infinite ping
-             let hasChanges = keysToDelete.length > 0;
-             Object.entries(filterParams).forEach(([key, value]) => {
-                 if (currentUrlParams.get(key) !== value) {
-                     hasChanges = true;
-                 }
-             });
+            columnFilters.forEach((filter) => {
+                const value = filter.value;
+                if (value !== undefined && value !== null && (Array.isArray(value) ? value.length > 0 : true)) {
+                    if (typeof value === 'object' && !Array.isArray(value)) {
+                        Object.entries(value).forEach(([subKey, subValue]) => {
+                            if (subValue !== undefined && subValue !== '') {
+                                filterParams[`filter[${filter.id}_${subKey}]`] = String(subValue);
+                            }
+                        });
+                    } else {
+                        const val = Array.isArray(value) ? value.join(',') : String(value);
+                        filterParams[`filter[${filter.id}]`] = val;
+                    }
+                }
+            });
 
-             // Apply updates if there are changes
-             if (hasChanges) {
-                 const paramsToUpdate: Record<string, string | number | undefined> = { ...filterParams };
-                 keysToDelete.forEach(k => paramsToUpdate[k] = '');
-                 paramsToUpdate['page'] = 1; // Reset to page 1
-                 
-                 updateServerParams(paramsToUpdate);
-             }
-             
+            // We also need to clear filters that were removed.
+            const currentUrlParams = new URLSearchParams(window.location.search);
+            const keysToDelete: string[] = [];
+            currentUrlParams.forEach((_, key) => {
+                if (key.startsWith('filter[') && key !== 'filter[global]') {
+                    if (!(key in filterParams)) {
+                        keysToDelete.push(key);
+                    }
+                }
+            });
+
+            // Check if there are ACTUAL differences between URL and our new state to avoid infinite ping
+            let hasChanges = keysToDelete.length > 0;
+            Object.entries(filterParams).forEach(([key, value]) => {
+                if (currentUrlParams.get(key) !== value) {
+                    hasChanges = true;
+                }
+            });
+
+            // Apply updates if there are changes
+            if (hasChanges) {
+                const paramsToUpdate: Record<string, string | number | undefined> = { ...filterParams };
+                keysToDelete.forEach((k) => (paramsToUpdate[k] = ''));
+                paramsToUpdate['page'] = 1; // Reset to page 1
+
+                updateServerParams(paramsToUpdate);
+            }
         }, 500);
-        
+
         return () => clearTimeout(timeoutId);
     }, [columnFilters, isServerSide, updateServerParams]);
-
 
     const handleClearFilters = () => {
         setColumnFilters([]);
         if (isServerSide) {
-             const currentUrlParams = new URLSearchParams(window.location.search);
-             const paramsToUpdate: Record<string, string> = {};
-             currentUrlParams.forEach((_, key) => {
-                 if (key.startsWith('filter[')) {
-                     paramsToUpdate[key] = '';
-                 }
-             });
-             updateServerParams(paramsToUpdate);
+            const currentUrlParams = new URLSearchParams(window.location.search);
+            const paramsToUpdate: Record<string, string> = {};
+            currentUrlParams.forEach((_, key) => {
+                if (key.startsWith('filter[')) {
+                    paramsToUpdate[key] = '';
+                }
+            });
+            updateServerParams(paramsToUpdate);
         }
     };
 
     const activeFilterCount = columnFilters.length;
-    
+
     // Initial value logic for Input
     const initialGlobalFilter = globalFilterFn ? globalFilter : ((table.getColumn(searchColumn)?.getFilterValue() as string) ?? '');
 
@@ -342,10 +339,8 @@ export function DataTable<TData>({
                 <Input
                     placeholder={searchPlaceholder}
                     value={globalFilterFn ? globalFilter : initialGlobalFilter}
-                    onChange={(event) => 
-                        globalFilterFn 
-                            ? onGlobalFilterChange(event.target.value)
-                            : table.getColumn(searchColumn)?.setFilterValue(event.target.value)
+                    onChange={(event) =>
+                        globalFilterFn ? onGlobalFilterChange(event.target.value) : table.getColumn(searchColumn)?.setFilterValue(event.target.value)
                     }
                     className="max-w-sm"
                 />
@@ -400,7 +395,7 @@ export function DataTable<TData>({
             </div>
             <div className={`rounded-md border ${scrollable ? 'relative h-[calc(100vh-280px)] overflow-auto' : ''}`}>
                 <Table>
-                    <TableHeader className={scrollable ? "sticky top-0 z-10 bg-background shadow-sm" : ""}>
+                    <TableHeader className={scrollable ? 'bg-background sticky top-0 z-10 shadow-sm' : ''}>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
@@ -441,15 +436,13 @@ export function DataTable<TData>({
             <div className="flex items-center justify-between py-4">
                 <div className="text-muted-foreground flex-1 text-sm">
                     {/* For server side, we might verify if we want to show selected count locally or total */}
-                    {table.getFilteredSelectedRowModel().rows.length} of {isServerSide && meta ? meta.total : table.getFilteredRowModel().rows.length} row(s) selected.
+                    {table.getFilteredSelectedRowModel().rows.length} of {isServerSide && meta ? meta.total : table.getFilteredRowModel().rows.length}{' '}
+                    row(s) selected.
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <span className="text-muted-foreground text-sm">Rows</span>
-                        <Select
-                            value={String(table.getState().pagination.pageSize)}
-                            onValueChange={(value) => table.setPageSize(Number(value))}
-                        >
+                        <Select value={String(table.getState().pagination.pageSize)} onValueChange={(value) => table.setPageSize(Number(value))}>
                             <SelectTrigger className="h-8 w-[70px]">
                                 <SelectValue />
                             </SelectTrigger>
@@ -524,13 +517,7 @@ export function DataTable<TData>({
                                 ),
                             );
                         })()}
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => table.nextPage()}
-                            disabled={!table.getCanNextPage()}
-                        >
+                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                         <Button
