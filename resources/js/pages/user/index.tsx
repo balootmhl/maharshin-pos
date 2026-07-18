@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PaginatedData, User } from '@/types';
 import { Head, Link } from '@inertiajs/react';
@@ -102,11 +103,21 @@ const columns: ColumnDef<User>[] = [
         header: 'Impersonate',
         cell: ({ row }) =>
             !row.original.is_super_admin && (
-                <Button variant="outline" asChild>
-                    <Link href={route('impersonate', { id: row.original.id })}>
-                        <LogInIcon />
-                    </Link>
-                </Button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            asChild
+                            className="h-8 w-8 rounded-lg border border-slate-200 shadow-xs transition-colors duration-200 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600 dark:border-slate-800 dark:hover:border-violet-900 dark:hover:bg-violet-950/30 dark:hover:text-violet-400"
+                        >
+                            <a href={route('impersonate', { id: row.original.id })}>
+                                <LogInIcon className="h-4 w-4" />
+                            </a>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Impersonate User</TooltipContent>
+                </Tooltip>
             ),
         enableSorting: false,
         enableHiding: false,
