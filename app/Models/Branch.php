@@ -73,4 +73,9 @@ class Branch extends BaseModel
     {
         return $this->hasMany(Group::class);
     }
+
+    public function modulePasswords(): HasMany
+    {
+        return $this->hasMany(BranchModulePassword::class);
+    }
 }
