@@ -1,7 +1,6 @@
-import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import SaleCreate from '../../pages/Sale/create';
 
 // Mock Ziggy route helper and Inertia usePage/useForm (done in setup.ts, but custom mocks can be added here)
@@ -17,10 +16,8 @@ vi.mock('@/hooks/use-product-search', () => {
                     cost_price: '1000',
                     selling_price: '1500',
                     stock: 50,
-                    branch_stocks: [
-                        { branch_id: 1, quantity: 50, cost_price: '1000', selling_price: '1500' }
-                    ]
-                }
+                    branch_stocks: [{ branch_id: 1, quantity: 50, cost_price: '1000', selling_price: '1500' }],
+                },
             ],
             search: vi.fn(),
             lookupBarcode: vi.fn(),
@@ -30,13 +27,9 @@ vi.mock('@/hooks/use-product-search', () => {
 
 describe('SaleCreate Integration Tests (POS Interface)', () => {
     const defaultProps = {
-        branches: [
-            { id: 1, name: 'Zabyuungpyaye Branch 1', is_active: true }
-        ],
-        customers: [
-            { id: 1, code: 'CUST-001', name: 'Mg Mg', phone: '09123456789' }
-        ],
-        invoiceNo: 'INV-2026-0001'
+        branches: [{ id: 1, name: 'Zabyuungpyaye Branch 1', is_active: true }],
+        customers: [{ id: 1, code: 'CUST-001', name: 'Mg Mg', phone: '09123456789', credit_limit: 0, current_balance: 0 }],
+        invoiceNo: 'INV-2026-0001',
     };
 
     it('should render the POS header, inputs, and empty cart message', () => {
