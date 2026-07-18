@@ -31,7 +31,7 @@ export default function CategoryShow({ category }: { category: Category }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={category.name} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Card className="max-w-4xl mx-auto w-full">
+                <Card className="mx-auto w-full max-w-4xl">
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>

@@ -37,9 +37,7 @@ export default function CustomerPaymentCreate({ customers = [], branches = [] }:
 
     const { auth } = usePage<SharedData>().props;
 
-    const defaultBranchId = auth.user.is_super_admin
-        ? (branches[0]?.id?.toString() || '')
-        : (auth.user.branch_id?.toString() || '');
+    const defaultBranchId = auth.user.is_super_admin ? branches[0]?.id?.toString() || '' : auth.user.branch_id?.toString() || '';
 
     const { data, setData, post, reset, errors, processing } = useForm<PaymentForm>({
         customer_id: '',
@@ -65,7 +63,7 @@ export default function CustomerPaymentCreate({ customers = [], branches = [] }:
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Record Payment" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <form onSubmit={submit} className="max-w-3xl mx-auto w-full">
+                <form onSubmit={submit} className="mx-auto w-full max-w-3xl">
                     <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid grid-flow-row gap-2">

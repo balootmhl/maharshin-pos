@@ -8,11 +8,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { useForm } from "@inertiajs/react";
-import { TrashIcon } from "lucide-react";
-import { Dispatch, FormEventHandler, SetStateAction } from "react";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { useForm } from '@inertiajs/react';
+import { TrashIcon } from 'lucide-react';
+import { Dispatch, FormEventHandler, SetStateAction } from 'react';
 
 export function DeleteBtn({
     open,
@@ -42,20 +42,16 @@ export function DeleteBtn({
             <AlertDialogContent>
                 <form onSubmit={submit}>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            Are you absolutely sure?
-                        </AlertDialogTitle>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This action cannot be undone. This will delete
-                            <code className="mx-2 text-primary">{item}</code>
+                            <code className="text-primary mx-2">{item}</code>
                             from the system.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction type="submit">
-                            Continue
-                        </AlertDialogAction>
+                        <AlertDialogAction type="submit">Continue</AlertDialogAction>
                     </AlertDialogFooter>
                 </form>
             </AlertDialogContent>

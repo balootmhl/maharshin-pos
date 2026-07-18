@@ -1,19 +1,12 @@
-"use client";
+'use client';
 
-import { Minus, Plus } from "lucide-react";
-import * as React from "react";
-import { Bar, BarChart } from "recharts";
+import { Minus, Plus } from 'lucide-react';
+import * as React from 'react';
+import { Bar, BarChart } from 'recharts';
 
-import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { ChartConfig, ChartContainer } from "@/components/ui/chart";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartConfig, ChartContainer } from '@/components/ui/chart';
 
 const data = [
     {
@@ -59,8 +52,8 @@ const data = [
 
 const chartConfig = {
     goal: {
-        label: "Goal",
-        color: "hsl(var(--primary))",
+        label: 'Goal',
+        color: 'hsl(var(--primary))',
     },
 } satisfies ChartConfig;
 
@@ -90,12 +83,8 @@ export function CardsActivityGoal() {
                         <span className="sr-only">Decrease</span>
                     </Button>
                     <div className="flex-1 text-center">
-                        <div className="text-5xl font-bold tracking-tighter">
-                            {goal}
-                        </div>
-                        <div className="text-[0.70rem] uppercase text-muted-foreground">
-                            Calories/day
-                        </div>
+                        <div className="text-5xl font-bold tracking-tighter">{goal}</div>
+                        <div className="text-muted-foreground text-[0.70rem] uppercase">Calories/day</div>
                     </div>
                     <Button
                         variant="outline"
@@ -109,16 +98,9 @@ export function CardsActivityGoal() {
                     </Button>
                 </div>
                 <div className="my-3 h-[60px]">
-                    <ChartContainer
-                        config={chartConfig}
-                        className="aspect-auto h-full w-full"
-                    >
+                    <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
                         <BarChart data={data}>
-                            <Bar
-                                dataKey="goal"
-                                radius={4}
-                                fill="var(--color-goal)"
-                            />
+                            <Bar dataKey="goal" radius={4} fill="var(--color-goal)" />
                         </BarChart>
                     </ChartContainer>
                 </div>

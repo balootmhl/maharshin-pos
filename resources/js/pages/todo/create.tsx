@@ -56,7 +56,7 @@ export default function TodoCreate() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create - Todo" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <form onSubmit={submit} className="max-w-3xl mx-auto w-full">
+                <form onSubmit={submit} className="mx-auto w-full max-w-3xl">
                     <div className="space-y-6">
                         <div className="grid grid-flow-row gap-2">
                             <Label htmlFor="name">Name*</Label>

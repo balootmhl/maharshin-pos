@@ -1,12 +1,5 @@
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,15 +21,7 @@ interface QuickAdjustDialogProps {
 
 type Mode = 'adjust' | 'set';
 
-export default function QuickAdjustDialog({
-    product,
-    branchId,
-    currentStock,
-    reasons,
-    open,
-    onOpenChange,
-    onSuccess,
-}: QuickAdjustDialogProps) {
+export default function QuickAdjustDialog({ product, branchId, currentStock, reasons, open, onOpenChange, onSuccess }: QuickAdjustDialogProps) {
     const [mode, setMode] = useState<Mode>('adjust'); // 'adjust' (+/-) or 'set' (=)
 
     const form = useForm({
@@ -127,20 +112,10 @@ export default function QuickAdjustDialog({
                     <div className="flex items-center gap-4">
                         <Label>Mode</Label>
                         <div className="flex gap-2">
-                            <Button
-                                type="button"
-                                variant={mode === 'adjust' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setMode('adjust')}
-                            >
+                            <Button type="button" variant={mode === 'adjust' ? 'default' : 'outline'} size="sm" onClick={() => setMode('adjust')}>
                                 Adjust (+/-)
                             </Button>
-                            <Button
-                                type="button"
-                                variant={mode === 'set' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setMode('set')}
-                            >
+                            <Button type="button" variant={mode === 'set' ? 'default' : 'outline'} size="sm" onClick={() => setMode('set')}>
                                 Set (=)
                             </Button>
                         </div>
@@ -152,10 +127,7 @@ export default function QuickAdjustDialog({
                             <Label htmlFor="type" className="text-right">
                                 Type
                             </Label>
-                            <Select
-                                value={form.data.adjustment_type}
-                                onValueChange={(val) => form.setData('adjustment_type', val)}
-                            >
+                            <Select value={form.data.adjustment_type} onValueChange={(val) => form.setData('adjustment_type', val)}>
                                 <SelectTrigger className="col-span-3">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -183,9 +155,7 @@ export default function QuickAdjustDialog({
                             step="0.01" // Assuming quantity can be decimal
                         />
                     </div>
-                    {form.errors.quantity && (
-                        <p className="text-destructive col-start-2 col-span-3 text-sm">{form.errors.quantity}</p>
-                    )}
+                    {form.errors.quantity && <p className="text-destructive col-span-3 col-start-2 text-sm">{form.errors.quantity}</p>}
 
                     {/* Reason */}
                     <div className="grid grid-cols-4 items-center gap-4">
@@ -209,21 +179,14 @@ export default function QuickAdjustDialog({
                             </SelectContent>
                         </Select>
                     </div>
-                    {form.errors.reason && (
-                        <p className="text-destructive col-start-2 col-span-3 text-sm">{form.errors.reason}</p>
-                    )}
+                    {form.errors.reason && <p className="text-destructive col-span-3 col-start-2 text-sm">{form.errors.reason}</p>}
 
                     {/* Notes */}
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="notes" className="text-right">
                             Notes
                         </Label>
-                        <Textarea
-                            id="notes"
-                            className="col-span-3"
-                            value={form.data.notes}
-                            onChange={(e) => form.setData('notes', e.target.value)}
-                        />
+                        <Textarea id="notes" className="col-span-3" value={form.data.notes} onChange={(e) => form.setData('notes', e.target.value)} />
                     </div>
                 </form>
 

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // The currency formatting utility used across the system
 const formatCurrency = (value: number) => {

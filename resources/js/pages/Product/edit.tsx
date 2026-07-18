@@ -1,18 +1,18 @@
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, Category, Group, Product } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEventHandler, useState } from 'react';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { FormEventHandler, useState } from 'react';
 
 type ProductForm = {
     code: string;
@@ -50,8 +50,12 @@ export default function ProductEdit({ product, categories, groups }: { product: 
         category_id: String(product.category_id),
         group_id: product.branch_stocks && product.branch_stocks.length > 0 ? String(product.branch_stocks[0].group_id || '') : '',
         unit: product.unit || 'pcs',
-        cost_price: product.branch_stocks && product.branch_stocks.length > 0 ? String(product.branch_stocks[0].cost_price ?? 0) : String(product.cost_price),
-        selling_price: product.branch_stocks && product.branch_stocks.length > 0 ? String(product.branch_stocks[0].selling_price ?? 0) : String(product.selling_price),
+        cost_price:
+            product.branch_stocks && product.branch_stocks.length > 0 ? String(product.branch_stocks[0].cost_price ?? 0) : String(product.cost_price),
+        selling_price:
+            product.branch_stocks && product.branch_stocks.length > 0
+                ? String(product.branch_stocks[0].selling_price ?? 0)
+                : String(product.selling_price),
         tax_rate: String(product.tax_rate),
         low_stock_alert: String(product.low_stock_alert || 0),
         is_active: product.is_active ?? true,
@@ -68,7 +72,7 @@ export default function ProductEdit({ product, categories, groups }: { product: 
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit - ${product.name}`} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <form onSubmit={submit} className="max-w-4xl mx-auto w-full">
+                <form onSubmit={submit} className="mx-auto w-full max-w-4xl">
                     <div className="space-y-6">
                         <div className="grid grid-cols-3 gap-4">
                             <div className="grid grid-flow-row gap-2">
@@ -117,11 +121,9 @@ export default function ProductEdit({ product, categories, groups }: { product: 
                                             variant="outline"
                                             role="combobox"
                                             aria-expanded={openGroup}
-                                            className={cn("w-full justify-between font-normal", !data.group_id && "text-muted-foreground")}
+                                            className={cn('w-full justify-between font-normal', !data.group_id && 'text-muted-foreground')}
                                         >
-                                            {data.group_id
-                                                ? groups.find((group) => String(group.id) === data.group_id)?.name
-                                                : "Select group..."}
+                                            {data.group_id ? groups.find((group) => String(group.id) === data.group_id)?.name : 'Select group...'}
                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                     </PopoverTrigger>
@@ -136,14 +138,14 @@ export default function ProductEdit({ product, categories, groups }: { product: 
                                                             key={group.id}
                                                             value={group.name}
                                                             onSelect={() => {
-                                                                setData('group_id', String(group.id) === data.group_id ? "" : String(group.id));
+                                                                setData('group_id', String(group.id) === data.group_id ? '' : String(group.id));
                                                                 setOpenGroup(false);
                                                             }}
                                                         >
                                                             <Check
                                                                 className={cn(
-                                                                    "mr-2 h-4 w-4",
-                                                                    data.group_id === String(group.id) ? "opacity-100" : "opacity-0"
+                                                                    'mr-2 h-4 w-4',
+                                                                    data.group_id === String(group.id) ? 'opacity-100' : 'opacity-0',
                                                                 )}
                                                             />
                                                             {group.name}

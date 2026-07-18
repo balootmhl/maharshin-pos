@@ -17,12 +17,7 @@ type UseProductSearchReturn = {
     clearResults: () => void;
 };
 
-export function useProductSearch({
-    branchId,
-    context,
-    debounceMs = 300,
-    limit = 30,
-}: UseProductSearchOptions): UseProductSearchReturn {
+export function useProductSearch({ branchId, context, debounceMs = 300, limit = 30 }: UseProductSearchOptions): UseProductSearchReturn {
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,7 +53,7 @@ export function useProductSearch({
                 const response = await fetch(`/api/products/search?${searchParams.toString()}`, {
                     signal: controller.signal,
                     headers: {
-                        'Accept': 'application/json',
+                        Accept: 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
                     },
                 });
@@ -141,7 +136,7 @@ export function useProductSearch({
             try {
                 const response = await fetch(`/api/products/barcode-lookup?${searchParams.toString()}`, {
                     headers: {
-                        'Accept': 'application/json',
+                        Accept: 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
                     },
                 });

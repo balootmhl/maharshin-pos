@@ -49,7 +49,7 @@ export default function UserEdit({ user, roles, branches }: { user: User; roles:
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Edit - User" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <form onSubmit={submit} className="max-w-3xl mx-auto w-full">
+                <form onSubmit={submit} className="mx-auto w-full max-w-3xl">
                     <div className="space-y-6">
                         <div className="grid grid-flow-row gap-2">
                             <Label htmlFor="name">Name*</Label>
@@ -87,7 +87,7 @@ export default function UserEdit({ user, roles, branches }: { user: User; roles:
                                 <Label htmlFor="branch_id">Branch{data.main_role !== 'god' ? '*' : ''}</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder={data.main_role !== 'god' ? "Select branch" : "Select branch (optional)"} />
+                                        <SelectValue placeholder={data.main_role !== 'god' ? 'Select branch' : 'Select branch (optional)'} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {branches.map((branch) => (

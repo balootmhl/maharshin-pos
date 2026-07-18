@@ -81,7 +81,7 @@ export default function PurchaseShow({ purchase }: { purchase: Purchase }) {
                                     {purchase.purchase_items.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
-                                                <div className="text-xs font-bold font-mono">{item.product?.code}</div>
+                                                <div className="font-mono text-xs font-bold">{item.product?.code}</div>
                                                 <div className="text-muted-foreground text-xs">{item.product?.name}</div>
                                             </TableCell>
                                             <TableCell className="text-right">{item.quantity}</TableCell>

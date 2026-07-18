@@ -79,7 +79,7 @@ export default function CustomerPaymentEdit({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Payment ${customerPayment.payment_no}`} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <form onSubmit={submit} className="max-w-3xl mx-auto w-full">
+                <form onSubmit={submit} className="mx-auto w-full max-w-3xl">
                     <div className="space-y-6">
                         {/* Display orphaned errors at the top */}
                         {orphanedErrors.length > 0 && (
@@ -88,7 +88,8 @@ export default function CustomerPaymentEdit({
                                 <ul className="mt-1 list-disc pl-5">
                                     {orphanedErrors.map((key) => (
                                         <li key={key}>
-                                            <span className="capitalize">{key.replace('_', ' ')}</span>: {(errors as Record<string, string | undefined>)[key]}
+                                            <span className="capitalize">{key.replace('_', ' ')}</span>:{' '}
+                                            {(errors as Record<string, string | undefined>)[key]}
                                         </li>
                                     ))}
                                 </ul>

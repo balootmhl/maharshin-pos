@@ -1,10 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, Product } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Barcode, Edit, Package, Tag } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -30,7 +30,7 @@ export default function ProductShow({ product }: { product: Product }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={product.name} />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Card className="max-w-4xl mx-auto w-full">
+                <Card className="mx-auto w-full max-w-4xl">
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
@@ -78,8 +78,8 @@ export default function ProductShow({ product }: { product: Product }) {
                         </div>
 
                         {product.branch_stocks && product.branch_stocks.length > 0 && (
-                            <div className="border-t pt-4 space-y-3">
-                                <h3 className="font-semibold text-sm text-foreground">Branch Configurations</h3>
+                            <div className="space-y-3 border-t pt-4">
+                                <h3 className="text-foreground text-sm font-semibold">Branch Configurations</h3>
                                 <div className="rounded-md border">
                                     <Table>
                                         <TableHeader>
@@ -94,11 +94,15 @@ export default function ProductShow({ product }: { product: Product }) {
                                         <TableBody>
                                             {product.branch_stocks.map((bs) => (
                                                 <TableRow key={bs.id}>
-                                                    <TableCell className="font-medium text-xs">{bs.branch?.name}</TableCell>
-                                                    <TableCell className="text-xs text-muted-foreground">{bs.group?.name || '-'}</TableCell>
+                                                    <TableCell className="text-xs font-medium">{bs.branch?.name}</TableCell>
+                                                    <TableCell className="text-muted-foreground text-xs">{bs.group?.name || '-'}</TableCell>
                                                     <TableCell className="text-right font-mono text-xs font-semibold">{bs.quantity}</TableCell>
-                                                    <TableCell className="text-right font-mono text-xs">{bs.cost_price ? `${formatCurrency(Number(bs.cost_price))} Ks` : '-'}</TableCell>
-                                                    <TableCell className="text-right font-mono text-xs">{bs.selling_price ? `${formatCurrency(Number(bs.selling_price))} Ks` : '-'}</TableCell>
+                                                    <TableCell className="text-right font-mono text-xs">
+                                                        {bs.cost_price ? `${formatCurrency(Number(bs.cost_price))} Ks` : '-'}
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-mono text-xs">
+                                                        {bs.selling_price ? `${formatCurrency(Number(bs.selling_price))} Ks` : '-'}
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>

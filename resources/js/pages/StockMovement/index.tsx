@@ -81,7 +81,7 @@ const columns: ColumnDef<StockMovement>[] = [
         header: 'Product',
         cell: ({ row }) => (
             <div>
-                <div className="font-medium font-mono">{row.original.product?.code}</div>
+                <div className="font-mono font-medium">{row.original.product?.code}</div>
                 <div className="text-muted-foreground text-xs">{row.original.product?.name}</div>
             </div>
         ),
@@ -143,12 +143,12 @@ function StockMovementFilterPanel({ table, onClearFilters }: FilterPanelProps<St
     const typeColumn = table.getColumn('movement_type');
     const typeFilter = (typeColumn?.getFilterValue() as string) || 'all';
 
-    const hasActiveFilters = (dateFilter.start || dateFilter.end) || (typeFilter && typeFilter !== 'all');
+    const hasActiveFilters = dateFilter.start || dateFilter.end || (typeFilter && typeFilter !== 'all');
 
     return (
         <div className="space-y-4">
-             {/* Clear All Button */}
-             {hasActiveFilters && (
+            {/* Clear All Button */}
+            {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                     <X className="mr-2 h-4 w-4" />
                     Clear all filters
@@ -181,10 +181,7 @@ function StockMovementFilterPanel({ table, onClearFilters }: FilterPanelProps<St
             {/* Movement Type Filter */}
             <div className="space-y-2">
                 <Label className="text-sm font-medium">Movement Type</Label>
-                <Select
-                    value={typeFilter}
-                    onValueChange={(value) => typeColumn?.setFilterValue(value === 'all' ? undefined : value)}
-                >
+                <Select value={typeFilter} onValueChange={(value) => typeColumn?.setFilterValue(value === 'all' ? undefined : value)}>
                     <SelectTrigger>
                         <SelectValue placeholder="All Types" />
                     </SelectTrigger>
@@ -198,7 +195,7 @@ function StockMovementFilterPanel({ table, onClearFilters }: FilterPanelProps<St
                     </SelectContent>
                 </Select>
             </div>
-            
+
             <Separator />
         </div>
     );

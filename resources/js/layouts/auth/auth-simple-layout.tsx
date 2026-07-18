@@ -21,7 +21,7 @@ export default function AuthSimpleLayout({ children, title, description }: Props
                 <div className="absolute top-1/4 right-1/4 h-64 w-64 rounded-full bg-white/5 blur-2xl" />
 
                 {/* Content */}
-                <div className="relative z-10 flex flex-col items-center justify-center w-full px-12">
+                <div className="relative z-10 flex w-full flex-col items-center justify-center px-12">
                     {/* Logo */}
                     <div className="mb-8 flex items-center justify-center">
                         <div className="rounded-3xl bg-white/10 p-6 shadow-2xl ring-1 ring-white/20 backdrop-blur-sm">
@@ -46,7 +46,7 @@ export default function AuthSimpleLayout({ children, title, description }: Props
                 </div>
 
                 {/* Bottom gradient fade */}
-                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0f1d3d]/50 to-transparent" />
+                <div className="absolute right-0 bottom-0 left-0 h-32 bg-gradient-to-t from-[#0f1d3d]/50 to-transparent" />
             </div>
 
             {/* Right Panel - Form */}

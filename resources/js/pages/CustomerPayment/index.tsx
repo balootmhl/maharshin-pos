@@ -179,8 +179,8 @@ function CustomerPaymentFilterPanel({ table, onClearFilters }: FilterPanelProps<
 
     return (
         <div className="space-y-4">
-             {/* Clear All Button */}
-             {hasActiveFilters && (
+            {/* Clear All Button */}
+            {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                     <X className="mr-2 h-4 w-4" />
                     Clear all filters
@@ -214,10 +214,7 @@ function CustomerPaymentFilterPanel({ table, onClearFilters }: FilterPanelProps<
             {/* Payment Method Filter */}
             <div className="space-y-3">
                 <Label className="text-sm font-medium">Payment Method</Label>
-                <Select
-                    value={methodFilter}
-                    onValueChange={(value) => methodColumn?.setFilterValue(value === 'all' ? undefined : value)}
-                >
+                <Select value={methodFilter} onValueChange={(value) => methodColumn?.setFilterValue(value === 'all' ? undefined : value)}>
                     <SelectTrigger>
                         <SelectValue placeholder="All Methods" />
                     </SelectTrigger>
@@ -291,7 +288,11 @@ function CustomerPaymentFilterPanel({ table, onClearFilters }: FilterPanelProps<
     );
 }
 
-export default function CustomerPaymentIndex({ customerPayments }: { customerPayments: PaginatedData<CustomerPayment> | LaravelPaginator<CustomerPayment> }) {
+export default function CustomerPaymentIndex({
+    customerPayments,
+}: {
+    customerPayments: PaginatedData<CustomerPayment> | LaravelPaginator<CustomerPayment>;
+}) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Customer Payments" />

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem, Branch, LaravelPaginator, PaginatedData } from '@/types';
+import { Branch, BreadcrumbItem, LaravelPaginator, PaginatedData } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, X } from 'lucide-react';
@@ -128,19 +128,12 @@ const columns: ColumnDef<Group>[] = [
 // So standard way is to define it inside the component or use context.
 // I'll define it inside `GroupIndex` to access `branches`.
 
-export default function GroupIndex({
-    groups,
-    branches,
-}: {
-    groups: PaginatedData<Group> | LaravelPaginator<Group>;
-    branches: Branch[];
-}) {
-
+export default function GroupIndex({ groups, branches }: { groups: PaginatedData<Group> | LaravelPaginator<Group>; branches: Branch[] }) {
     const GroupFilterPanel = ({ table, onClearFilters }: FilterPanelProps<Group>) => {
         // Status filter
         const statusColumn = table.getColumn('is_active');
         const statusFilter = (statusColumn?.getFilterValue() as string[]) || [];
-    
+
         const toggleStatus = (statusValue: string) => {
             const current = [...statusFilter];
             const index = current.indexOf(statusValue);
@@ -151,7 +144,7 @@ export default function GroupIndex({
             }
             statusColumn?.setFilterValue(current.length > 0 ? current : undefined);
         };
-    
+
         // Branch ID filter (backend uses 'branch_id' for exact match, but frontend table usually filters by accessor)
         // However, `QueryBuilder` has `AllowedFilter::exact('branch_id')`.
         // If we want to use that, we need a column or manual filter set.
@@ -165,7 +158,7 @@ export default function GroupIndex({
         // So if we set filter on `branch.name` column, it sends `filter[branch.name]`.
         // Backend handles `branch.name`.
         // If we want to use `branch_id` exact filter (select dropdown), we can add a hidden `branch_id` column.
-    
+
         const branchIdColumn = table.getColumn('branch_id'); // We need to add this column definitions
         const branchIdFilter = (branchIdColumn?.getFilterValue() as string) || 'all';
 
@@ -176,49 +169,42 @@ export default function GroupIndex({
         // Name filter
         const nameColumn = table.getColumn('name');
         const nameFilter = (nameColumn?.getFilterValue() as string) || '';
-    
+
         const hasActiveFilters = statusFilter.length > 0 || (branchIdFilter && branchIdFilter !== 'all') || codeFilter || nameFilter;
-    
+
         return (
             <div className="space-y-4">
-                 {/* Clear All Button */}
-                 {hasActiveFilters && (
+                {/* Clear All Button */}
+                {hasActiveFilters && (
                     <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                         <X className="mr-2 h-4 w-4" />
                         Clear all filters
                     </Button>
                 )}
-    
+
                 {/* Status Filter */}
                 <div className="space-y-3">
                     <Label className="text-sm font-medium">Status</Label>
                     <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="status-active"
-                            checked={statusFilter.includes('1')}
-                            onCheckedChange={() => toggleStatus('1')}
-                        />
-                        <Label htmlFor="status-active" className="text-sm font-normal">Active</Label>
+                        <Checkbox id="status-active" checked={statusFilter.includes('1')} onCheckedChange={() => toggleStatus('1')} />
+                        <Label htmlFor="status-active" className="text-sm font-normal">
+                            Active
+                        </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="status-inactive"
-                            checked={statusFilter.includes('0')}
-                            onCheckedChange={() => toggleStatus('0')}
-                        />
-                        <Label htmlFor="status-inactive" className="text-sm font-normal">Inactive</Label>
+                        <Checkbox id="status-inactive" checked={statusFilter.includes('0')} onCheckedChange={() => toggleStatus('0')} />
+                        <Label htmlFor="status-inactive" className="text-sm font-normal">
+                            Inactive
+                        </Label>
                     </div>
                 </div>
-    
+
                 <Separator />
-    
+
                 {/* Branch Filter */}
                 <div className="space-y-3">
                     <Label className="text-sm font-medium">Branch</Label>
-                    <Select
-                        value={branchIdFilter}
-                        onValueChange={(value) => branchIdColumn?.setFilterValue(value === 'all' ? undefined : value)}
-                    >
+                    <Select value={branchIdFilter} onValueChange={(value) => branchIdColumn?.setFilterValue(value === 'all' ? undefined : value)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Branch" />
                         </SelectTrigger>
@@ -247,8 +233,8 @@ export default function GroupIndex({
 
                 <Separator />
 
-                 {/* Name Filter */}
-                 <div className="space-y-3">
+                {/* Name Filter */}
+                <div className="space-y-3">
                     <Label className="text-sm font-medium">Name</Label>
                     <Input
                         placeholder="Filter by name..."
@@ -276,7 +262,10 @@ export default function GroupIndex({
                 </div>
                 <DataTable
                     data={groups}
-                    columns={[...columns, { accessorKey: 'branch_id', enableHiding: true, meta: { hidden: true }, header: () => null, cell: () => null }]}
+                    columns={[
+                        ...columns,
+                        { accessorKey: 'branch_id', enableHiding: true, meta: { hidden: true }, header: () => null, cell: () => null },
+                    ]}
                     filterPanel={GroupFilterPanel} // Pass the component defined inside to access branches
                     searchColumn="name"
                     searchPlaceholder="Search group name..."

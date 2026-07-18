@@ -33,7 +33,7 @@ export function useDirectPrint() {
         iframe.onload = () => {
             if (iframe.contentWindow) {
                 iframe.contentWindow.print();
-                
+
                 // Optional: clean up after print dialog closes (though browser handling varies)
                 // For now, we leave it or replace on next print to ensure print dialog isn't cut off
             }

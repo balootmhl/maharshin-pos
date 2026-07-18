@@ -70,8 +70,21 @@ class BranchController extends Controller
 
     public function edit(Request $request, Branch $branch): Response
     {
+        $passwords = \App\Models\BranchModulePassword::where('branch_id', $branch->id)
+            ->pluck('module')
+            ->toArray();
+
+        $lockedModules = [
+            'sale' => in_array('sale', $passwords),
+            'purchase' => in_array('purchase', $passwords),
+            'inventory' => in_array('inventory', $passwords),
+            'customer' => in_array('customer', $passwords),
+            'supplier' => in_array('supplier', $passwords),
+        ];
+
         return Inertia::render('Branch/edit', [
             'branch' => $branch,
+            'lockedModules' => $lockedModules,
         ]);
     }
 
@@ -82,6 +95,52 @@ class BranchController extends Controller
         $request->session()->flash('branch.id', $branch->id);
 
         return redirect()->route('branches.index')->with('success', 'Branch updated successfully.');
+    }
+
+    public function updateModulePasswords(Request $request, Branch $branch): RedirectResponse
+    {
+        $request->validate([
+            'sale.locked' => ['required', 'boolean'],
+            'sale.password' => ['nullable', 'string', 'min:4'],
+            'purchase.locked' => ['required', 'boolean'],
+            'purchase.password' => ['nullable', 'string', 'min:4'],
+            'inventory.locked' => ['required', 'boolean'],
+            'inventory.password' => ['nullable', 'string', 'min:4'],
+            'customer.locked' => ['required', 'boolean'],
+            'customer.password' => ['nullable', 'string', 'min:4'],
+            'supplier.locked' => ['required', 'boolean'],
+            'supplier.password' => ['nullable', 'string', 'min:4'],
+        ]);
+
+        foreach (['sale', 'purchase', 'inventory', 'customer', 'supplier'] as $module) {
+            $data = $request->input($module);
+
+            if (!$data['locked']) {
+                // Delete if exists (unlock)
+                \App\Models\BranchModulePassword::where('branch_id', $branch->id)
+                    ->where('module', $module)
+                    ->delete();
+            } else {
+                // Lock enabled
+                if (!empty($data['password'])) {
+                    // Update or create with new password
+                    \App\Models\BranchModulePassword::updateOrCreate(
+                        ['branch_id' => $branch->id, 'module' => $module],
+                        ['password' => bcrypt($data['password'])]
+                    );
+                } else {
+                    // If locked, but password is empty, ensure it already exists
+                    $exists = \App\Models\BranchModulePassword::where('branch_id', $branch->id)
+                        ->where('module', $module)
+                        ->exists();
+                    if (!$exists) {
+                        return back()->withErrors(["{$module}.password" => "A password is required to lock the {$module} module."]);
+                    }
+                }
+            }
+        }
+
+        return redirect()->route('branches.edit', $branch->id)->with('success', 'Module passwords updated successfully.');
     }
 
     public function destroy(Request $request, Branch $branch): RedirectResponse

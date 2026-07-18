@@ -41,7 +41,7 @@ const columns: ColumnDef<BranchStock>[] = [
         id: 'product_code',
         accessorKey: 'product.code',
         header: 'Code',
-        cell: ({ row }) => <div className="font-mono font-bold text-sm">{row.original.product?.code}</div>,
+        cell: ({ row }) => <div className="font-mono text-sm font-bold">{row.original.product?.code}</div>,
     },
     {
         id: 'product_name',
@@ -110,8 +110,8 @@ function BranchStockFilterPanel({ table, onClearFilters }: FilterPanelProps<Bran
 
     return (
         <div className="space-y-4">
-             {/* Clear All Button */}
-             {isLowStock && (
+            {/* Clear All Button */}
+            {isLowStock && (
                 <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                     <X className="mr-2 h-4 w-4" />
                     Clear all filters
@@ -121,13 +121,13 @@ function BranchStockFilterPanel({ table, onClearFilters }: FilterPanelProps<Bran
             <div className="space-y-3">
                 <Label className="text-sm font-medium">Stock Status</Label>
                 <div className="flex items-center space-x-2">
-                    <Checkbox 
-                        id="low-stock" 
+                    <Checkbox
+                        id="low-stock"
                         checked={isLowStock}
                         onCheckedChange={(checked) => {
                             // We set '1' for true, or undefined to clear
                             lowStockColumn?.setFilterValue(checked ? '1' : undefined);
-                        }} 
+                        }}
                     />
                     <Label htmlFor="low-stock" className="cursor-pointer text-sm font-normal">
                         Low Stock Only
@@ -140,7 +140,6 @@ function BranchStockFilterPanel({ table, onClearFilters }: FilterPanelProps<Bran
 }
 
 export default function BranchStockIndex({ branchStocks }: { branchStocks: PaginatedData<BranchStock> | LaravelPaginator<BranchStock> }) {
-    
     // Add hidden low_stock column for filtering purposes
     const tableColumns = [
         ...columns,
@@ -148,7 +147,7 @@ export default function BranchStockIndex({ branchStocks }: { branchStocks: Pagin
             id: 'low_stock',
             enableHiding: true,
             header: 'Low Stock', // Won't show if we hide it via initial visibility
-        }
+        },
     ];
 
     return (

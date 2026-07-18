@@ -50,7 +50,7 @@ export default function SettingIndex({ settings }: { settings: Settings }) {
             <Head title="Settings" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <form onSubmit={submit} className="space-y-6">
-                    <Card className="max-w-4xl mx-auto w-full">
+                    <Card className="mx-auto w-full max-w-4xl">
                         <CardHeader>
                             <CardTitle>Company Information</CardTitle>
                             <CardDescription>Basic details about your company</CardDescription>
@@ -98,7 +98,7 @@ export default function SettingIndex({ settings }: { settings: Settings }) {
                         </CardContent>
                     </Card>
 
-                    <Card className="max-w-4xl mx-auto w-full">
+                    <Card className="mx-auto w-full max-w-4xl">
                         <CardHeader>
                             <CardTitle>Sales Configuration</CardTitle>
                             <CardDescription>Invoice and tax settings</CardDescription>
@@ -149,7 +149,7 @@ export default function SettingIndex({ settings }: { settings: Settings }) {
                         </CardContent>
                     </Card>
 
-                    <div className="flex justify-end max-w-4xl mx-auto w-full">
+                    <div className="mx-auto flex w-full max-w-4xl justify-end">
                         <Button type="submit" disabled={processing}>
                             Save Settings
                         </Button>

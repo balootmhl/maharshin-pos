@@ -150,9 +150,9 @@ function SupplierFilterPanel({ table, onClearFilters }: FilterPanelProps<Supplie
                     </div>
                 </div>
             </div>
-            
+
             <Separator />
-            
+
             {/* Note: More filters can be added here if needed, e.g. Phone, Contact Person search */}
         </div>
     );
@@ -166,9 +166,9 @@ export default function SupplierIndex({ suppliers }: { suppliers: PaginatedData<
                 <div className="flex flex-row justify-between">
                     <CreateBtn route={route('suppliers.create')} />
                 </div>
-                <DataTable 
-                    data={suppliers} 
-                    columns={columns} 
+                <DataTable
+                    data={suppliers}
+                    columns={columns}
                     filterPanel={SupplierFilterPanel}
                     searchColumn="name"
                     searchPlaceholder="Search supplier..."

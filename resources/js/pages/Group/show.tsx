@@ -68,9 +68,7 @@ export default function GroupShow({ group }: { group: Group }) {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Status</span>
-                                <Badge variant={group.is_active ? 'default' : 'secondary'}>
-                                    {group.is_active ? 'Active' : 'Inactive'}
-                                </Badge>
+                                <Badge variant={group.is_active ? 'default' : 'secondary'}>{group.is_active ? 'Active' : 'Inactive'}</Badge>
                             </div>
                             {group.description && (
                                 <div>
@@ -103,9 +101,7 @@ export default function GroupShow({ group }: { group: Group }) {
                                             <TableRow key={stock.id}>
                                                 <TableCell>
                                                     <div className="font-medium">{stock.product?.name}</div>
-                                                    <div className="text-muted-foreground text-xs font-mono">
-                                                        {stock.product?.code}
-                                                    </div>
+                                                    <div className="text-muted-foreground font-mono text-xs">{stock.product?.code}</div>
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono">{stock.quantity}</TableCell>
                                             </TableRow>
@@ -113,7 +109,7 @@ export default function GroupShow({ group }: { group: Group }) {
                                     </TableBody>
                                 </Table>
                             ) : (
-                                <p className="text-muted-foreground text-center py-8">No products assigned to this group yet.</p>
+                                <p className="text-muted-foreground py-8 text-center">No products assigned to this group yet.</p>
                             )}
                         </CardContent>
                     </Card>

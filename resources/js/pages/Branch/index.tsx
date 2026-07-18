@@ -150,8 +150,8 @@ function BranchFilterPanel({ table, onClearFilters }: FilterPanelProps<Branch>) 
 
     return (
         <div className="space-y-4">
-             {/* Clear All Button */}
-             {hasActiveFilters && (
+            {/* Clear All Button */}
+            {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                     <X className="mr-2 h-4 w-4" />
                     Clear all filters
@@ -162,20 +162,16 @@ function BranchFilterPanel({ table, onClearFilters }: FilterPanelProps<Branch>) 
             <div className="space-y-3">
                 <Label className="text-sm font-medium">Status</Label>
                 <div className="flex items-center space-x-2">
-                    <Checkbox
-                        id="status-active"
-                        checked={statusFilter.includes('1')}
-                        onCheckedChange={() => toggleStatus('1')}
-                    />
-                    <Label htmlFor="status-active" className="text-sm font-normal">Active</Label>
+                    <Checkbox id="status-active" checked={statusFilter.includes('1')} onCheckedChange={() => toggleStatus('1')} />
+                    <Label htmlFor="status-active" className="text-sm font-normal">
+                        Active
+                    </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Checkbox
-                        id="status-inactive"
-                        checked={statusFilter.includes('0')}
-                        onCheckedChange={() => toggleStatus('0')}
-                    />
-                    <Label htmlFor="status-inactive" className="text-sm font-normal">Inactive</Label>
+                    <Checkbox id="status-inactive" checked={statusFilter.includes('0')} onCheckedChange={() => toggleStatus('0')} />
+                    <Label htmlFor="status-inactive" className="text-sm font-normal">
+                        Inactive
+                    </Label>
                 </div>
             </div>
 
@@ -184,11 +180,7 @@ function BranchFilterPanel({ table, onClearFilters }: FilterPanelProps<Branch>) 
             {/* Code Filter */}
             <div className="space-y-3">
                 <Label className="text-sm font-medium">Code</Label>
-                <Input
-                    placeholder="Filter by code..."
-                    value={codeFilter}
-                    onChange={(e) => codeColumn?.setFilterValue(e.target.value || undefined)}
-                />
+                <Input placeholder="Filter by code..." value={codeFilter} onChange={(e) => codeColumn?.setFilterValue(e.target.value || undefined)} />
             </div>
 
             <Separator />

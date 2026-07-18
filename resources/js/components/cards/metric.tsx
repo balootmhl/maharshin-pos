@@ -1,20 +1,9 @@
-"use client";
+'use client';
 
-import { Line, LineChart } from "recharts";
+import { Line, LineChart } from 'recharts';
 
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-} from "@/components/ui/chart";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const data = [
     {
@@ -49,12 +38,12 @@ const data = [
 
 const chartConfig = {
     today: {
-        label: "Today",
-        color: "hsl(var(--primary))",
+        label: 'Today',
+        color: 'hsl(var(--primary))',
     },
     average: {
-        label: "Average",
-        color: "hsl(var(--primary))",
+        label: 'Average',
+        color: 'hsl(var(--primary))',
     },
 } satisfies ChartConfig;
 
@@ -63,15 +52,10 @@ export function CardsMetric() {
         <Card>
             <CardHeader>
                 <CardTitle>Exercise Minutes</CardTitle>
-                <CardDescription>
-                    Your exercise minutes are ahead of where you normally are.
-                </CardDescription>
+                <CardDescription>Your exercise minutes are ahead of where you normally are.</CardDescription>
             </CardHeader>
             <CardContent className="pb-4">
-                <ChartContainer
-                    config={chartConfig}
-                    className="w-full md:h-[200px]"
-                >
+                <ChartContainer config={chartConfig} className="w-full md:h-[200px]">
                     <LineChart
                         data={data}
                         margin={{
@@ -89,7 +73,7 @@ export function CardsMetric() {
                             strokeOpacity={0.5}
                             activeDot={{
                                 r: 6,
-                                fill: "var(--color-average)",
+                                fill: 'var(--color-average)',
                             }}
                         />
                         <Line
@@ -99,7 +83,7 @@ export function CardsMetric() {
                             stroke="var(--color-today)"
                             activeDot={{
                                 r: 8,
-                                style: { fill: "var(--color-today)" },
+                                style: { fill: 'var(--color-today)' },
                             }}
                         />
                         <ChartTooltip content={<ChartTooltipContent />} />

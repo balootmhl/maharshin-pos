@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Textarea } from '@/components/ui/textarea';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -115,9 +115,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
     const discountInputRef = useRef<HTMLInputElement>(null);
     const paidAmountInputRef = useRef<HTMLInputElement>(null);
 
-    const defaultBranchId = auth.user.is_super_admin
-        ? (branches[0]?.id?.toString() || '')
-        : (auth.user.branch_id?.toString() || '');
+    const defaultBranchId = auth.user.is_super_admin ? branches[0]?.id?.toString() || '' : auth.user.branch_id?.toString() || '';
 
     // Server-side product search
     const {
@@ -419,10 +417,10 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                 <Head title="POS - New Sale" />
                 <form
                     onSubmit={submit}
-                    className="grid h-auto lg:h-[calc(100vh-110px)] grid-cols-1 gap-2 lg:overflow-hidden p-2 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_minmax(400px,450px)]"
+                    className="grid h-auto grid-cols-1 gap-2 p-2 lg:h-[calc(100vh-110px)] lg:grid-cols-[1fr_340px] lg:overflow-hidden xl:grid-cols-[1fr_minmax(400px,450px)]"
                 >
                     {/* Left: Product Selection */}
-                    <div className="flex h-auto lg:h-full flex-col gap-2 lg:min-h-0 lg:overflow-hidden">
+                    <div className="flex h-auto flex-col gap-2 lg:h-full lg:min-h-0 lg:overflow-hidden">
                         {/* Keyboard-First Product Search */}
                         <div className="flex gap-4">
                             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
@@ -550,10 +548,14 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
 
                         {/* Header with Branch, Customer, and Price Type */}
                         <Card className="py-2">
-                            <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-2 px-3">
+                            <CardContent className="grid grid-cols-1 gap-2 px-3 sm:grid-cols-3">
                                 <div className="space-y-1">
                                     <Label>Branch</Label>
-                                    <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
+                                    <Select
+                                        value={data.branch_id}
+                                        onValueChange={(v) => setData('branch_id', v)}
+                                        disabled={!auth.user.is_super_admin}
+                                    >
                                         <SelectTrigger tabIndex={3}>
                                             <SelectValue placeholder="Select branch" />
                                         </SelectTrigger>
@@ -633,7 +635,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                                     setShowNotes(false);
                                                     setData('notes', '');
                                                 }}
-                                                className="text-xs text-destructive hover:underline"
+                                                className="text-destructive text-xs hover:underline"
                                             >
                                                 Remove Notes
                                             </button>
@@ -652,7 +654,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                         <button
                                             type="button"
                                             onClick={() => setShowNotes(true)}
-                                            className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
+                                            className="text-primary flex items-center gap-1 text-xs font-medium hover:underline"
                                         >
                                             + Add Notes
                                         </button>
@@ -663,7 +665,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
 
                         {/* Held Sales */}
                         {heldSales.length > 0 && (
-                            <Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20 py-2">
+                            <Card className="border-orange-200 bg-orange-50 py-2 dark:border-orange-800 dark:bg-orange-950/20">
                                 <CardContent className="py-0">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium text-orange-700 dark:text-orange-400">
@@ -690,8 +692,8 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                         )}
 
                         {/* Cart Items */}
-                        <Card className="flex h-auto min-h-[300px] lg:h-0 lg:grow lg:min-h-0 flex-col py-2 gap-2">
-                            <CardHeader className="flex flex-row items-center justify-between py-0 px-3">
+                        <Card className="flex h-auto min-h-[300px] flex-col gap-2 py-2 lg:h-0 lg:min-h-0 lg:grow">
+                            <CardHeader className="flex flex-row items-center justify-between px-3 py-0">
                                 <div className="flex items-center gap-2">
                                     <ShoppingCart className="h-5 w-5" />
                                     <CardTitle className="text-lg">Cart</CardTitle>
@@ -712,95 +714,95 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                     )}
                                 </div>
                             </CardHeader>
-                            <CardContent className="h-auto lg:h-0 lg:grow lg:overflow-y-auto p-2">
-                                    {cart.length === 0 ? (
-                                        <div className="text-muted-foreground flex h-full items-center justify-center py-8">
-                                            Cart is empty. Add products to start.
-                                        </div>
-                                    ) : (
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Product</TableHead>
-                                                    <TableHead className="w-28 text-center">Qty</TableHead>
-                                                    <TableHead className="text-right">Total</TableHead>
-                                                    <TableHead className="w-10"></TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {cart.map((item) => (
-                                                    <TableRow key={item.product_id}>
-                                                        <TableCell>
-                                                            <div className="font-small font-mono">{item.product.code}</div>
-                                                            <div className="text-muted-foreground text-xs">
-                                                                {item.product.name} - {formatCurrency(item.unit_price)} Ks
-                                                                {/* Display Group Name if available */}
-                                                                {getProductDetails(item.product).groupName && (
-                                                                    <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-0 text-xs font-medium text-blue-700 ring-1 ring-blue-700/10 ring-inset">
-                                                                        {getProductDetails(item.product).groupName}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <div className="flex items-center justify-center gap-1">
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="outline"
-                                                                    size="icon"
-                                                                    className="h-7 w-7"
-                                                                    onClick={() => updateQuantity(item.product_id, -1)}
-                                                                    tabIndex={-1}
-                                                                >
-                                                                    <Minus className="h-3 w-3" />
-                                                                </Button>
-                                                                <input
-                                                                    type="number"
-                                                                    min="1"
-                                                                    value={item.quantity}
-                                                                    onChange={(e) => {
-                                                                        const val = parseInt(e.target.value) || 0;
-                                                                        setQuantity(item.product_id, val);
-                                                                    }}
-                                                                    className="h-7 w-14 [appearance:textfield] rounded border text-center font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                                                    tabIndex={5}
-                                                                />
-                                                                <Button
-                                                                    type="button"
-                                                                    variant="outline"
-                                                                    size="icon"
-                                                                    className="h-7 w-7"
-                                                                    onClick={() => updateQuantity(item.product_id, 1)}
-                                                                    tabIndex={-1}
-                                                                >
-                                                                    <Plus className="h-3 w-3" />
-                                                                </Button>
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-right font-mono font-medium">
-                                                            {formatCurrency(item.subtotal)}
-                                                        </TableCell>
-                                                        <TableCell>
+                            <CardContent className="h-auto p-2 lg:h-0 lg:grow lg:overflow-y-auto">
+                                {cart.length === 0 ? (
+                                    <div className="text-muted-foreground flex h-full items-center justify-center py-8">
+                                        Cart is empty. Add products to start.
+                                    </div>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Product</TableHead>
+                                                <TableHead className="w-28 text-center">Qty</TableHead>
+                                                <TableHead className="text-right">Total</TableHead>
+                                                <TableHead className="w-10"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {cart.map((item) => (
+                                                <TableRow key={item.product_id}>
+                                                    <TableCell>
+                                                        <div className="font-small font-mono">{item.product.code}</div>
+                                                        <div className="text-muted-foreground text-xs">
+                                                            {item.product.name} - {formatCurrency(item.unit_price)} Ks
+                                                            {/* Display Group Name if available */}
+                                                            {getProductDetails(item.product).groupName && (
+                                                                <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-0 text-xs font-medium text-blue-700 ring-1 ring-blue-700/10 ring-inset">
+                                                                    {getProductDetails(item.product).groupName}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center justify-center gap-1">
                                                             <Button
                                                                 type="button"
-                                                                variant="ghost"
+                                                                variant="outline"
                                                                 size="icon"
-                                                                className="text-destructive hover:text-destructive h-7 w-7"
-                                                                onClick={() => removeFromCart(item.product_id)}
+                                                                className="h-7 w-7"
+                                                                onClick={() => updateQuantity(item.product_id, -1)}
+                                                                tabIndex={-1}
                                                             >
-                                                                <Trash2 className="h-4 w-4" />
+                                                                <Minus className="h-3 w-3" />
                                                             </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    )}
+                                                            <input
+                                                                type="number"
+                                                                min="1"
+                                                                value={item.quantity}
+                                                                onChange={(e) => {
+                                                                    const val = parseInt(e.target.value) || 0;
+                                                                    setQuantity(item.product_id, val);
+                                                                }}
+                                                                className="h-7 w-14 [appearance:textfield] rounded border text-center font-mono [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                                tabIndex={5}
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-7 w-7"
+                                                                onClick={() => updateQuantity(item.product_id, 1)}
+                                                                tabIndex={-1}
+                                                            >
+                                                                <Plus className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-mono font-medium">
+                                                        {formatCurrency(item.subtotal)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-destructive hover:text-destructive h-7 w-7"
+                                                            onClick={() => removeFromCart(item.product_id)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
                     {/* Right: Totals and Payment */}
-                    <div className="flex h-auto lg:h-full flex-col gap-2">
+                    <div className="flex h-auto flex-col gap-2 lg:h-full">
                         {/* Totals and Payment */}
                         <Card className="gap-1 py-3">
                             <CardContent className="space-y-3 px-3">

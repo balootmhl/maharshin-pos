@@ -148,7 +148,7 @@ const columns: ColumnDef<Activity>[] = [
             if (!product) return <span className="text-muted-foreground">-</span>;
             return (
                 <div className="flex flex-col">
-                    <span className="text-sm font-mono font-medium">{product.code}</span>
+                    <span className="font-mono text-sm font-medium">{product.code}</span>
                     <span className="text-muted-foreground text-xs">{product.name}</span>
                 </div>
             );
@@ -192,7 +192,11 @@ const columns: ColumnDef<Activity>[] = [
     },
 ];
 
-export default function StockHistoryIndex({ activities }: { activities: PaginatedActivities | PaginatedData<Activity> | LaravelPaginator<Activity> }) {
+export default function StockHistoryIndex({
+    activities,
+}: {
+    activities: PaginatedActivities | PaginatedData<Activity> | LaravelPaginator<Activity>;
+}) {
     const StockHistoryFilterPanel = ({ table, onClearFilters }: FilterPanelProps<Activity>) => {
         // Description Filter
         const descriptionColumn = table.getColumn('description');
@@ -215,8 +219,8 @@ export default function StockHistoryIndex({ activities }: { activities: Paginate
 
         return (
             <div className="space-y-4">
-                 {/* Clear All Button */}
-                 {hasActiveFilters && (
+                {/* Clear All Button */}
+                {hasActiveFilters && (
                     <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                         <X className="mr-2 h-4 w-4" />
                         Clear all filters
@@ -250,10 +254,7 @@ export default function StockHistoryIndex({ activities }: { activities: Paginate
                 {/* Event Filter */}
                 <div className="space-y-3">
                     <Label className="text-sm font-medium">Event Type</Label>
-                    <Select
-                        value={eventFilter}
-                        onValueChange={(value) => eventColumn?.setFilterValue(value === 'all' ? undefined : value)}
-                    >
+                    <Select value={eventFilter} onValueChange={(value) => eventColumn?.setFilterValue(value === 'all' ? undefined : value)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Event" />
                         </SelectTrigger>
@@ -268,8 +269,8 @@ export default function StockHistoryIndex({ activities }: { activities: Paginate
 
                 <Separator />
 
-                 {/* Date Range Filter */}
-                 <div className="space-y-3">
+                {/* Date Range Filter */}
+                <div className="space-y-3">
                     <Label className="text-sm font-medium">Date Range</Label>
                     <div className="flex gap-2">
                         <div className="flex-1">

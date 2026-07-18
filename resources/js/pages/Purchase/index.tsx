@@ -2,6 +2,7 @@ import { CreateBtn } from '@/components/buttons/create-btn';
 import { DataTable, FilterPanelProps } from '@/components/tables/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -10,7 +11,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -305,18 +305,16 @@ function PurchaseFilterPanel({ table, onClearFilters }: FilterPanelProps<Purchas
     );
 }
 
-
-
 const ActionsCell = ({ row }: { row: { original: Purchase } }) => {
     const { printUrl } = useDirectPrint();
     const { props } = usePage();
     const editTimeLimitEnabled = props.edit_time_limit_enabled ?? true;
-    const editTimeLimitDays = props.edit_time_limit_days as number ?? 3;
+    const editTimeLimitDays = (props.edit_time_limit_days as number) ?? 3;
 
     // Check if purchase edit time has passed
-    const canEdit = row.original.created_at ? (
-        !editTimeLimitEnabled || new Date(row.original.created_at) > new Date(Date.now() - editTimeLimitDays * 24 * 60 * 60 * 1000)
-    ) : false;
+    const canEdit = row.original.created_at
+        ? !editTimeLimitEnabled || new Date(row.original.created_at) > new Date(Date.now() - editTimeLimitDays * 24 * 60 * 60 * 1000)
+        : false;
 
     return (
         <div className="flex items-center gap-1">
@@ -351,7 +349,7 @@ const ActionsCell = ({ row }: { row: { original: Purchase } }) => {
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        className="text-red-500 hover:bg-red-50 hover:text-red-600"
                         onClick={() => {
                             if (confirm('Are you sure you want to delete this purchase? This action cannot be undone.')) {
                                 router.visit(route('purchases.destroy', { purchase: row.original.id }), {

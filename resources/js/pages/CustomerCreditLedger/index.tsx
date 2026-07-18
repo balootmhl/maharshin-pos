@@ -188,7 +188,6 @@ export default function CustomerCreditLedgerIndex({
     ledgers: PaginatedData<CustomerCreditLedger> | LaravelPaginator<CustomerCreditLedger>;
     branches: Branch[];
 }) {
-
     const CustomerCreditLedgerFilterPanel = ({ table, onClearFilters }: FilterPanelProps<CustomerCreditLedger>) => {
         // Customer Filter
         const customerColumn = table.getColumn('customer.name');
@@ -206,12 +205,17 @@ export default function CustomerCreditLedgerIndex({
         const dateColumn = table.getColumn('transaction_date');
         const dateFilter = (dateColumn?.getFilterValue() as { start?: string; end?: string }) || {};
 
-        const hasActiveFilters = !!customerFilter || (branchIdFilter && branchIdFilter !== 'all') || (typeFilter && typeFilter !== 'all') || dateFilter.start || dateFilter.end;
+        const hasActiveFilters =
+            !!customerFilter ||
+            (branchIdFilter && branchIdFilter !== 'all') ||
+            (typeFilter && typeFilter !== 'all') ||
+            dateFilter.start ||
+            dateFilter.end;
 
         return (
             <div className="space-y-4">
-                 {/* Clear All Button */}
-                 {hasActiveFilters && (
+                {/* Clear All Button */}
+                {hasActiveFilters && (
                     <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                         <X className="mr-2 h-4 w-4" />
                         Clear all filters
@@ -233,10 +237,7 @@ export default function CustomerCreditLedgerIndex({
                 {/* Branch Filter */}
                 <div className="space-y-3">
                     <Label className="text-sm font-medium">Branch</Label>
-                    <Select
-                        value={branchIdFilter}
-                        onValueChange={(value) => branchIdColumn?.setFilterValue(value === 'all' ? undefined : value)}
-                    >
+                    <Select value={branchIdFilter} onValueChange={(value) => branchIdColumn?.setFilterValue(value === 'all' ? undefined : value)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Branch" />
                         </SelectTrigger>
@@ -256,10 +257,7 @@ export default function CustomerCreditLedgerIndex({
                 {/* Type Filter */}
                 <div className="space-y-3">
                     <Label className="text-sm font-medium">Transaction Type</Label>
-                    <Select
-                        value={typeFilter}
-                        onValueChange={(value) => typeColumn?.setFilterValue(value === 'all' ? undefined : value)}
-                    >
+                    <Select value={typeFilter} onValueChange={(value) => typeColumn?.setFilterValue(value === 'all' ? undefined : value)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Type" />
                         </SelectTrigger>
@@ -274,8 +272,8 @@ export default function CustomerCreditLedgerIndex({
 
                 <Separator />
 
-                 {/* Date Range Filter */}
-                 <div className="space-y-3">
+                {/* Date Range Filter */}
+                <div className="space-y-3">
                     <Label className="text-sm font-medium">Date Range</Label>
                     <div className="flex gap-2">
                         <div className="flex-1">
@@ -316,7 +314,10 @@ export default function CustomerCreditLedgerIndex({
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <DataTable
                     data={ledgers}
-                    columns={[...columns, { accessorKey: 'branch_id', enableHiding: true, meta: { hidden: true }, header: () => null, cell: () => null }]}
+                    columns={[
+                        ...columns,
+                        { accessorKey: 'branch_id', enableHiding: true, meta: { hidden: true }, header: () => null, cell: () => null },
+                    ]}
                     filterPanel={CustomerCreditLedgerFilterPanel}
                     searchColumn="customer.name"
                     searchPlaceholder="Search customer..."

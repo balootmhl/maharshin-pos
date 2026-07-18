@@ -207,7 +207,7 @@ export default function SaleTrash({ sales }: { sales: PaginatedData<Sale> | Lara
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Trash Bin - Sales" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="flex flex-row justify-between items-center">
+                <div className="flex flex-row items-center justify-between">
                     <h2 className="text-lg font-semibold">Deleted Sales</h2>
                     <Button variant="outline" size="sm" asChild>
                         <Link href={route('sales.index')}>

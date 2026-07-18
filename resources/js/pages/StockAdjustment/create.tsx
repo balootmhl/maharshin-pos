@@ -31,9 +31,7 @@ export default function StockAdjustmentCreate({ branches, products, reasons }: {
 
     const { auth } = usePage<SharedData>().props;
 
-    const defaultBranchId = auth.user.is_super_admin
-        ? (branches[0]?.id?.toString() || '')
-        : (auth.user.branch_id?.toString() || '');
+    const defaultBranchId = auth.user.is_super_admin ? branches[0]?.id?.toString() || '' : auth.user.branch_id?.toString() || '';
 
     const { data, setData, post, processing, errors } = useForm({
         branch_id: defaultBranchId,
@@ -81,7 +79,11 @@ export default function StockAdjustmentCreate({ branches, products, reasons }: {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="branch_id">Branch*</Label>
-                                    <Select value={data.branch_id} onValueChange={(value) => setData('branch_id', value)} disabled={!auth.user.is_super_admin}>
+                                    <Select
+                                        value={data.branch_id}
+                                        onValueChange={(value) => setData('branch_id', value)}
+                                        disabled={!auth.user.is_super_admin}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select branch" />
                                         </SelectTrigger>

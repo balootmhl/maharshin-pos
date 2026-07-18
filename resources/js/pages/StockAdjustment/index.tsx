@@ -50,13 +50,7 @@ function StockAdjustmentFilterPanel({ table, onClearFilters }: FilterPanelProps<
     const dateColumn = table.getColumn('adjustment_date');
     const dateFilter = (dateColumn?.getFilterValue() as { start?: string; end?: string }) || {};
 
-    const hasActiveFilters =
-        typeFilter !== 'all' ||
-        reasonFilter !== 'all' ||
-        productFilter ||
-        branchFilter ||
-        dateFilter.start ||
-        dateFilter.end;
+    const hasActiveFilters = typeFilter !== 'all' || reasonFilter !== 'all' || productFilter || branchFilter || dateFilter.start || dateFilter.end;
 
     return (
         <div className="space-y-4">
@@ -215,7 +209,7 @@ export default function StockAdjustmentIndex({
             header: 'Product',
             cell: ({ row }) => (
                 <div>
-                    <div className="font-medium font-mono">{row.original.product?.code}</div>
+                    <div className="font-mono font-medium">{row.original.product?.code}</div>
                     <div className="text-muted-foreground text-xs">{row.original.product?.name}</div>
                 </div>
             ),

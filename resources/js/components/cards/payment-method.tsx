@@ -1,50 +1,27 @@
-"use client";
+'use client';
 
-import { Icons } from "@/components/breeze/icons";
-import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Icons } from '@/components/breeze/icons';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function CardsPaymentMethod() {
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Payment Method</CardTitle>
-                <CardDescription>
-                    Add a new payment method to your account.
-                </CardDescription>
+                <CardDescription>Add a new payment method to your account.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-6">
-                <RadioGroup
-                    defaultValue="card"
-                    className="grid grid-cols-3 gap-4"
-                >
+                <RadioGroup defaultValue="card" className="grid grid-cols-3 gap-4">
                     <div>
-                        <RadioGroupItem
-                            value="card"
-                            id="card"
-                            className="peer sr-only"
-                            aria-label="Card"
-                        />
+                        <RadioGroupItem value="card" id="card" className="peer sr-only" aria-label="Card" />
                         <Label
                             htmlFor="card"
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                            className="border-muted hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary flex flex-col items-center justify-between rounded-md border-2 bg-transparent p-4"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -56,43 +33,27 @@ export function CardsPaymentMethod() {
                                 strokeWidth="2"
                                 className="mb-3 h-6 w-6"
                             >
-                                <rect
-                                    width="20"
-                                    height="14"
-                                    x="2"
-                                    y="5"
-                                    rx="2"
-                                />
+                                <rect width="20" height="14" x="2" y="5" rx="2" />
                                 <path d="M2 10h20" />
                             </svg>
                             Card
                         </Label>
                     </div>
                     <div>
-                        <RadioGroupItem
-                            value="paypal"
-                            id="paypal"
-                            className="peer sr-only"
-                            aria-label="Paypal"
-                        />
+                        <RadioGroupItem value="paypal" id="paypal" className="peer sr-only" aria-label="Paypal" />
                         <Label
                             htmlFor="paypal"
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                            className="border-muted hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary flex flex-col items-center justify-between rounded-md border-2 bg-transparent p-4"
                         >
                             <Icons.paypal className="mb-3 h-6 w-6" />
                             Paypal
                         </Label>
                     </div>
                     <div>
-                        <RadioGroupItem
-                            value="apple"
-                            id="apple"
-                            className="peer sr-only"
-                            aria-label="Apple"
-                        />
+                        <RadioGroupItem value="apple" id="apple" className="peer sr-only" aria-label="Apple" />
                         <Label
                             htmlFor="apple"
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary "
+                            className="border-muted hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary flex flex-col items-center justify-between rounded-md border-2 bg-transparent p-4"
                         >
                             <Icons.apple className="mb-3 h-6 w-6" />
                             Apple
@@ -142,12 +103,7 @@ export function CardsPaymentMethod() {
                             </SelectTrigger>
                             <SelectContent>
                                 {Array.from({ length: 10 }, (_, i) => (
-                                    <SelectItem
-                                        key={i}
-                                        value={`${
-                                            new Date().getFullYear() + i
-                                        }`}
-                                    >
+                                    <SelectItem key={i} value={`${new Date().getFullYear() + i}`}>
                                         {new Date().getFullYear() + i}
                                     </SelectItem>
                                 ))}

@@ -149,12 +149,13 @@ export default function SaleReturnIndex({
         const dateColumn = table.getColumn('return_date');
         const dateFilter = (dateColumn?.getFilterValue() as { start?: string; end?: string }) || {};
 
-        const hasActiveFilters = !!returnNoFilter || !!invoiceNoFilter || (branchIdFilter && branchIdFilter !== 'all') || dateFilter.start || dateFilter.end;
+        const hasActiveFilters =
+            !!returnNoFilter || !!invoiceNoFilter || (branchIdFilter && branchIdFilter !== 'all') || dateFilter.start || dateFilter.end;
 
         return (
             <div className="space-y-4">
-                 {/* Clear All Button */}
-                 {hasActiveFilters && (
+                {/* Clear All Button */}
+                {hasActiveFilters && (
                     <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                         <X className="mr-2 h-4 w-4" />
                         Clear all filters
@@ -188,10 +189,7 @@ export default function SaleReturnIndex({
                 {/* Branch Filter */}
                 <div className="space-y-3">
                     <Label className="text-sm font-medium">Branch</Label>
-                    <Select
-                        value={branchIdFilter}
-                        onValueChange={(value) => branchIdColumn?.setFilterValue(value === 'all' ? undefined : value)}
-                    >
+                    <Select value={branchIdFilter} onValueChange={(value) => branchIdColumn?.setFilterValue(value === 'all' ? undefined : value)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Branch" />
                         </SelectTrigger>
@@ -208,8 +206,8 @@ export default function SaleReturnIndex({
 
                 <Separator />
 
-                 {/* Date Range Filter */}
-                 <div className="space-y-3">
+                {/* Date Range Filter */}
+                <div className="space-y-3">
                     <Label className="text-sm font-medium">Date Range</Label>
                     <div className="flex gap-2">
                         <div className="flex-1">
@@ -253,7 +251,10 @@ export default function SaleReturnIndex({
                 </div>
                 <DataTable
                     data={saleReturns}
-                    columns={[...columns, { accessorKey: 'branch_id', enableHiding: true, meta: { hidden: true }, header: () => null, cell: () => null }]}
+                    columns={[
+                        ...columns,
+                        { accessorKey: 'branch_id', enableHiding: true, meta: { hidden: true }, header: () => null, cell: () => null },
+                    ]}
                     filterPanel={SaleReturnFilterPanel}
                     searchColumn="return_no"
                     searchPlaceholder="Search return no..."

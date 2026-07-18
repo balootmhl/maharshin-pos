@@ -79,8 +79,8 @@ function RoleFilterPanel({ table, onClearFilters }: FilterPanelProps<Role>) {
 
     return (
         <div className="space-y-4">
-             {/* Clear All Button */}
-             {hasActiveFilters && (
+            {/* Clear All Button */}
+            {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={onClearFilters} className="w-full justify-start text-red-500 hover:text-red-600">
                     <X className="mr-2 h-4 w-4" />
                     Clear all filters
@@ -90,11 +90,7 @@ function RoleFilterPanel({ table, onClearFilters }: FilterPanelProps<Role>) {
             {/* Name Filter */}
             <div className="space-y-3">
                 <Label className="text-sm font-medium">Name</Label>
-                <Input
-                    placeholder="Filter by name..."
-                    value={nameFilter}
-                    onChange={(e) => nameColumn?.setFilterValue(e.target.value || undefined)}
-                />
+                <Input placeholder="Filter by name..." value={nameFilter} onChange={(e) => nameColumn?.setFilterValue(e.target.value || undefined)} />
             </div>
         </div>
     );

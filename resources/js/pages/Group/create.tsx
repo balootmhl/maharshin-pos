@@ -32,9 +32,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function GroupCreate({ branches }: { branches: Branch[] }) {
     const { auth } = usePage<SharedData>().props;
 
-    const defaultBranchId = auth.user.is_super_admin
-        ? (branches[0]?.id?.toString() || '')
-        : (auth.user.branch_id?.toString() || '');
+    const defaultBranchId = auth.user.is_super_admin ? branches[0]?.id?.toString() || '' : auth.user.branch_id?.toString() || '';
 
     const { data, setData, post, reset, errors, processing } = useForm<GroupForm>({
         code: '',
@@ -58,7 +56,7 @@ export default function GroupCreate({ branches }: { branches: Branch[] }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Group" />
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <form onSubmit={submit} className="max-w-3xl mx-auto w-full">
+                <form onSubmit={submit} className="mx-auto w-full max-w-3xl">
                     <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid grid-flow-row gap-2">
@@ -75,13 +73,7 @@ export default function GroupCreate({ branches }: { branches: Branch[] }) {
                             </div>
                             <div className="grid grid-flow-row gap-2">
                                 <Label htmlFor="name">Group Name*</Label>
-                                <Input
-                                    id="name"
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    required
-                                    placeholder="Shelf A"
-                                />
+                                <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required placeholder="Shelf A" />
                                 <InputError className="mt-2" message={errors.name} />
                             </div>
                         </div>
