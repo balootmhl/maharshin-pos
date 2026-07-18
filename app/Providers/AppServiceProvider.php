@@ -26,5 +26,13 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user, $ability) {
             return $user->hasRole(config('project.super_admin')) ? true : null;
         });
+
+        \Illuminate\Support\Facades\Event::listen(\Lab404\Impersonate\Events\TakeImpersonable::class, function ($event) {
+            session()->flash('success', "Impersonating {$event->impersonated->name}.");
+        });
+
+        \Illuminate\Support\Facades\Event::listen(\Lab404\Impersonate\Events\LeaveImpersonable::class, function ($event) {
+            session()->flash('success', "Returned to your original account ({$event->impersonator->name}).");
+        });
     }
 }
