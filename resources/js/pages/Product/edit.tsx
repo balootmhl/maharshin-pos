@@ -86,8 +86,8 @@ export default function ProductEdit({ product, categories, groups }: { product: 
                 <form onSubmit={submit}>
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                         {/* Left Card: Core Details */}
-                        <div className="lg:col-span-7">
-                            <Card className="border border-slate-200 shadow-xs dark:border-slate-800">
+                        <div className="space-y-6 lg:col-span-7">
+                            <Card className="flex h-full flex-col border border-slate-200 shadow-xs dark:border-slate-800">
                                 <CardHeader className="pb-6">
                                     <CardTitle className="flex items-center gap-2 text-xl font-bold">
                                         <Package className="h-5 w-5 text-indigo-500" />
@@ -256,8 +256,8 @@ export default function ProductEdit({ product, categories, groups }: { product: 
                         </div>
 
                         {/* Right Card: Pricing & Inventory */}
-                        <div className="lg:col-span-5">
-                            <Card className="border border-slate-200 shadow-xs dark:border-slate-800">
+                        <div className="space-y-6 lg:col-span-5">
+                            <Card className="flex h-full flex-col border border-slate-200 shadow-xs dark:border-slate-800">
                                 <CardHeader className="pb-6">
                                     <CardTitle className="flex items-center gap-2 text-xl font-bold">
                                         <Coins className="h-5 w-5 text-amber-500" />
@@ -267,7 +267,7 @@ export default function ProductEdit({ product, categories, groups }: { product: 
                                         Control standard cost structures, selling prices, tax policies, and inventory thresholds.
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-5">
+                                <CardContent className="flex-1 space-y-5">
                                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                                         <div className="space-y-2">
                                             <Label htmlFor="unit" className="font-semibold">
@@ -376,8 +376,9 @@ export default function ProductEdit({ product, categories, groups }: { product: 
                                             <p className="text-muted-foreground text-[10px]">Inactive items will be hidden from cash registers.</p>
                                         </div>
                                     </div>
-
-                                    <div className="mt-2 flex justify-end gap-3 border-t pt-5">
+                                </CardContent>
+                                <CardContent className="pt-0">
+                                    <div className="flex justify-end gap-3 border-t pt-5">
                                         <Button variant="outline" asChild>
                                             <Link href={route('products.index')}>Cancel</Link>
                                         </Button>
