@@ -25,6 +25,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\UserController;
 use App\Models\BranchStock;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -42,9 +43,73 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $lowStockCount = BranchStock::whereRaw('quantity <= (SELECT low_stock_alert FROM products WHERE products.id = branch_stocks.product_id)')
             ->count();
 
+        // 1. Recent Sales
+        $recentSales = \App\Models\Sale::with(['customer:id,name', 'branch:id,name'])
+            ->whereNull('deleted_at')
+            ->orderBy('id', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'id' => $sale->id,
+                    'invoice_no' => $sale->invoice_no,
+                    'customer_name' => $sale->customer?->name ?? 'Walk-in Customer',
+                    'branch_name' => $sale->branch?->name ?? 'Head Office',
+                    'total_amount' => (float) $sale->total_amount,
+                    'payment_status' => $sale->payment_status,
+                    'sale_date' => $sale->sale_date->format('Y-m-d H:i'),
+                ];
+            });
+
+        // 2. Top Selling Products
+        $topProducts = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->whereNull('sales.deleted_at')
+            ->selectRaw('products.name, products.code, SUM(sale_items.quantity) as qty_sold, SUM(sale_items.subtotal) as revenue')
+            ->groupBy('products.id', 'products.name', 'products.code')
+            ->orderByDesc('revenue')
+            ->limit(5)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'name' => $p->name,
+                    'code' => $p->code,
+                    'qty_sold' => (float) $p->qty_sold,
+                    'revenue' => (float) $p->revenue,
+                ];
+            });
+
+        // 3. Sales Trend (Last 7 Days)
+        $salesTrend = collect(range(6, 0))->map(function ($daysAgo) {
+            $date = now()->subDays($daysAgo)->format('Y-m-d');
+            $sales = \App\Models\Sale::whereDate('sale_date', $date)
+                ->whereNull('deleted_at')
+                ->selectRaw('COALESCE(SUM(total_amount), 0) as revenue, COUNT(*) as count')
+                ->first();
+            return [
+                'date' => now()->subDays($daysAgo)->format('M d'),
+                'revenue' => (float) ($sales->revenue ?? 0),
+                'sales_count' => (int) ($sales->count ?? 0),
+            ];
+        })->values()->toArray();
+
+        // 4. Stock Summary
+        $totalProductsCount = \App\Models\Product::where('is_active', true)->count();
+        $outOfStockCount = BranchStock::where('quantity', 0)->count();
+        $stockSummary = [
+            'total_products' => $totalProductsCount,
+            'low_stock_count' => $lowStockCount,
+            'out_of_stock_count' => $outOfStockCount,
+        ];
+
         return Inertia::render('dashboard', [
             'dailySummary' => $dailySummary,
             'lowStockCount' => $lowStockCount,
+            'recentSales' => $recentSales,
+            'topProducts' => $topProducts,
+            'salesTrend' => $salesTrend,
+            'stockSummary' => $stockSummary,
         ]);
     })->name('dashboard');
 
