@@ -24,4 +24,13 @@ export default defineConfig({
         environment: 'jsdom',
         setupFiles: 'resources/js/tests/setup.ts',
     },
+    server: {
+        host: '0.0.0.0',
+        port: 5173,
+        hmr: {
+            host: 'localhost',
+            clientPort: process.env.DOCKER_VITE_PORT || 5173,
+        },
+        cors: true,
+    },
 });

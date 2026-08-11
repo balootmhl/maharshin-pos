@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      dockerfile_inline: |
+        FROM serversideup/php:8.3-fpm-nginx
+        USER root
+        RUN apt-get update && apt-get install -y \
+                libpng-dev libjpeg-dev libfreetype6-dev libexif-dev \
+            && docker-php-ext-configure gd --with-freetype --with-jpeg \
+            && docker-php-ext-install gd exif \
+            && apt-get clean && rm -rf /var/lib/apt/lists/*
+        USER www-data
+    ports:
+      - "${DOCKER_APP_PORT:-8000}:8080"
+    volumes:
+      - .:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - pos_internal
+
+  node:
+    image: node:22-alpine
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+      - pnpm_store:/pnpm-store
+    ports:
+      - "${DOCKER_VITE_PORT:-5173}:5173"
+    environment:
+      - DOCKER_VITE_PORT=${DOCKER_VITE_PORT:-5173}
+      - PNPM_STORE_DIR=/pnpm-store
+    command: sh -c "corepack enable && pnpm install && pnpm dev"
+    networks:
+      - pos_internal
+
+networks:
+  pos_internal:
+    driver: bridge
+
+volumes:
+  node_modules:
+  pnpm_store:
