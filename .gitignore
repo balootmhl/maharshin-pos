@@ -31,3 +31,6 @@ yarn-error.log
 .DS_Store
 **/.DS_Store
 /public_html
+.pnpm-store
+.pnpm-store-old
+node_modules-old

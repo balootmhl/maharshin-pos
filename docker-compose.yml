@@ -21,16 +21,15 @@ services:
 
   node:
     image: node:22-alpine
+    user: "1000:1000"
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html
-      - pnpm_store:/pnpm-store
     ports:
-      - "${DOCKER_VITE_PORT:-5173}:5173"
+      - "${DOCKER_VITE_PORT:-5174}:5174"
     environment:
-      - DOCKER_VITE_PORT=${DOCKER_VITE_PORT:-5173}
-      - PNPM_STORE_DIR=/pnpm-store
-    command: sh -c "corepack enable && pnpm install && pnpm dev"
+      - DOCKER_VITE_PORT=${DOCKER_VITE_PORT:-5174}
+    command: sh -c "npx pnpm install && npx pnpm dev --port 5174"
     networks:
       - pos_internal
 
@@ -38,5 +37,3 @@ networks:
   pos_internal:
     driver: bridge
 
-volumes:
-  pnpm_store:
