@@ -36,7 +36,7 @@ Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        $reportController = new ReportController;
+        $reportController = app(ReportController::class);
         $dailySummary = $reportController->dailySummary();
 
         // Count low stock items
@@ -121,6 +121,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('playground', PlaygroundController::class)->name('playground');
         Route::resource('users', UserController::class);
         Route::resource('roles', RoleController::class);
+        Route::get('roles/{role}/permissions', [App\Http\Controllers\RolePermissionController::class, 'edit'])->name('roles.permissions.edit');
+        Route::put('roles/{role}/permissions', [App\Http\Controllers\RolePermissionController::class, 'update'])->name('roles.permissions.update');
         Route::resource('branches', BranchController::class);
         Route::post('branches/{branch}/module-passwords', [BranchController::class, 'updateModulePasswords'])->name('branches.module-passwords.update');
     });

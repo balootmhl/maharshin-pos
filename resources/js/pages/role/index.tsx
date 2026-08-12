@@ -64,7 +64,14 @@ const columns: ColumnDef<Role>[] = [
         cell: ({ row }) => {
             const param = { role: row.original.id };
 
-            return <DataTableActions routePrefix="roles" routeParam={param} />;
+            return (
+                <div className="flex items-center gap-2 justify-end">
+                    <Button variant="outline" size="sm" asChild className="h-8 border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950/30">
+                        <Link href={route('roles.permissions.edit', param)}>Manage Permissions</Link>
+                    </Button>
+                    <DataTableActions routePrefix="roles" routeParam={param} />
+                </div>
+            );
         },
     },
 ];
