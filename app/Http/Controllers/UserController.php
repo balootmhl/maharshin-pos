@@ -99,7 +99,13 @@ class UserController extends Controller
 
     public function update(UserFormRequest $request, User $user): RedirectResponse
     {
-        $user->update($request->safe()->except(['main_role']));
+        $data = $request->safe()->except(['main_role']);
+
+        if (empty($data['password'])) {
+            unset($data['password']);
+        }
+
+        $user->update($data);
 
         // Sync the role if provided
         if ($request->filled('main_role')) {

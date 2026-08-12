@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, User } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem, Branch, User, SharedData } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AtSign, GitBranch, KeyRound, Pencil, User2 } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
@@ -17,6 +17,7 @@ type UserForm = {
     email: string;
     main_role: string;
     branch_id: string;
+    password?: string;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -43,11 +44,15 @@ function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.Re
 }
 
 export default function UserEdit({ user, roles, branches }: { user: User; roles: string[]; branches: Branch[] }) {
+    const { auth } = usePage<SharedData>().props;
+    const isSuperAdmin = auth.user.is_super_admin;
+
     const { data, setData, patch, reset, errors, processing } = useForm<UserForm>({
         name: user.name,
         email: user.email,
         main_role: user.main_role ?? '',
         branch_id: user.branch_id?.toString() ?? '',
+        password: '',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -122,6 +127,25 @@ export default function UserEdit({ user, roles, branches }: { user: User; roles:
                                 </div>
                                 <InputError message={errors.email} />
                             </FieldGroup>
+
+                            {/* Password - Only for Super Admin */}
+                            {isSuperAdmin && (
+                                <FieldGroup>
+                                    <FieldLabel htmlFor="password">Password (Optional)</FieldLabel>
+                                    <div className="relative">
+                                        <KeyRound className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            id="password"
+                                            type="password"
+                                            value={data.password}
+                                            onChange={(e) => setData('password', e.target.value)}
+                                            placeholder="Leave empty to keep current password"
+                                            className="pl-9"
+                                        />
+                                    </div>
+                                    <InputError message={errors.password} />
+                                </FieldGroup>
+                            )}
 
                             {/* Role & Branch */}
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
