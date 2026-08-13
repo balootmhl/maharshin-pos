@@ -212,6 +212,7 @@ class ReportService
                      ->on('bs.branch_id', '=', 's.branch_id');
             })
             ->whereIn('si.sale_id', $saleIds)
+            ->whereNull('si.deleted_at')
             ->select([
                 'si.id',
                 'si.sale_id',
