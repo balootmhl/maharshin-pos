@@ -1,3 +1,4 @@
+name: maharshin-pos
 services:
   app:
     build:
@@ -29,7 +30,7 @@ services:
       - "${DOCKER_VITE_PORT:-5174}:5174"
     environment:
       - DOCKER_VITE_PORT=${DOCKER_VITE_PORT:-5174}
-    command: sh -c "npx pnpm install && npx pnpm dev --port 5174"
+    command: sh -c "corepack pnpm install && corepack pnpm dev --port 5174"
     networks:
       - pos_internal
 
