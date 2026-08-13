@@ -1,191 +1,76 @@
-# Laravel 12 starter template
+# Maharshin POS
 
-> 🆘 **WARNING** Repo is still work in progress. Check the to-do list for current status. ‼️
+A modern, robust Point of Sale (POS) and Inventory Management System built with Laravel, React, Inertia.js, and Docker.
 
-## To Do
+## Core Features
 
-- [x] generate basic React CRUD pages
-- [x] to do CRUD with spatie media upload
-- [x] role CRUD
-- [x] user CRUD with role
-- [x] example for Authorization based on role and permission
-- [ ] prefix sub-directory (eg: admin, frontend) with generate commands
-- [ ] one command to generate both backend and frontend files
-- [x] impersonate as a user
-- [x] example REST api endpoint and usage in React code
+- **Inventory Management:** Products, Categories, Product Pricing, Stock Movements, Stock Adjustments, and Stock History.
+- **Sales & Returns:** Process Sales (with multiple price types and payment statuses), issue Receipts, and manage Sale Returns.
+- **Purchases:** Manage Suppliers, record Purchases (Purchase Orders), and update inventory automatically.
+- **Customer Management:** Track Customers, Credit Limits, and Customer Credit Ledgers.
+- **Reporting:** Daily Summaries, Sales Reports, Daily Profit Reports, and Low Stock Alerts.
+- **Role-Based Access Control (RBAC):** Granular permissions for Sales, Purchases, Stocks, Customers, Suppliers, and Reports using Spatie Permissions.
+- **Multi-Branch Support:** Segregate stocks and transactions by branches. 
 
-> ⚠️ **ATTENTION** This is a starter template. Clone or fork this repo. Develop and commit in a new repo. Do not commit to this repo. ‼️
+## Technology Stack
+
+- [Laravel v12](https://laravel.com/)
+- [Inertia v2](https://inertiajs.com)
+- [React JS v19](https://react.dev/)
+- [Tailwind CSS v4](https://tailwindcss.com/)
+- [Shadcn UI](https://ui.shadcn.com/)
+- [Docker & Docker Compose](https://www.docker.com/)
 
 ## Requirements
 
-- php 8.2 or 8.3
-- composer 2.8.1
-- node 22.14.0
-- pnpm [install guide](https://pnpm.io/installation#using-corepack)
-- mysql
-- apache/nginx
+- Docker Desktop (or Docker Engine + Compose plugin)
+- Node.js & pnpm (for local frontend development)
 
-## Installation
+## Installation & Setup
 
-1. clone or fork `git@github.com:mrlinnth/laravel12-starter.git`
-1. create database
-1. change to project directory
-1. copy `.env.example` to `.env`
-1. update `.env` with correct settings
-1. run `composer install`
-1. run `php artisan key:generate`
-1. run `php artisan migrate:refresh --seed`
-1. run `pnpm install`
-1. run `pnpm dev` for local development or `pnpm build` for deployment
+1. Clone the repository.
+2. Copy `.env.example` to `.env` and configure your environment variables.
+3. Start the Docker containers:
+   ```bash
+   docker compose up -d
+   ```
+4. Install PHP dependencies inside the container:
+   ```bash
+   docker compose exec app composer install
+   ```
+5. Generate application key:
+   ```bash
+   docker compose exec app php artisan key:generate
+   ```
+6. Run migrations and seeders:
+   ```bash
+   docker compose exec app php artisan migrate:refresh --seed
+   ```
+7. Install Node dependencies (using pnpm):
+   ```bash
+   pnpm install
+   ```
+8. Build frontend assets or start Vite development server:
+   ```bash
+   pnpm run dev
+   ```
 
-## Use
+## Authorization & Roles
 
-- [Laravel v12](https://laravel.com/docs/12.x)
-- [Inertia v2](https://inertiajs.com)
-- [React JS v19](https://react.dev/reference/react)
-- [Tailwind CSS v4](https://tailwindcss.com/docs)
-- [Shadcn UI](https://ui.shadcn.com/docs)
+- The system uses [Spatie Laravel Permission](https://spatie.be/docs/laravel-permission).
+- **Super Admin (`god`):** Has bypass access to all routes, including core settings, users, and branches.
+- **Standard Roles:** Managers, Cashiers, and Inventory Staff are restricted by specific `permissions` (e.g., `sales.create`, `products.view`).
 
-### Laravel Packages
+### Default Users (Seed Data)
 
-- [Blueprint](https://blueprint.laravelshift.com)
-- [Laravel Debugbar](https://github.com/barryvdh/laravel-debugbar)
-- [Laravel Excel](https://docs.laravel-excel.com/3.1/getting-started/installation.html)
-- [Laravel File Geneator](https://github.com/skyronic/laravel-file-generator)
-- [Laravel Pint](https://laravel.com/docs/12.x/pint)
-- [Laravel Sanctum](https://laravel.com/docs/12.x/sanctum)
-- [Laravel Telescope](https://laravel.com/docs/12.x/telescope)
-- [Laravel Envoy](https://laravel.com/docs/12.x/envoy)
-- [Orion](https://orion.tailflow.org/)
-- [Spatie - Laravel Activity Log](https://spatie.be/docs/laravel-activitylog/v4/introduction)
-- [Spatie - Laravel Media Library](https://spatie.be/docs/laravel-medialibrary/v11/introduction)
-- [Spatie - Laravel Permission](https://spatie.be/docs/laravel-permission/v6/introduction)
-- [Spatie - Laravel Query Builder](https://spatie.be/docs/laravel-query-builder/v6/introduction)
-- [Ziggy](https://github.com/tightenco/ziggy)
+| Name         | Login Email      | Password | Role    |
+|--------------|------------------|----------|---------|
+| Super Admin  | admin@mail.com   | password | god     |
+| Manager User | manager@mail.com | password | manager |
+| User         | user@mail.com    | password |         |
 
-### Node Packages
+## Development Guidelines
 
-- [React DayPicker](https://daypicker.dev/)
-- [Recharts](https://recharts.org/en-US/guide/installation)
-- [Sonner](https://sonner.emilkowal.ski/)
-- [Tanstack Table](https://tanstack.com/table)
-
-## Tips
-
-### Project Structure
-
-```txt
-laravel12-starter
-├── app
-│   ├── Console
-│   │   └── Commands
-│   │       └── ShadcnCrud.php (Custom command to generate React CRUD pages)
-│   ├── Enums
-│   ├── Exports
-│   ├── Http
-│   │   ├── Controllers
-│   │   │   ├── Auth
-│   │   │   ├── Settings
-│   │   │   └── PlaygroundController.php
-│   │   └── Requests
-│   ├── Models
-│   ├── Policies
-│   └── Providers
-├── bootstrap
-├── config
-├── database
-│   ├── factories
-│   ├── migrations
-│   └── seeders
-├── public
-├── resources
-│   ├── boilerplates (Templates for custom file generate)
-│   ├── css
-│   ├── js
-│   │   ├── components
-│   │   │   └── ui (Shadcn components)
-│   │   ├── hooks
-│   │   ├── layouts
-│   │   ├── lib
-│   │   ├── pages
-│   │   │   ├── auth
-│   │   │   ├── settings
-│   │   │   ├── dashboard.tsx
-│   │   │   └── welcome.tsx
-│   │   ├── types
-│   │   └── app.tsx
-│   └── views
-├── routes
-│   └── web.php
-└── storage
-```
-
-### Default users
-
-| Name         | Login Email      | Password | Role    | Permissions               |
-|--------------|------------------|----------|---------|---------------------------|
-| Super Admin  | <admin@mail.com>   | password | god     | *                         |
-| Manager User | <manager@mail.com> | password | manager | create,read,update,delete |
-| User         | <user@mail.com>    | password |         |                           |
-
-### File Upload
-
-- Use [Spatie - Laravel Media Library](https://spatie.be/docs/laravel-medialibrary/v11/introduction) to associate file to model
-- Check sample code in Todo CRUD files
-
-### Basic Workflow
-
-> 💡 **Advice** Copy and paste existing file/directory. Find and replace. Voila.
-
-#### Backend - For new entity (eg: Comment)
-
-1. Generate migration, seeder, model, controller, request files using blueprint for your entity (refer to `draft.yaml.example` and create your own `draft.yaml`)
-1. Delete blueprint generated view direcotry under `resources/views`
-1. Update blueprint generated controller file to return `Inertia::render` instead of blade `view`
-1. Update `routes/web.php`
-1. Make changes to other blueprint generated files if necessary
-1. Run `php artisan migrate:refresh --seed`
-
-#### Frontend - For new entity (eg: Comment)
-
-1. Generate react crud files using `php artisan make:shadcn-crud comment` (custom artisan command which uses Laravel File Generator package)
-1. Make necessary changes to generated react crud files
-1. Update `resources/js/components/app-sidebar.tsx` with new route
-
-#### If you already have migration file (eg: Role)
-
-1. Create factory and seeder (optional)
-1. If model not exist, create and extends `BaseModel`
-1. If controller not exist, create a resource controller
-1. If request not exist, create a form request
-1. Update web.php with new route(s)
-1. Generate react crud files using `php artisan make:shadcn-crud role`
-1. Make necessary changes to generated react crud files
-1. Run `php artisan migrate:refresh --seed`
-1. Update `resources/js/components/app-sidebar.tsx` with new route
-
-### Authorization
-
-- Refer to [Spatie - Laravel Permission](https://spatie.be/docs/laravel-permission/v6/introduction)
-- check `database/seeders/DatabaseSeeder.php` DatabaseSeeder class for how to create role, permission and assign to user
-- `app/Models/User.php` User model has `is_super_admin`, `main_role`, `can_do` custom  attributes
-- for frontend authorization, check `resources/js/components/buttons/create-btn.tsx`, Create button is hidden for user without `create` permission
-- for backend authorization, check `app/Policies/TodoPolicy.php` TodoPolicy class `update` method and `app/Http/Controllers/TodoController.php` TodoController class `edit` and `update` methods
-- `secret` route in `routes/web.php` is available only to super admin user
-
-### Generate CRUD API for an entity
-
-- Check `app\Http\Controllers\Api\UserController.php` Api/UserController and [Orion documentation](https://orion.tailflow.org/)
-
-### Custom action API
-
-- Check `app\Http\Controllers\Api\TodoStatusController.php` Api/TodoStatusController
-- Must follow Orion Response object structure to have a consistant API responses
-
-### Fetch data using API at Frontend
-
-- Check `resources\js\components\inputs\country-select.tsx` CountrySelect component and `/playground` page
-
-### Submit data using API at Frontend
-
-- Check `resources\js\components\todo\todo-status-dropdown.tsx` TodoStatusDropdown component and `/todos` page
+- **Docker First:** Always use `docker compose exec app ...` for backend CLI operations (Artisan, Composer). 
+- **Frontend Tools:** Use `pnpm` exclusively for frontend package management.
+- **RBAC:** All new controllers must implement `HasMiddleware` and explicitly define permission mappings.
