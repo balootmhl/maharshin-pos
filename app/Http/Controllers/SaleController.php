@@ -22,9 +22,21 @@ use Inertia\Response;
 
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class SaleController extends Controller
+class SaleController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:sales.view', only: ['index', 'show', 'print']),
+            new Middleware('permission:sales.create', only: ['create', 'store']),
+            new Middleware('permission:sales.edit', only: ['edit', 'update']),
+            new Middleware('permission:sales.delete', only: ['destroy', 'trash', 'restore', 'forceDelete']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $sales = QueryBuilder::for(Sale::class)

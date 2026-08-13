@@ -12,9 +12,21 @@ use Inertia\Response;
 
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class CategoryController extends Controller
+class CategoryController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:products.view', only: ['index', 'show']),
+            new Middleware('permission:products.create', only: ['create', 'store']),
+            new Middleware('permission:products.edit', only: ['edit', 'update']),
+            new Middleware('permission:products.delete', only: ['destroy']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $categories = QueryBuilder::for(Category::class)

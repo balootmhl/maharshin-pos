@@ -21,9 +21,21 @@ use Inertia\Response;
 
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class PurchaseController extends Controller
+class PurchaseController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:purchases.view', only: ['index', 'show', 'print']),
+            new Middleware('permission:purchases.create', only: ['create', 'store']),
+            new Middleware('permission:purchases.edit', only: ['edit', 'update']),
+            new Middleware('permission:purchases.delete', only: ['destroy', 'trash', 'restore', 'forceDelete']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $purchases = QueryBuilder::for(Purchase::class)

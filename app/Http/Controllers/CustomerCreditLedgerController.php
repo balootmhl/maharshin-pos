@@ -10,9 +10,18 @@ use Inertia\Response;
 use App\Models\Branch;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class CustomerCreditLedgerController extends Controller
+class CustomerCreditLedgerController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:customers.view', only: ['index']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $ledgers = QueryBuilder::for(CustomerCreditLedger::class)

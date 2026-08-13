@@ -10,9 +10,19 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class ProductPricingController extends Controller
+class ProductPricingController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:products.view', only: ['index']),
+            new Middleware('permission:products.edit', only: ['update']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $user = $request->user();

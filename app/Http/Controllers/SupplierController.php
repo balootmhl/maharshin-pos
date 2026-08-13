@@ -12,9 +12,21 @@ use Inertia\Response;
 
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class SupplierController extends Controller
+class SupplierController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:suppliers.view', only: ['index', 'show']),
+            new Middleware('permission:suppliers.create', only: ['create', 'store']),
+            new Middleware('permission:suppliers.edit', only: ['edit', 'update']),
+            new Middleware('permission:suppliers.delete', only: ['destroy']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $suppliers = QueryBuilder::for(Supplier::class)

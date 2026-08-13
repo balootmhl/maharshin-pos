@@ -14,9 +14,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class CustomerController extends Controller
+class CustomerController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:customers.view', only: ['index', 'show', 'exportCreditLedger']),
+            new Middleware('permission:customers.create', only: ['create', 'store']),
+            new Middleware('permission:customers.edit', only: ['edit', 'update']),
+            new Middleware('permission:customers.delete', only: ['destroy']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $customers = QueryBuilder::for(Customer::class)

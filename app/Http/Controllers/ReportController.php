@@ -6,11 +6,21 @@ use App\Services\ReportService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class ReportController extends Controller
+class ReportController extends Controller implements HasMiddleware
 {
     public function __construct(private ReportService $reportService)
     {
+    }
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:reports.sales', only: ['salesReport', 'dailyProfitReport']),
+            new Middleware('permission:reports.stocks', only: ['lowStockReport']),
+        ];
     }
 
     /**

@@ -17,9 +17,21 @@ use Inertia\Response;
 
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class CustomerPaymentController extends Controller
+class CustomerPaymentController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:customers.view', only: ['index', 'show']),
+            new Middleware('permission:customers.create', only: ['create', 'store']),
+            new Middleware('permission:customers.edit', only: ['edit', 'update']),
+            new Middleware('permission:customers.delete', only: ['destroy']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $customerPayments = QueryBuilder::for(CustomerPayment::class)

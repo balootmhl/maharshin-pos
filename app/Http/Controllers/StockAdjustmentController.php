@@ -17,9 +17,19 @@ use Inertia\Response;
 
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class StockAdjustmentController extends Controller
+class StockAdjustmentController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:stocks.view', only: ['index', 'show']),
+            new Middleware('permission:stocks.adjust', only: ['create', 'store', 'quickStore']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $stockAdjustments = QueryBuilder::for(StockAdjustment::class)

@@ -9,9 +9,18 @@ use Inertia\Response;
 
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class StockMovementController extends Controller
+class StockMovementController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:stocks.view', only: ['index']),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $stockMovements = QueryBuilder::for(StockMovement::class)
