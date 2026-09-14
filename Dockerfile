@@ -13,6 +13,12 @@ RUN corepack enable && corepack pnpm install --frozen-lockfile
 # Copy the rest of the app so Vite can see resources/, vite.config.js, etc.
 COPY . .
 
+# Vite only exposes VITE_-prefixed vars, and it reads them at build time here,
+# not from the runtime container's env (which .env is excluded from via
+# .dockerignore). Pass it in explicitly via --build-arg.
+ARG VITE_APP_NAME=Laravel
+ENV VITE_APP_NAME=$VITE_APP_NAME
+
 RUN corepack pnpm build
 
 # =========================================================
