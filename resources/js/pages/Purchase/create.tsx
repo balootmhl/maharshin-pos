@@ -387,7 +387,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                             }}
                                             onFocus={() => setSearchOpen(searchQuery.length > 0)}
                                             onKeyDown={(e) => {
-                                                const maxIndex = Math.min(searchResults.length, 10) - 1;
+                                                const maxIndex = searchResults.length - 1;
 
                                                 if (e.key === 'ArrowDown' && searchOpen) {
                                                     e.preventDefault();
@@ -433,7 +433,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                         <CommandList className="max-h-[300px]">
                                             <CommandEmpty>No products found. Try a different search.</CommandEmpty>
                                             <CommandGroup>
-                                                {searchResults.slice(0, 10).map((product, index) => (
+                                                {searchResults.map((product, index) => (
                                                     <CommandItem
                                                         key={product.id}
                                                         value={product.id.toString()}

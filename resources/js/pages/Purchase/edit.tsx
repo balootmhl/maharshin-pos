@@ -319,7 +319,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                         }}
                                         onFocus={() => setSearchOpen(searchQuery.length > 0)}
                                         onKeyDown={(e) => {
-                                            const maxIndex = Math.min(searchResults.length, 10) - 1;
+                                            const maxIndex = searchResults.length - 1;
                                             if (e.key === 'ArrowDown' && searchOpen) {
                                                 e.preventDefault();
                                                 setSelectedIndex((prev) => Math.min(prev + 1, maxIndex));
@@ -359,7 +359,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                     <CommandList className="max-h-[300px]">
                                         <CommandEmpty>No products found.</CommandEmpty>
                                         <CommandGroup>
-                                            {searchResults.slice(0, 10).map((product, index) => (
+                                            {searchResults.map((product, index) => (
                                                 <CommandItem
                                                     key={product.id}
                                                     value={product.id.toString()}

@@ -15,7 +15,7 @@ class ProductSearchController extends Controller
             'q' => 'nullable|string|max:100',
             'branch_id' => 'nullable|integer|exists:branches,id',
             'category_id' => 'nullable|integer|exists:categories,id',
-            'limit' => 'nullable|integer|min:1|max:100',
+            'limit' => 'nullable|integer|min:1|max:500',
             'for' => 'nullable|in:sale,purchase',
         ]);
 
@@ -48,7 +48,7 @@ class ProductSearchController extends Controller
             $query->where('category_id', $request->input('category_id'));
         }
 
-        $limit = $request->input('limit', 30);
+        $limit = $request->input('limit', 200);
         $context = $request->input('for', 'sale');
 
         // Select only the fields needed for the context
