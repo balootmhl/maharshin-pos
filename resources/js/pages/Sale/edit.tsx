@@ -9,11 +9,12 @@ import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { Textarea } from '@/components/ui/textarea';
 import { useProductSearch } from '@/hooks/use-product-search';
 
+import SmartSelect from '@/components/inputs/smart-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Customer, Product, Sale, SharedData } from '@/types';
+import { type BreadcrumbItem, Branch, Customer, Option, Product, Sale, SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, ArrowLeft, Barcode, Loader2, Minus, Package, Plus, Save, Search, ShoppingCart, Trash2 } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -68,6 +69,18 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
         { title: 'Sales', href: route('sales.index') },
         { title: `Edit ${sale.invoice_no}`, href: '#' },
     ];
+
+    const customerOptions: Option[] = useMemo(
+        () => [
+            { value: 'walk-in', label: 'Walk-in Customer' },
+            ...customers.map((c) => ({
+                value: c.id.toString(),
+                label: `${c.name} (${c.code})`,
+                description: c.phone || undefined,
+            })),
+        ],
+        [customers],
+    );
 
     const { auth } = usePage<SharedData>().props;
 
@@ -426,22 +439,22 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                             </PopoverContent>
                         </Popover>
                         <div className="relative w-48">
-                                <Barcode className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                                <Input
-                                    ref={barcodeInputRef}
-                                    placeholder="Scan barcode (F2)..."
-                                    onKeyDown={handleBarcodeInput}
-                                    className="h-10 w-full pl-9"
-                                    tabIndex={2}
-                                />
-                            </div>
+                            <Barcode className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                            <Input
+                                ref={barcodeInputRef}
+                                placeholder="Scan barcode (F2)..."
+                                onKeyDown={handleBarcodeInput}
+                                className="h-10 w-full pl-9"
+                                tabIndex={2}
+                            />
+                        </div>
                     </div>
 
                     {/* Header with Branch, Customer, and Price Type */}
                     <Card className="border-slate-200 py-2 shadow-xs dark:border-slate-800">
                         <CardContent className="grid grid-cols-1 gap-2 px-3 sm:grid-cols-3">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Branch</Label>
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Branch</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                     <SelectTrigger tabIndex={3}>
                                         <SelectValue placeholder="Select branch" />
@@ -457,23 +470,20 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                 <InputError message={errors.branch_id} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customer</Label>
-                                <Select value={data.customer_id} onValueChange={(v) => setData('customer_id', v)}>
-                                    <SelectTrigger tabIndex={4}>
-                                        <SelectValue placeholder="Walk-in customer" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                                        {customers.map((c) => (
-                                            <SelectItem key={c.id} value={c.id.toString()}>
-                                                {c.name} ({c.code})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Customer</Label>
+                                <SmartSelect
+                                    options={customerOptions}
+                                    value={data.customer_id}
+                                    onValueChange={(v) => setData('customer_id', v || 'walk-in')}
+                                    placeholder="Walk-in Customer"
+                                    searchPlaceholder="Search customer..."
+                                    emptyMessage="No customer found."
+                                    tabIndex={4}
+                                />
+                                <InputError message={errors.customer_id} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Price Type</Label>
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Price Type</Label>
                                 <Select
                                     value={data.price_type}
                                     onValueChange={(v) => {
@@ -551,12 +561,14 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex h-auto min-h-[300px] flex-col gap-2 border-slate-200 py-2 shadow-xs dark:border-slate-800 lg:h-0 lg:min-h-0 lg:grow">
+                    <Card className="flex h-auto min-h-[300px] flex-col gap-2 border-slate-200 py-2 shadow-xs lg:h-0 lg:min-h-0 lg:grow dark:border-slate-800">
                         <CardHeader className="flex flex-row items-center justify-between px-3 py-0">
                             <div className="flex items-center gap-2">
                                 <ShoppingCart className="h-5 w-5 text-indigo-500" />
                                 <CardTitle className="text-lg font-bold">Cart (Edit Mode)</CardTitle>
-                                <Badge variant="secondary" className="font-mono">{cart.length} items</Badge>
+                                <Badge variant="secondary" className="font-mono">
+                                    {cart.length} items
+                                </Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="h-auto p-2 lg:h-0 lg:grow lg:overflow-y-auto">
@@ -584,7 +596,9 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                                     <div className="text-muted-foreground flex gap-2 text-xs">
                                                         <span className="font-medium">{item.product.code}</span>
                                                         {item.product.barcode && <span>· {item.product.barcode}</span>}
-                                                        <span className="font-mono text-indigo-600 dark:text-indigo-400">· @ {formatCurrency(item.unit_price)} Ks</span>
+                                                        <span className="font-mono text-indigo-600 dark:text-indigo-400">
+                                                            · @ {formatCurrency(item.unit_price)} Ks
+                                                        </span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -622,7 +636,9 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                                         </Button>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-right font-mono font-semibold text-foreground">{formatCurrency(item.subtotal)}</TableCell>
+                                                <TableCell className="text-foreground text-right font-mono font-semibold">
+                                                    {formatCurrency(item.subtotal)}
+                                                </TableCell>
                                                 <TableCell>
                                                     <Button
                                                         type="button"

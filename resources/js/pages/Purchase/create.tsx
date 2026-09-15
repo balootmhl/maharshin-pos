@@ -1,4 +1,5 @@
 import InputError from '@/components/input-error';
+import SmartSelect from '@/components/inputs/smart-select';
 import { PurchaseSuccessDialog } from '@/components/purchase-success-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useDirectPrint } from '@/hooks/use-direct-print';
 import { useProductSearch } from '@/hooks/use-product-search';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Product, SharedData, Supplier } from '@/types';
+import { type BreadcrumbItem, Branch, Option, Product, SharedData, Supplier } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Barcode, Minus, Package, Plus, Search, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -75,6 +76,18 @@ const formatCurrency = (value: number) => {
 
 export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { branches: Branch[]; suppliers: Supplier[]; purchaseNo: string }) {
     const { auth, flash } = usePage<SharedData & { flash: { completedPurchase?: CompletedPurchase } }>().props;
+
+    const supplierOptions: Option[] = useMemo(
+        () => [
+            { value: 'none', label: 'No supplier' },
+            ...suppliers.map((s) => ({
+                value: s.id.toString(),
+                label: s.code ? `${s.name} (${s.code})` : s.name,
+                description: s.phone || s.contact_person || undefined,
+            })),
+        ],
+        [suppliers],
+    );
 
     // Success dialog state
     const [successDialogOpen, setSuccessDialogOpen] = useState(false);
@@ -360,7 +373,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                             <Popover open={searchOpen} onOpenChange={setSearchOpen}>
                                 <PopoverAnchor asChild>
                                     <div className="relative flex-1">
-                                    <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2" />
+                                        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2" />
                                         <Input
                                             ref={searchInputRef}
                                             placeholder="Search products (F1)... ↑↓ to navigate, Enter to add"
@@ -474,7 +487,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                         <Card className="border-slate-200 py-1 shadow-xs dark:border-slate-800">
                             <CardContent className="grid grid-cols-2 gap-1 px-3 pt-0 lg:grid-cols-4">
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Branch*</Label>
+                                    <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Branch*</Label>
                                     <Select
                                         value={data.branch_id}
                                         onValueChange={(v) => setData('branch_id', v)}
@@ -494,23 +507,20 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                     <InputError message={errors.branch_id} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Supplier</Label>
-                                    <Select value={data.supplier_id} onValueChange={(v) => setData('supplier_id', v)}>
-                                        <SelectTrigger tabIndex={4}>
-                                            <SelectValue placeholder="Select supplier" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">No supplier</SelectItem>
-                                            {suppliers.map((s) => (
-                                                <SelectItem key={s.id} value={s.id.toString()}>
-                                                    {s.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Supplier</Label>
+                                    <SmartSelect
+                                        options={supplierOptions}
+                                        value={data.supplier_id}
+                                        onValueChange={(v) => setData('supplier_id', v || 'none')}
+                                        placeholder="Select supplier"
+                                        searchPlaceholder="Search supplier..."
+                                        emptyMessage="No supplier found."
+                                        tabIndex={4}
+                                    />
+                                    <InputError message={errors.supplier_id} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Purchase Date</Label>
+                                    <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Purchase Date</Label>
                                     <Input
                                         type="date"
                                         value={data.purchase_date}
@@ -519,19 +529,21 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">PO Number</Label>
+                                    <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">PO Number</Label>
                                     <Input value={purchaseNo} disabled className="font-mono" />
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Cart Items */}
-                        <Card className="flex h-auto min-h-[300px] flex-col gap-2 border-slate-200 py-2 shadow-xs dark:border-slate-800 lg:h-0 lg:min-h-0 lg:grow">
+                        <Card className="flex h-auto min-h-[300px] flex-col gap-2 border-slate-200 py-2 shadow-xs lg:h-0 lg:min-h-0 lg:grow dark:border-slate-800">
                             <CardHeader className="flex flex-row items-center justify-between px-3 py-0">
                                 <div className="flex items-center gap-2">
                                     <Package className="h-5 w-5 text-indigo-500" />
                                     <CardTitle className="text-lg font-bold">Items</CardTitle>
-                                    <Badge variant="secondary" className="font-mono">{cart.length} items</Badge>
+                                    <Badge variant="secondary" className="font-mono">
+                                        {cart.length} items
+                                    </Badge>
                                 </div>
                                 {cart.length > 0 && (
                                     <Button type="button" variant="ghost" size="sm" onClick={clearCart} tabIndex={-1}>
@@ -609,7 +621,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                                             tabIndex={7}
                                                         />
                                                     </TableCell>
-                                                    <TableCell className="text-right font-mono font-semibold text-foreground">
+                                                    <TableCell className="text-foreground text-right font-mono font-semibold">
                                                         {formatCurrency(item.subtotal)}
                                                     </TableCell>
                                                     <TableCell>
@@ -653,7 +665,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                 </div>
                                 <Separator />
                                 <div className="space-y-1">
-                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amount Paid</Label>
+                                    <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Amount Paid</Label>
                                     <Input
                                         ref={paidAmountInputRef}
                                         type="text"
@@ -710,7 +722,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
                                     </div>
                                 )}
                                 <div className="space-y-1">
-                                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes</Label>
+                                    <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Notes</Label>
                                     <Textarea
                                         value={data.notes}
                                         onChange={(e) => setData('notes', e.target.value)}

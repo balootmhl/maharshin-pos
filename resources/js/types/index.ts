@@ -26,6 +26,7 @@ export interface NavItem {
 export type Option = {
     value: string;
     label: string;
+    description?: string;
 };
 
 export interface SharedData {

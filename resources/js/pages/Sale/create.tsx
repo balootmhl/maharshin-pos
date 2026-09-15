@@ -9,13 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 
+import SmartSelect from '@/components/inputs/smart-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useDirectPrint } from '@/hooks/use-direct-print';
 import { useProductSearch } from '@/hooks/use-product-search';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Customer, Product, SharedData } from '@/types';
+import { type BreadcrumbItem, Branch, Customer, Option, Product, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, Barcode, Minus, Package, Pause, Play, Plus, Search, ShoppingCart, Trash2, X } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -89,6 +90,18 @@ type CompletedSale = {
 export default function SaleCreate({ branches, customers }: { branches: Branch[]; customers: Customer[]; invoiceNo: string }) {
     // Get flash and auth data
     const { auth, flash } = usePage<SharedData & { flash: { completedSale?: CompletedSale } }>().props;
+
+    const customerOptions: Option[] = useMemo(
+        () => [
+            { value: 'walk-in', label: 'Walk-in Customer' },
+            ...customers.map((c) => ({
+                value: c.id.toString(),
+                label: `${c.name} (${c.code})`,
+                description: c.phone || undefined,
+            })),
+        ],
+        [customers],
+    );
 
     // Success dialog state
     const [successDialogOpen, setSuccessDialogOpen] = useState(false);
@@ -575,19 +588,16 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Customer</Label>
-                                    <Select value={data.customer_id} onValueChange={(v) => setData('customer_id', v)}>
-                                        <SelectTrigger tabIndex={4}>
-                                            <SelectValue placeholder="Walk-in customer" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                                            {customers.map((c) => (
-                                                <SelectItem key={c.id} value={c.id.toString()}>
-                                                    {c.name} ({c.code})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <SmartSelect
+                                        options={customerOptions}
+                                        value={data.customer_id}
+                                        onValueChange={(v) => setData('customer_id', v || 'walk-in')}
+                                        placeholder="Walk-in Customer"
+                                        searchPlaceholder="Search customer..."
+                                        emptyMessage="No customer found."
+                                        tabIndex={4}
+                                    />
+                                    <InputError message={errors.customer_id} />
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Price Type</Label>

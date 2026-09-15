@@ -1,4 +1,5 @@
 import InputError from '@/components/input-error';
+import SmartSelect from '@/components/inputs/smart-select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useProductSearch } from '@/hooks/use-product-search';
 import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem, Branch, Product, Purchase, SharedData, Supplier } from '@/types';
+import { type BreadcrumbItem, Branch, Option, Product, Purchase, SharedData, Supplier } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Barcode, Loader2, Minus, Package, Plus, Save, Search, Trash2 } from 'lucide-react';
 import { FormEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -61,6 +62,18 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
         { title: 'Purchases', href: route('purchases.index') },
         { title: `Edit ${purchase.purchase_no}`, href: '#' },
     ];
+
+    const supplierOptions: Option[] = useMemo(
+        () => [
+            { value: 'none', label: 'No supplier' },
+            ...suppliers.map((s) => ({
+                value: s.id.toString(),
+                label: s.code ? `${s.name} (${s.code})` : s.name,
+                description: s.phone || s.contact_person || undefined,
+            })),
+        ],
+        [suppliers],
+    );
 
     const { auth } = usePage<SharedData>().props;
 
@@ -385,22 +398,22 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                             </PopoverContent>
                         </Popover>
                         <div className="relative w-48">
-                                <Barcode className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                                <Input
-                                    ref={barcodeInputRef}
-                                    placeholder="Scan barcode (F2)..."
-                                    onKeyDown={handleBarcodeInput}
-                                    className="h-10 w-full pl-9"
-                                    tabIndex={2}
-                                />
-                            </div>
+                            <Barcode className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                            <Input
+                                ref={barcodeInputRef}
+                                placeholder="Scan barcode (F2)..."
+                                onKeyDown={handleBarcodeInput}
+                                className="h-10 w-full pl-9"
+                                tabIndex={2}
+                            />
+                        </div>
                     </div>
 
                     {/* Header */}
                     <Card className="border-slate-200 py-1 shadow-xs dark:border-slate-800">
                         <CardContent className="grid grid-cols-2 gap-1 px-3 pt-0 lg:grid-cols-4">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Branch*</Label>
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Branch*</Label>
                                 <Select value={data.branch_id} onValueChange={(v) => setData('branch_id', v)} disabled={!auth.user.is_super_admin}>
                                     <SelectTrigger tabIndex={3}>
                                         <SelectValue placeholder="Select branch" />
@@ -416,23 +429,20 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                 <InputError message={errors.branch_id} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Supplier</Label>
-                                <Select value={data.supplier_id} onValueChange={(v) => setData('supplier_id', v)}>
-                                    <SelectTrigger tabIndex={4}>
-                                        <SelectValue placeholder="Select supplier" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">No supplier</SelectItem>
-                                        {suppliers.map((s) => (
-                                            <SelectItem key={s.id} value={s.id.toString()}>
-                                                {s.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Supplier</Label>
+                                <SmartSelect
+                                    options={supplierOptions}
+                                    value={data.supplier_id}
+                                    onValueChange={(v) => setData('supplier_id', v || 'none')}
+                                    placeholder="Select supplier"
+                                    searchPlaceholder="Search supplier..."
+                                    emptyMessage="No supplier found."
+                                    tabIndex={4}
+                                />
+                                <InputError message={errors.supplier_id} />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Purchase Date</Label>
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Purchase Date</Label>
                                 <Input
                                     type="date"
                                     value={data.purchase_date}
@@ -441,19 +451,21 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">PO Number</Label>
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">PO Number</Label>
                                 <Input value={data.purchase_no} disabled className="font-mono" />
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Cart Items */}
-                    <Card className="flex h-auto min-h-[300px] flex-col gap-2 border-slate-200 py-2 shadow-xs dark:border-slate-800 lg:h-0 lg:min-h-0 lg:grow">
+                    <Card className="flex h-auto min-h-[300px] flex-col gap-2 border-slate-200 py-2 shadow-xs lg:h-0 lg:min-h-0 lg:grow dark:border-slate-800">
                         <CardHeader className="flex flex-row items-center justify-between px-3 py-0">
                             <div className="flex items-center gap-2">
                                 <Package className="h-5 w-5 text-indigo-500" />
                                 <CardTitle className="text-lg font-bold">Items (Edit)</CardTitle>
-                                <Badge variant="secondary" className="font-mono">{cart.length} items</Badge>
+                                <Badge variant="secondary" className="font-mono">
+                                    {cart.length} items
+                                </Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="h-auto p-2 lg:h-0 lg:grow lg:overflow-y-auto">
@@ -519,7 +531,9 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                                     tabIndex={7}
                                                 />
                                             </TableCell>
-                                            <TableCell className="text-right font-mono font-semibold text-foreground">{formatCurrency(item.subtotal)}</TableCell>
+                                            <TableCell className="text-foreground text-right font-mono font-semibold">
+                                                {formatCurrency(item.subtotal)}
+                                            </TableCell>
                                             <TableCell>
                                                 <Button
                                                     type="button"
@@ -568,7 +582,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                             </div>
 
                             <div className="space-y-1">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amount Paid</Label>
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Amount Paid</Label>
                                 <Input
                                     ref={paidAmountInputRef}
                                     type="text"
@@ -624,7 +638,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                                 )}
                             </div>
                             <div className="space-y-1">
-                                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes</Label>
+                                <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Notes</Label>
                                 <Textarea
                                     value={data.notes}
                                     onChange={(e) => setData('notes', e.target.value)}
