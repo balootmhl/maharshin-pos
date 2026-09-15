@@ -40,23 +40,27 @@ class ProductPricingController extends Controller implements HasMiddleware
         if (!$search && (!$categoryId || $categoryId === 'all')) {
             $products = [];
         } else {
-            $products = Product::with(['category', 'branchStocks' => function ($query) use ($branchId) {
+            $products = Product::with([
+                'category:id,name',
+                'branchStocks' => function ($query) use ($branchId) {
                     $query->withoutGlobalScopes()
-                          ->where('branch_id', $branchId)
-                          ->with('group');
-                }])
+                        ->where('branch_id', $branchId)
+                        ->select(['id', 'product_id', 'branch_id', 'group_id', 'quantity', 'cost_price', 'selling_price'])
+                        ->with('group:id,name');
+                }
+            ])
                 ->where('is_active', true)
                 ->when($search, function ($query, $search) {
                     $query->where(function ($q) use ($search) {
                         $q->where('code', 'like', "%{$search}%")
-                          ->orWhere('name', 'like', "%{$search}%");
+                            ->orWhere('name', 'like', "%{$search}%");
                     });
                 })
                 ->when($categoryId && $categoryId !== 'all', function ($query, $id) {
                     $query->where('category_id', $id);
                 })
                 ->orderBy('code')
-                ->limit(500) // Limit results to prevent overload
+                ->limit(150) // Limit to 150 to keep memory low and prevent overload
                 ->get(['id', 'code', 'name', 'category_id', 'cost_price', 'selling_price', 'unit']);
         }
 

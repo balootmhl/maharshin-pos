@@ -73,9 +73,9 @@ export default function ProductPricing({
                     },
                 );
             }
-        }, 300);
+        }, 500);
         return () => clearTimeout(timeout);
-    }, [search, categoryFilter, filters, selectedBranchId]);
+    }, [search, categoryFilter, filters.search, filters.category_id, selectedBranchId]);
 
     const handleCategoryChange = (val: string) => {
         setCategoryFilter(val);

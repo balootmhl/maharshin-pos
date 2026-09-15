@@ -17,7 +17,7 @@ type UseProductSearchReturn = {
     clearResults: () => void;
 };
 
-export function useProductSearch({ branchId, context, debounceMs = 300, limit = 200 }: UseProductSearchOptions): UseProductSearchReturn {
+export function useProductSearch({ branchId, context, debounceMs = 500, limit = 30 }: UseProductSearchOptions): UseProductSearchReturn {
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
