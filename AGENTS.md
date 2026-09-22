@@ -4,16 +4,16 @@
 - **Backend:** Laravel 12
 - **Frontend:** React JS, Inertia.js, Tailwind CSS, Shadcn UI
 - **Database:** MySQL
-- **Containerization:** Docker & Docker Compose
+- **Local Environment:** Laravel Herd (macOS)
 
-## 2. Docker & CLI Commands
-We are strictly using Docker for this project. **DO NOT** run standard PHP or Artisan commands directly on the host machine. Instead, execute them inside the `app` container via Docker Compose.
+## 2. CLI & Development Commands
+We are using **Laravel Herd** locally. Standard PHP, Artisan, and Composer commands can be run directly on the host machine.
 
-- **PHP Artisan:** `docker compose exec app php artisan <command>`
-- **Composer:** `docker compose exec app composer <command>`
-- **Tinker:** `docker compose exec app php artisan tinker`
+- **PHP Artisan:** `php artisan <command>`
+- **Composer:** `composer <command>`
+- **Tinker:** `php artisan tinker`
 
-*Note: For the frontend, you can still run `pnpm` commands on the host if necessary for Vite/Asset compilation.*
+*Note: For the frontend, always use `pnpm`.*
 
 ## 3. Node Package Manager
 - Always use `pnpm` instead of `npm` or `yarn` for frontend dependencies and scripts (e.g., `pnpm install`, `pnpm run dev`, `pnpm run build`).
