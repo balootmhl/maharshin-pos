@@ -52,6 +52,7 @@ class Todo extends BaseModel implements HasMedia
         $this
             ->addMediaConversion('preview')
             ->fit(Fit::Contain, 300, 300)
+            ->keepOriginalImageFormat()
             ->nonQueued();
     }
 }

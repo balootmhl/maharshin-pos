@@ -110,6 +110,7 @@ class Branch extends BaseModel implements HasMedia
     {
         $this->addMediaConversion('thumb')
             ->fit(Fit::Contain, 150, 150)
+            ->keepOriginalImageFormat()
             ->nonQueued();
     }
 
