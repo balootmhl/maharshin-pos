@@ -30,7 +30,7 @@ export function AppSidebar() {
             <SidebarHeader className="p-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <Link href={route('dashboard')} prefetch className="flex items-center">
+                        <Link href={route('dashboard')} prefetch className="w-full flex items-center justify-start">
                             <AppLogo />
                         </Link>
                     </SidebarMenuItem>
