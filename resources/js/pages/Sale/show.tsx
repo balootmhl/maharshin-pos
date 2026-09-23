@@ -5,19 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, Sale } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Edit, Printer } from 'lucide-react';
-import { useRef } from 'react';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Sales',
-        href: route('sales.index'),
-    },
-    {
-        title: 'Details',
-        href: '#',
-    },
-];
+import { ArrowLeft, Edit, Printer } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -41,6 +30,25 @@ const getPaymentStatusVariant = (status: string) => {
 
 export default function SaleShow({ sale }: { sale: Sale }) {
     const receiptRef = useRef<HTMLDivElement>(null);
+    const [backUrl, setBackUrl] = useState<string>(route('sales.index'));
+
+    useEffect(() => {
+        const savedUrl = sessionStorage.getItem('last_sales_url');
+        if (savedUrl) {
+            setBackUrl(savedUrl);
+        }
+    }, []);
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Sales',
+            href: backUrl,
+        },
+        {
+            title: 'Details',
+            href: '#',
+        },
+    ];
 
     const handlePrint = () => {
         const printContent = receiptRef.current;
@@ -99,6 +107,12 @@ export default function SaleShow({ sale }: { sale: Sale }) {
                                 </CardDescription>
                             </div>
                             <div className="flex gap-2">
+                                <Button variant="outline" asChild>
+                                    <Link href={backUrl}>
+                                        <ArrowLeft className="mr-2 h-4 w-4" />
+                                        Back
+                                    </Link>
+                                </Button>
                                 <Button variant="outline" onClick={handlePrint}>
                                     <Printer className="mr-2 h-4 w-4" />
                                     Print Receipt
@@ -183,6 +197,15 @@ export default function SaleShow({ sale }: { sale: Sale }) {
                 <div className="hidden">
                     <div ref={receiptRef}>
                         <div className="header">
+                            {sale.branch?.logo_url && (
+                                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                                    <img
+                                        src={sale.branch.logo_url}
+                                        alt={sale.branch.name}
+                                        style={{ maxHeight: '60px', maxWidth: '120px', objectFit: 'contain' }}
+                                    />
+                                </div>
+                            )}
                             <div className="company">Mahar Shin POS</div>
                             <div>{sale.branch?.name}</div>
                             {sale.branch?.address && <div>{sale.branch.address}</div>}
@@ -251,6 +274,12 @@ export default function SaleShow({ sale }: { sale: Sale }) {
                             <div className="row">
                                 <span>Change:</span>
                                 <span>{formatCurrency(sale.paid_amount - sale.total_amount)} Ks</span>
+                            </div>
+                        )}
+                        {sale.notes && (
+                            <div className="row" style={{ marginTop: '4px', fontStyle: 'italic', fontSize: '0.9em' }}>
+                                <span>Note:</span>
+                                <span>{sale.notes}</span>
                             </div>
                         )}
                         <div className="footer">

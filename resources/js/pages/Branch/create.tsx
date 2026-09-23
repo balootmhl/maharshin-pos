@@ -1,3 +1,4 @@
+import ImageUpload from '@/components/image-upload';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,7 @@ type BranchForm = {
     phone: string;
     email: string;
     is_active: boolean;
+    logo: File | null;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -39,6 +41,7 @@ export default function BranchCreate() {
         phone: '',
         email: '',
         is_active: true,
+        logo: null,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -171,6 +174,14 @@ export default function BranchCreate() {
                                     </div>
                                     <InputError className="mt-1" message={errors.address} />
                                 </div>
+
+                                <ImageUpload
+                                    label="Branch Logo / Profile Image"
+                                    description="Upload a clear square 1:1 image. PNG, JPG, WebP or SVG up to 2MB."
+                                    value={data.logo}
+                                    onChange={(file) => setData('logo', file)}
+                                    error={errors.logo}
+                                />
 
                                 <div className="flex items-center space-x-3 rounded-lg border border-slate-100 p-3 dark:border-slate-800">
                                     <Switch id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />

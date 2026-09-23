@@ -639,7 +639,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                {showNotes ? (
+                                {(showNotes || !!data.notes) ? (
                                     <div className="col-span-full space-y-1.5">
                                         <div className="flex items-center justify-between">
                                             <Label>Notes</Label>
@@ -655,6 +655,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
                                             </button>
                                         </div>
                                         <Textarea
+                                            name="notes"
                                             placeholder="Add sale notes..."
                                             value={data.notes}
                                             onChange={(e) => setData('notes', e.target.value)}

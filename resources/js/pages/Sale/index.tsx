@@ -20,6 +20,7 @@ import { BreadcrumbItem, LaravelPaginator, PaginatedData, Sale } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, Edit, Printer, Trash2, X } from 'lucide-react';
+import { useEffect } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -112,7 +113,16 @@ const columns: ColumnDef<Sale>[] = [
         id: 'customer',
         accessorKey: 'customer.name',
         header: 'Customer',
-        cell: ({ row }) => <div>{row.original.customer?.name || 'Walk-in'}</div>,
+        cell: ({ row }) => (
+            <div>
+                <div>{row.original.customer?.name || 'Walk-in'}</div>
+                {row.original.notes && (
+                    <div className="text-muted-foreground max-w-[180px] truncate text-xs italic" title={row.original.notes}>
+                        Note: {row.original.notes}
+                    </div>
+                )}
+            </div>
+        ),
         filterFn: (row, id, value) => {
             const customerName = row.original.customer?.name?.toLowerCase() || 'walk-in';
             return customerName.includes(value.toLowerCase());
@@ -367,6 +377,12 @@ const ActionsCell = ({ row }: { row: { original: Sale } }) => {
 };
 
 export default function SaleIndex({ sales }: { sales: PaginatedData<Sale> | LaravelPaginator<Sale> }) {
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('last_sales_url', window.location.href);
+        }
+    }, [sales]);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Sales" />

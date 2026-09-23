@@ -20,6 +20,7 @@ import { BreadcrumbItem, LaravelPaginator, PaginatedData, Purchase } from '@/typ
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, Edit, Printer, Trash2, X } from 'lucide-react';
+import { useEffect } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -112,7 +113,16 @@ const columns: ColumnDef<Purchase>[] = [
         id: 'supplier',
         accessorKey: 'supplier.name',
         header: 'Supplier',
-        cell: ({ row }) => <div>{row.original.supplier?.name || '-'}</div>,
+        cell: ({ row }) => (
+            <div>
+                <div>{row.original.supplier?.name || '-'}</div>
+                {row.original.notes && (
+                    <div className="text-muted-foreground max-w-[180px] truncate text-xs italic" title={row.original.notes}>
+                        Note: {row.original.notes}
+                    </div>
+                )}
+            </div>
+        ),
         filterFn: (row, id, value) => {
             const supplierName = row.original.supplier?.name?.toLowerCase() || '';
             return supplierName.includes(value.toLowerCase());
@@ -367,6 +377,12 @@ const ActionsCell = ({ row }: { row: { original: Purchase } }) => {
 };
 
 export default function PurchaseIndex({ purchases }: { purchases: PaginatedData<Purchase> | LaravelPaginator<Purchase> }) {
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('last_purchases_url', window.location.href);
+        }
+    }, [purchases]);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Purchases" />

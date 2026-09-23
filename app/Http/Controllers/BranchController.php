@@ -42,7 +42,11 @@ class BranchController extends Controller
 
     public function store(BranchStoreRequest $request): RedirectResponse
     {
-        $branch = Branch::create($request->validated());
+        $branch = Branch::create($request->safe()->except(['logo']));
+
+        if ($request->hasFile('logo')) {
+            $branch->addMediaFromRequest('logo')->toMediaCollection('logo');
+        }
 
         // Create default branch stock records for all existing products for the new branch
         $products = Product::all();
@@ -90,7 +94,13 @@ class BranchController extends Controller
 
     public function update(BranchUpdateRequest $request, Branch $branch): RedirectResponse
     {
-        $branch->update($request->validated());
+        $branch->update($request->safe()->except(['logo', 'remove_logo']));
+
+        if ($request->boolean('remove_logo')) {
+            $branch->clearMediaCollection('logo');
+        } elseif ($request->hasFile('logo')) {
+            $branch->addMediaFromRequest('logo')->toMediaCollection('logo');
+        }
 
         $request->session()->flash('branch.id', $branch->id);
 

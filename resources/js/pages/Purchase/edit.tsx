@@ -640,6 +640,7 @@ export default function PurchaseEdit({ purchase, branches, suppliers }: { purcha
                             <div className="space-y-1">
                                 <Label className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">Notes</Label>
                                 <Textarea
+                                    name="notes"
                                     value={data.notes}
                                     onChange={(e) => setData('notes', e.target.value)}
                                     rows={2}

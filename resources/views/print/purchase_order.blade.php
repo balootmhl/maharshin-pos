@@ -412,6 +412,12 @@
             </table>
         </div>
 
+        @if ($purchase->notes)
+            <div style="margin-top: 10px; padding: 6px 10px; background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0; font-size: {{ $format === 'thermal' ? '9px' : '11px' }}; text-align: left;">
+                <strong>Notes:</strong> {{ $purchase->notes }}
+            </div>
+        @endif
+
         <!-- Footer -->
         <div class="invoice-footer">
             <p>Purchase Order generated on {{ now()->format('d M Y, h:i A') }}</p>

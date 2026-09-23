@@ -313,7 +313,7 @@
         <!-- Header -->
         <div class="invoice-header">
             <div class="company-info">
-                <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 150px;">
+                <img src="{{ $sale->branch?->logo_url ?? asset('logo.png') }}" alt="{{ $sale->branch?->name ?? 'Logo' }}" style="height: 150px; max-width: 180px; object-fit: contain;">
                 <div class="company-text">
                     <h1>Zabyuaungpyae</h1>
                     <p><strong>{{ $sale->branch?->name ?? 'Bayintnaung Showroom' }}</strong></p>
@@ -422,6 +422,12 @@
                 @endif
             </table>
         </div>
+
+        @if ($sale->notes)
+            <div style="margin-top: 10px; padding: 6px 10px; background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0; font-size: {{ $format === 'thermal' ? '9px' : '11px' }}; text-align: left;">
+                <strong>Notes:</strong> {{ $sale->notes }}
+            </div>
+        @endif
 
         <!-- Footer -->
         <div class="invoice-footer">

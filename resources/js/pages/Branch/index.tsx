@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, LaravelPaginator, PaginatedData } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, X } from 'lucide-react';
+import { ArrowUpDown, Building2, X } from 'lucide-react';
 
 type Branch = {
     id: number;
@@ -20,6 +20,8 @@ type Branch = {
     phone?: string;
     email?: string;
     is_active: boolean;
+    logo_url?: string | null;
+    thumb_url?: string | null;
     created_at?: string;
     updated_at?: string;
     deleted_at?: string | null;
@@ -74,16 +76,35 @@ const columns: ColumnDef<Branch>[] = [
                 </Button>
             );
         },
-        cell: ({ row }) => (
-            <Link
-                className="text-link font-medium"
-                href={route('branches.show', {
-                    branch: row.original.id,
-                })}
-            >
-                {row.getValue('name')}
-            </Link>
-        ),
+        cell: ({ row }) => {
+            const branch = row.original;
+            return (
+                <div className="flex items-center gap-3">
+                    <div className="size-9 shrink-0 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+                        {branch.thumb_url || branch.logo_url ? (
+                            <img
+                                src={branch.thumb_url || branch.logo_url || ''}
+                                alt={branch.name}
+                                className="size-full object-contain p-0.5"
+                            />
+                        ) : (
+                            <Building2 className="size-4 text-slate-400" />
+                        )}
+                    </div>
+                    <div className="flex flex-col">
+                        <Link
+                            className="text-link font-medium hover:underline"
+                            href={route('branches.show', {
+                                branch: branch.id,
+                            })}
+                        >
+                            {branch.name}
+                        </Link>
+                        {branch.email && <span className="text-muted-foreground text-xs">{branch.email}</span>}
+                    </div>
+                </div>
+            );
+        },
         filterFn: (row, id, value) => {
             const name = row.getValue(id) as string;
             return name.toLowerCase().includes(value.toLowerCase());

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { LaravelPaginator, PaginatedData } from '@/types';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     ColumnDef,
     ColumnFiltersState,
@@ -26,7 +26,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, Filter, Pencil } from 'lucide-react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 // Simple debounce implementation to avoid adding lodash dependency
 function debounce<Args extends unknown[], R>(func: (...args: Args) => R, wait: number): (...args: Args) => void {
@@ -103,6 +103,76 @@ type TableProps<TData> = {
     scrollable?: boolean;
 };
 
+// Helper to parse Spatie QueryBuilder filter parameters from URL
+function parseFiltersFromUrl(): {
+    columnFilters: ColumnFiltersState;
+    globalFilter: string;
+    sorting: SortingState;
+} {
+    if (typeof window === 'undefined') {
+        return { columnFilters: [], globalFilter: '', sorting: [] };
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const filterMap = new Map<string, unknown>();
+    let globalFilter = '';
+
+    searchParams.forEach((value, key) => {
+        if (!value) return;
+
+        if (key === 'filter[global]') {
+            globalFilter = value;
+            return;
+        }
+
+        const match = key.match(/^filter\[(.*)\]$/);
+        if (!match) return;
+
+        const filterKey = match[1];
+
+        // Check compound range keys like sale_date_start, sale_date_end, total_amount_min, total_amount_max
+        const rangeMatch = filterKey.match(/^(.*)_(start|end|min|max)$/);
+        if (rangeMatch) {
+            const colId = rangeMatch[1];
+            const subKey = rangeMatch[2];
+            const existing = (filterMap.get(colId) as Record<string, unknown>) || {};
+            const parsedVal = subKey === 'min' || subKey === 'max' ? Number(value) || undefined : value;
+            filterMap.set(colId, { ...existing, [subKey]: parsedVal });
+            return;
+        }
+
+        // Multi-select status fields (e.g. payment_status=paid,partial)
+        if (filterKey === 'payment_status' || filterKey === 'status') {
+            filterMap.set(filterKey, value.split(',').filter(Boolean));
+            return;
+        }
+
+        // Standard filter (e.g., invoice_no, purchase_no, customer, supplier, products, etc.)
+        filterMap.set(filterKey, value);
+    });
+
+    const columnFilters: ColumnFiltersState = Array.from(filterMap.entries()).map(([id, value]) => ({
+        id,
+        value,
+    }));
+
+    // Parse sort: e.g. sort=-created_at,invoice_no
+    const sortParam = searchParams.get('sort');
+    const sorting: SortingState = [];
+    if (sortParam) {
+        sortParam.split(',').forEach((s) => {
+            if (!s) return;
+            if (s.startsWith('-')) {
+                sorting.push({ id: s.substring(1), desc: true });
+            } else {
+                sorting.push({ id: s, desc: false });
+            }
+        });
+    }
+
+    return { columnFilters, globalFilter, sorting };
+}
+
 export function DataTable<TData>({
     data,
     columns,
@@ -125,13 +195,22 @@ export function DataTable<TData>({
 
     const meta = isServerSide ? ('meta' in data ? (data as PaginatedData<TData>).meta : (data as LaravelPaginator<TData>)) : null;
 
+    const { url } = usePage();
+    const isFirstRender = useRef(true);
+
+    // Initial parsed filters from URL (only if server-side)
+    const initialParsed = React.useMemo(() => {
+        if (!isServerSide) return { columnFilters: [], globalFilter: '', sorting: [] };
+        return parseFiltersFromUrl();
+    }, [isServerSide]);
+
     // State
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const [sorting, setSorting] = useState<SortingState>(() => initialParsed.sorting);
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => initialParsed.columnFilters);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialColumnVisibility);
     const [rowSelection, setRowSelection] = useState({});
     const [filterOpen, setFilterOpen] = useState(false);
-    const [globalFilter, setGlobalFilter] = useState('');
+    const [globalFilter, setGlobalFilter] = useState<string>(() => initialParsed.globalFilter);
 
     // Pagination State
     const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
@@ -259,9 +338,39 @@ export function DataTable<TData>({
         globalFilterFn: globalFilterFnAdapter,
     });
 
+    // Keep filter state in sync if URL query parameters change (e.g. browser back/forward or external navigation)
+    useEffect(() => {
+        if (!isServerSide) return;
+        if (isFirstRender.current) return;
+
+        const currentParsed = parseFiltersFromUrl();
+
+        setColumnFilters((prev) => {
+            if (JSON.stringify(prev) !== JSON.stringify(currentParsed.columnFilters)) {
+                return currentParsed.columnFilters;
+            }
+            return prev;
+        });
+
+        setGlobalFilter((prev) => (prev !== currentParsed.globalFilter ? currentParsed.globalFilter : prev));
+
+        setSorting((prev) => {
+            if (JSON.stringify(prev) !== JSON.stringify(currentParsed.sorting)) {
+                return currentParsed.sorting;
+            }
+            return prev;
+        });
+    }, [url, isServerSide]);
+
     // Check if we need to sync column filters for server-side
     useEffect(() => {
         if (!isServerSide) return;
+
+        // Skip the initial mount render so we don't wipe or rewrite initial URL params
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
 
         const timeoutId = setTimeout(() => {
             const filterParams: Record<string, string | number | undefined> = {};
@@ -318,17 +427,20 @@ export function DataTable<TData>({
         setColumnFilters([]);
         if (isServerSide) {
             const currentUrlParams = new URLSearchParams(window.location.search);
-            const paramsToUpdate: Record<string, string> = {};
+            const paramsToUpdate: Record<string, string | number | undefined> = {};
             currentUrlParams.forEach((_, key) => {
                 if (key.startsWith('filter[')) {
                     paramsToUpdate[key] = '';
                 }
             });
+            paramsToUpdate['page'] = 1;
             updateServerParams(paramsToUpdate);
         }
     };
 
-    const activeFilterCount = columnFilters.length;
+    const activeFilterCount = columnFilters.filter(
+        (f) => f.id !== searchColumn && (Array.isArray(f.value) ? f.value.length > 0 : Boolean(f.value)),
+    ).length;
 
     // Initial value logic for Input
     const initialGlobalFilter = globalFilterFn ? globalFilter : ((table.getColumn(searchColumn)?.getFilterValue() as string) ?? '');

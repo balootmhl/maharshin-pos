@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Edit, Mail, MapPin, Phone } from 'lucide-react';
+import { Building2, Edit, Mail, MapPin, Phone } from 'lucide-react';
 
 type Branch = {
     id: number;
@@ -14,6 +14,8 @@ type Branch = {
     phone?: string;
     email?: string;
     is_active: boolean;
+    logo_url?: string | null;
+    thumb_url?: string | null;
     created_at?: string;
 };
 
@@ -35,13 +37,26 @@ export default function BranchShow({ branch }: { branch: Branch }) {
             <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
                 <Card className="mx-auto w-full max-w-4xl">
                     <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    {branch.name}
-                                    <Badge variant={branch.is_active ? 'default' : 'secondary'}>{branch.is_active ? 'Active' : 'Inactive'}</Badge>
-                                </CardTitle>
-                                <CardDescription className="font-mono">{branch.code}</CardDescription>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="size-16 shrink-0 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-center shadow-xs">
+                                    {branch.logo_url ? (
+                                        <img
+                                            src={branch.logo_url}
+                                            alt={branch.name}
+                                            className="size-full object-contain p-1"
+                                        />
+                                    ) : (
+                                        <Building2 className="size-8 text-slate-400" />
+                                    )}
+                                </div>
+                                <div>
+                                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                                        {branch.name}
+                                        <Badge variant={branch.is_active ? 'default' : 'secondary'}>{branch.is_active ? 'Active' : 'Inactive'}</Badge>
+                                    </CardTitle>
+                                    <CardDescription className="font-mono mt-0.5">{branch.code}</CardDescription>
+                                </div>
                             </div>
                             <Button asChild>
                                 <Link href={route('branches.edit', { branch: branch.id })}>

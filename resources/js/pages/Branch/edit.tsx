@@ -1,3 +1,4 @@
+import ImageUpload from '@/components/image-upload';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,15 +39,20 @@ type Branch = {
     phone?: string;
     email?: string;
     is_active: boolean;
+    logo_url?: string | null;
+    thumb_url?: string | null;
 };
 
 type BranchForm = {
+    _method: string;
     code: string;
     name: string;
     address: string;
     phone: string;
     email: string;
     is_active: boolean;
+    logo: File | null;
+    remove_logo: boolean;
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -89,13 +95,16 @@ const moduleConfigs = {
 };
 
 export default function BranchEdit({ branch, lockedModules }: { branch: Branch; lockedModules: { [key: string]: boolean } }) {
-    const { data, setData, patch, reset, errors, processing } = useForm<BranchForm>({
+    const { data, setData, post, reset, errors, processing } = useForm<BranchForm>({
+        _method: 'put',
         code: branch.code,
         name: branch.name,
         address: branch.address || '',
         phone: branch.phone || '',
         email: branch.email || '',
         is_active: branch.is_active,
+        logo: null,
+        remove_logo: false,
     });
 
     const passwordForm = useForm({
@@ -110,11 +119,9 @@ export default function BranchEdit({ branch, lockedModules }: { branch: Branch; 
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        patch(route('branches.update', { branch: branch.id }), {
+        post(route('branches.update', { branch: branch.id }), {
             preserveScroll: true,
-            onSuccess: () => {
-                reset();
-            },
+            forceFormData: true,
         });
     };
 
@@ -249,6 +256,28 @@ export default function BranchEdit({ branch, lockedModules }: { branch: Branch; 
                                         </div>
                                         <InputError className="mt-1" message={errors.address} />
                                     </div>
+
+                                    <ImageUpload
+                                        label="Branch Logo / Profile Image"
+                                        description="Upload a clear square 1:1 image. PNG, JPG, WebP or SVG up to 2MB."
+                                        value={data.logo}
+                                        initialUrl={data.remove_logo ? null : branch.logo_url}
+                                        onChange={(file) => {
+                                            setData((prev) => ({
+                                                ...prev,
+                                                logo: file,
+                                                remove_logo: false,
+                                            }));
+                                        }}
+                                        onRemove={() => {
+                                            setData((prev) => ({
+                                                ...prev,
+                                                logo: null,
+                                                remove_logo: true,
+                                            }));
+                                        }}
+                                        error={errors.logo}
+                                    />
 
                                     <div className="flex items-center space-x-3 rounded-lg border border-slate-100 p-3 dark:border-slate-800">
                                         <Switch

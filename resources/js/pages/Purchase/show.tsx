@@ -5,18 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, Purchase } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Edit } from 'lucide-react';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Purchases',
-        href: route('purchases.index'),
-    },
-    {
-        title: 'Details',
-        href: '#',
-    },
-];
+import { ArrowLeft, Edit } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -39,6 +29,26 @@ const getPaymentStatusVariant = (status: string) => {
 };
 
 export default function PurchaseShow({ purchase }: { purchase: Purchase }) {
+    const [backUrl, setBackUrl] = useState<string>(route('purchases.index'));
+
+    useEffect(() => {
+        const savedUrl = sessionStorage.getItem('last_purchases_url');
+        if (savedUrl) {
+            setBackUrl(savedUrl);
+        }
+    }, []);
+
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Purchases',
+            href: backUrl,
+        },
+        {
+            title: 'Details',
+            href: '#',
+        },
+    ];
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Purchase ${purchase.purchase_no}`} />
@@ -57,12 +67,20 @@ export default function PurchaseShow({ purchase }: { purchase: Purchase }) {
                                     {purchase.purchase_date} • {purchase.branch?.name} • {purchase.supplier?.name || '-'}
                                 </CardDescription>
                             </div>
-                            <Button asChild>
-                                <Link href={route('purchases.edit', { purchase: purchase.id })}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                </Link>
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button variant="outline" asChild>
+                                    <Link href={backUrl}>
+                                        <ArrowLeft className="mr-2 h-4 w-4" />
+                                        Back
+                                    </Link>
+                                </Button>
+                                <Button asChild>
+                                    <Link href={route('purchases.edit', { purchase: purchase.id })}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Edit
+                                    </Link>
+                                </Button>
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">

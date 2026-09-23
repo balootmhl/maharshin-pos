@@ -78,11 +78,12 @@ class CustomerPaymentController extends Controller implements HasMiddleware
 
         DB::transaction(function () use ($validated) {
             // Generate unique payment number
-            $maxPaymentNo = CustomerPayment::withTrashed()
+            $maxPaymentNo = CustomerPayment::withoutGlobalScopes()
+                ->withTrashed()
                 ->selectRaw('MAX(CAST(SUBSTRING(payment_no, 5) AS UNSIGNED)) as max_num')
                 ->value('max_num');
             $nextNumber = ($maxPaymentNo ?? 0) + 1;
-            $paymentNo = 'PAY-'.str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+            $paymentNo = 'PAY-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
 
             // Create the payment
             $customerPayment = CustomerPayment::create([
@@ -142,7 +143,7 @@ class CustomerPaymentController extends Controller implements HasMiddleware
     public function update(CustomerPaymentUpdateRequest $request, CustomerPayment $customerPayment): RedirectResponse
     {
         $validated = $request->validated();
-        
+
         DB::transaction(function () use ($validated, $customerPayment) {
             // 1. Revert old amount from old customer balance
             $oldCustomer = Customer::find($customerPayment->customer_id);
@@ -160,7 +161,8 @@ class CustomerPaymentController extends Controller implements HasMiddleware
             }
 
             // 4. Update the related credit ledger entry
-            $ledger = CustomerCreditLedger::where('reference_type', CustomerPayment::class)
+            $ledger = CustomerCreditLedger::withoutGlobalScopes()
+                ->where('reference_type', CustomerPayment::class)
                 ->where('reference_id', $customerPayment->id)
                 ->first();
 
@@ -189,7 +191,8 @@ class CustomerPaymentController extends Controller implements HasMiddleware
             }
 
             // Delete the related credit ledger entry
-            CustomerCreditLedger::where('reference_type', CustomerPayment::class)
+            CustomerCreditLedger::withoutGlobalScopes()
+                ->where('reference_type', CustomerPayment::class)
                 ->where('reference_id', $customerPayment->id)
                 ->delete();
 

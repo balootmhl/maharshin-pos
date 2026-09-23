@@ -27,6 +27,14 @@ class PurchaseUpdateRequest extends FormRequest
         if ($this->user() && !$this->user()->is_super_admin) {
             $this->merge(['branch_id' => $this->user()->branch_id]);
         }
+
+        // Normalize note/notes
+        if ($this->has('note') && !$this->has('notes')) {
+            $this->merge(['notes' => $this->input('note')]);
+        }
+        if ($this->has('notes') && !$this->has('note')) {
+            $this->merge(['note' => $this->input('notes')]);
+        }
     }
 
     /**
@@ -34,8 +42,10 @@ class PurchaseUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $purchaseId = $this->purchase instanceof \App\Models\Purchase ? $this->purchase->id : ($this->route('purchase')?->id ?? $this->route('purchase'));
+
         return [
-            'purchase_no' => ['required', 'string', 'max:50', 'unique:purchases,purchase_no,' . $this->purchase->id],
+            'purchase_no' => ['required', 'string', 'max:50', 'unique:purchases,purchase_no,' . $purchaseId],
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'purchase_date' => ['required', 'date'],
@@ -45,6 +55,7 @@ class PurchaseUpdateRequest extends FormRequest
             'payment_status' => ['required', 'string', 'in:paid,partial,unpaid'],
             'paid_amount' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'note' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],

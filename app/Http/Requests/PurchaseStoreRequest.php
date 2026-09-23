@@ -27,6 +27,14 @@ class PurchaseStoreRequest extends FormRequest
         if ($this->user() && !$this->user()->is_super_admin) {
             $this->merge(['branch_id' => $this->user()->branch_id]);
         }
+
+        // Normalize note/notes
+        if ($this->has('note') && !$this->has('notes')) {
+            $this->merge(['notes' => $this->input('note')]);
+        }
+        if ($this->has('notes') && !$this->has('note')) {
+            $this->merge(['note' => $this->input('notes')]);
+        }
     }
 
     /**
@@ -44,6 +52,7 @@ class PurchaseStoreRequest extends FormRequest
             'payment_status' => ['required', 'string', 'in:paid,partial,unpaid'],
             'paid_amount' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
+            'note' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],

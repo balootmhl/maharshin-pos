@@ -11,6 +11,7 @@ type CompletedPurchase = {
     total_amount: number;
     paid_amount: number;
     payment_status: string;
+    notes?: string;
     supplier?: {
         id: number;
         name: string;
@@ -75,6 +76,12 @@ export function PurchaseSuccessDialog({ open, onOpenChange, purchase, onNewPurch
                         <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Balance Due</span>
                             <span className="font-mono text-orange-600">{formatCurrency(purchase.total_amount - purchase.paid_amount)} Ks</span>
+                        </div>
+                    )}
+                    {purchase.notes && (
+                        <div className="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+                            <span className="font-medium text-foreground">Note: </span>
+                            {purchase.notes}
                         </div>
                     )}
                 </div>

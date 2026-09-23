@@ -522,7 +522,7 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                     </SelectContent>
                                 </Select>
                             </div>
-                            {showNotes ? (
+                            {(showNotes || !!data.notes) ? (
                                 <div className="col-span-full space-y-1.5">
                                     <div className="flex items-center justify-between">
                                         <Label>Notes</Label>
@@ -538,6 +538,7 @@ export default function SaleEdit({ sale, branches, customers }: { sale: Sale; br
                                         </button>
                                     </div>
                                     <Textarea
+                                        name="notes"
                                         placeholder="Add sale notes..."
                                         value={data.notes}
                                         onChange={(e) => setData('notes', e.target.value)}

@@ -81,7 +81,10 @@ export interface Branch {
     code?: string;
     address?: string;
     phone?: string;
+    email?: string;
     is_active?: boolean;
+    logo_url?: string | null;
+    thumb_url?: string | null;
     created_at?: string;
     updated_at?: string;
 }

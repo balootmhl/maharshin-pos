@@ -39,7 +39,7 @@ class SaleController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $sales = QueryBuilder::for(Sale::class)
+        $sales = QueryBuilder::for(Sale::class, $request)
             ->with(['branch', 'customer', 'createdBy', 'saleItems.product'])
             ->allowedFilters([
                 'invoice_no',
@@ -126,7 +126,7 @@ class SaleController extends Controller implements HasMiddleware
                 'payment_method' => $validated['payment_method'] ?? null,
                 'paid_amount' => $validated['paid_amount'],
                 'credit_amount' => $validated['credit_amount'],
-                'notes' => $validated['notes'] ?? null,
+                'notes' => $validated['notes'] ?? $validated['note'] ?? null,
                 'created_by' => Auth::id(),
             ]);
 
@@ -201,6 +201,7 @@ class SaleController extends Controller implements HasMiddleware
             'paid_amount' => $sale->paid_amount,
             'credit_amount' => $sale->credit_amount,
             'payment_status' => $sale->payment_status,
+            'notes' => $sale->notes,
             'customer' => $sale->customer ? [
                 'id' => $sale->customer->id,
                 'name' => $sale->customer->name,
@@ -321,7 +322,7 @@ class SaleController extends Controller implements HasMiddleware
                 'payment_method' => $validated['payment_method'] ?? null,
                 'paid_amount' => $validated['paid_amount'],
                 'credit_amount' => $validated['credit_amount'],
-                'notes' => $validated['notes'] ?? null,
+                'notes' => $validated['notes'] ?? $validated['note'] ?? null,
                 // created_by preserved
             ]);
 

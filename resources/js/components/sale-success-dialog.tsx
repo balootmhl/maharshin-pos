@@ -12,6 +12,7 @@ type CompletedSale = {
     paid_amount: number;
     credit_amount: number;
     payment_status: string;
+    notes?: string;
     customer?: {
         id: number;
         name: string;
@@ -76,6 +77,12 @@ export function SaleSuccessDialog({ open, onOpenChange, sale, onNewSale, onPrint
                         <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Credit</span>
                             <span className="font-mono text-red-600">{formatCurrency(sale.credit_amount)} Ks</span>
+                        </div>
+                    )}
+                    {sale.notes && (
+                        <div className="rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
+                            <span className="font-medium text-foreground">Note: </span>
+                            {sale.notes}
                         </div>
                     )}
                 </div>

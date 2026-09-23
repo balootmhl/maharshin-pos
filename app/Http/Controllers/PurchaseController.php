@@ -38,7 +38,7 @@ class PurchaseController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $purchases = QueryBuilder::for(Purchase::class)
+        $purchases = QueryBuilder::for(Purchase::class, $request)
             ->with(['branch', 'supplier', 'createdBy', 'purchaseItems.product'])
             ->allowedFilters([
                 'purchase_no',
@@ -118,7 +118,7 @@ class PurchaseController extends Controller implements HasMiddleware
                 'total_amount' => $validated['total_amount'],
                 'payment_status' => $validated['payment_status'],
                 'paid_amount' => $validated['paid_amount'],
-                'notes' => $validated['notes'] ?? null,
+                'notes' => $validated['notes'] ?? $validated['note'] ?? null,
                 'created_by' => Auth::id(),
             ]);
 
@@ -169,6 +169,7 @@ class PurchaseController extends Controller implements HasMiddleware
             'total_amount' => $purchase->total_amount,
             'paid_amount' => $purchase->paid_amount,
             'payment_status' => $purchase->payment_status,
+            'notes' => $purchase->notes,
             'supplier' => $purchase->supplier ? [
                 'id' => $purchase->supplier->id,
                 'name' => $purchase->supplier->name,
@@ -261,7 +262,7 @@ class PurchaseController extends Controller implements HasMiddleware
                 'total_amount' => $validated['total_amount'],
                 'payment_status' => $validated['payment_status'],
                 'paid_amount' => $validated['paid_amount'],
-                'notes' => $validated['notes'] ?? null,
+                'notes' => $validated['notes'] ?? $validated['note'] ?? null,
                 // created_by preserves original creator
             ]);
 

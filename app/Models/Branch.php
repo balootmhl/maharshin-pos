@@ -5,10 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Branch extends BaseModel
+class Branch extends BaseModel implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, InteractsWithMedia, SoftDeletes;
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'logo_url',
+        'thumb_url',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -77,5 +91,41 @@ class Branch extends BaseModel
     public function modulePasswords(): HasMany
     {
         return $this->hasMany(BranchModulePassword::class);
+    }
+
+    /**
+     * Register media collections for the model.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('logo')
+            ->singleFile()
+            ->useDisk('public');
+    }
+
+    /**
+     * Register media conversions for the model.
+     */
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->fit(Fit::Contain, 150, 150)
+            ->nonQueued();
+    }
+
+    /**
+     * Get the full URL to the branch logo.
+     */
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('logo') ?: null;
+    }
+
+    /**
+     * Get the thumbnail URL to the branch logo.
+     */
+    public function getThumbUrlAttribute(): ?string
+    {
+        return $this->getFirstMediaUrl('logo', 'thumb') ?: $this->getFirstMediaUrl('logo') ?: null;
     }
 }
