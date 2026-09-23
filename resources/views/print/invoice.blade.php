@@ -315,8 +315,10 @@
             <div class="company-info">
                 <img src="{{ $sale->branch?->logo_url ?? asset('logo.png') }}" alt="{{ $sale->branch?->name ?? 'Logo' }}" style="height: 150px; max-width: 180px; object-fit: contain;">
                 <div class="company-text">
-                    <h1>Zabyuaungpyae</h1>
-                    <p><strong>{{ $sale->branch?->name ?? 'Bayintnaung Showroom' }}</strong></p>
+                    <h1>{{ $sale->branch?->invoice_title ?: ($sale->branch?->name ?? 'Mahar Shin POS') }}</h1>
+                    @if ($sale->branch?->invoice_title && $sale->branch?->name && $sale->branch->invoice_title !== $sale->branch->name)
+                        <p><strong>{{ $sale->branch->name }}</strong></p>
+                    @endif
                     <p>{{ $sale->branch?->address ?? '' }}</p>
                     <p>{{ $sale->branch?->phone ?? '' }}</p>
                 </div>

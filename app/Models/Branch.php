@@ -32,6 +32,7 @@ class Branch extends BaseModel implements HasMedia
     protected $fillable = [
         'code',
         'name',
+        'invoice_title',
         'address',
         'phone',
         'email',

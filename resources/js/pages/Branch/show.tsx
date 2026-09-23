@@ -10,6 +10,7 @@ type Branch = {
     id: number;
     code: string;
     name: string;
+    invoice_title?: string | null;
     address?: string;
     phone?: string;
     email?: string;
@@ -55,7 +56,14 @@ export default function BranchShow({ branch }: { branch: Branch }) {
                                         {branch.name}
                                         <Badge variant={branch.is_active ? 'default' : 'secondary'}>{branch.is_active ? 'Active' : 'Inactive'}</Badge>
                                     </CardTitle>
-                                    <CardDescription className="font-mono mt-0.5">{branch.code}</CardDescription>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <CardDescription className="font-mono">{branch.code}</CardDescription>
+                                        {branch.invoice_title && (
+                                            <Badge variant="outline" className="text-xs font-normal">
+                                                Invoice Title: {branch.invoice_title}
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             <Button asChild>

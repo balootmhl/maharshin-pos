@@ -35,6 +35,7 @@ type Branch = {
     id: number;
     code: string;
     name: string;
+    invoice_title?: string | null;
     address?: string;
     phone?: string;
     email?: string;
@@ -47,6 +48,7 @@ type BranchForm = {
     _method: string;
     code: string;
     name: string;
+    invoice_title: string;
     address: string;
     phone: string;
     email: string;
@@ -95,10 +97,11 @@ const moduleConfigs = {
 };
 
 export default function BranchEdit({ branch, lockedModules }: { branch: Branch; lockedModules: { [key: string]: boolean } }) {
-    const { data, setData, post, reset, errors, processing } = useForm<BranchForm>({
+    const { data, setData, post, errors, processing } = useForm<BranchForm>({
         _method: 'put',
         code: branch.code,
         name: branch.name,
+        invoice_title: branch.invoice_title || '',
         address: branch.address || '',
         phone: branch.phone || '',
         email: branch.email || '',
@@ -202,6 +205,26 @@ export default function BranchEdit({ branch, lockedModules }: { branch: Branch; 
                                             </div>
                                             <InputError className="mt-1" message={errors.name} />
                                         </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="invoice_title" className="font-semibold">
+                                            Invoice Title
+                                        </Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="invoice_title"
+                                                value={data.invoice_title}
+                                                onChange={(e) => setData('invoice_title', e.target.value)}
+                                                placeholder="e.g. Zabyuaungpyae (defaults to branch name)"
+                                                className="pl-9"
+                                            />
+                                            <Building2 className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                                        </div>
+                                        <p className="text-muted-foreground text-[11px]">
+                                            Header title displayed on printed receipts and invoices. If left empty, branch name will be used.
+                                        </p>
+                                        <InputError className="mt-1" message={errors.invoice_title} />
                                     </div>
 
                                     <div className="space-y-2">

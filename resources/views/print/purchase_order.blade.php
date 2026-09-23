@@ -311,10 +311,12 @@
         <!-- Header -->
         <div class="invoice-header">
             <div class="company-info">
-                <img src="{{ asset('logo.png') }}" alt="Logo" style="height: 150px;">
+                <img src="{{ $purchase->branch?->logo_url ?? asset('logo.png') }}" alt="{{ $purchase->branch?->name ?? 'Logo' }}" style="height: 150px; max-width: 180px; object-fit: contain;">
                 <div class="company-text">
-                    <h1>Zabyuaungpyae</h1>
-                    <p><strong>{{ $purchase->branch?->name ?? 'Bayintnaung Showroom' }}</strong></p>
+                    <h1>{{ $purchase->branch?->invoice_title ?: ($purchase->branch?->name ?? 'Mahar Shin POS') }}</h1>
+                    @if ($purchase->branch?->invoice_title && $purchase->branch?->name && $purchase->branch->invoice_title !== $purchase->branch->name)
+                        <p><strong>{{ $purchase->branch->name }}</strong></p>
+                    @endif
                     <p>{{ $purchase->branch?->address ?? '' }}</p>
                     <p>{{ $purchase->branch?->phone ?? '' }}</p>
                 </div>

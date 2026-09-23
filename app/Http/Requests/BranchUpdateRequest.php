@@ -22,6 +22,7 @@ class BranchUpdateRequest extends FormRequest
         return [
             'code' => ['required', 'string', 'max:50', 'unique:branches,code,' . $this->route('branch')->id],
             'name' => ['required', 'string'],
+            'invoice_title' => ['nullable', 'string', 'max:150'],
             'address' => ['nullable', 'string'],
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:100'],

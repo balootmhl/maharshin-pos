@@ -78,6 +78,7 @@ export interface User {
 export interface Branch {
     id: number;
     name: string;
+    invoice_title?: string | null;
     code?: string;
     address?: string;
     phone?: string;
