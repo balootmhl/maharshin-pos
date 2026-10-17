@@ -21,6 +21,8 @@ test('recording a purchase executes inventory increment and stock movement loggi
         'branch_id' => $branch->id,
         'email_verified_at' => now(),
     ]);
+    \Spatie\Permission\Models\Permission::findOrCreate('purchases.create');
+    $user->givePermissionTo('purchases.create');
 
     $category = Category::factory()->create([
         'is_active' => true,

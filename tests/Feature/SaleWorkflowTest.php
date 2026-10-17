@@ -22,6 +22,8 @@ test('completing a POS sale executes inventory deduction, stock movement logging
         'branch_id' => $branch->id,
         'email_verified_at' => now(),
     ]);
+    \Spatie\Permission\Models\Permission::findOrCreate('sales.create');
+    $user->givePermissionTo('sales.create');
 
     $category = Category::factory()->create([
         'is_active' => true,
