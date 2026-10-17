@@ -97,4 +97,9 @@ class Product extends BaseModel
     {
         return $this->hasMany(SaleReturnItem::class);
     }
+
+    public function priceHistories(): HasMany
+    {
+        return $this->hasMany(ProductPriceHistory::class)->orderByDesc('effective_date')->orderByDesc('id');
+    }
 }

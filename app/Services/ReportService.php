@@ -203,14 +203,11 @@ class ReportService
         $sales = $saleQuery->get();
         $saleIds = $sales->pluck('id');
 
-        // Load sale items with product info and branch_stock cost_price via raw join
+        // Load sale items with snapshot data (cost_price, product_name, product_code)
+        // with fallback to products table for backward compatibility
         $rawItems = DB::table('sale_items as si')
             ->join('sales as s', 'si.sale_id', '=', 's.id')
-            ->join('products as p', 'si.product_id', '=', 'p.id')
-            ->leftJoin(DB::raw('(SELECT product_id, branch_id, MAX(cost_price) as cost_price FROM branch_stocks WHERE deleted_at IS NULL GROUP BY product_id, branch_id) as bs'), function ($join) {
-                $join->on('bs.product_id', '=', 'si.product_id')
-                     ->on('bs.branch_id', '=', 's.branch_id');
-            })
+            ->leftJoin('products as p', 'si.product_id', '=', 'p.id')
             ->whereIn('si.sale_id', $saleIds)
             ->whereNull('si.deleted_at')
             ->select([
@@ -220,11 +217,11 @@ class ReportService
                 'si.quantity',
                 'si.unit_price',
                 'si.subtotal',
-                'p.name as product_name',
-                'p.code as product_code',
-                DB::raw('COALESCE(bs.cost_price, p.cost_price, 0) as cost_price'),
-                DB::raw('(si.unit_price - COALESCE(bs.cost_price, p.cost_price, 0)) as profit_per_unit'),
-                DB::raw('(si.unit_price - COALESCE(bs.cost_price, p.cost_price, 0)) * si.quantity as item_profit'),
+                DB::raw('COALESCE(si.product_name, p.name, "Unknown Product") as product_name'),
+                DB::raw('COALESCE(si.product_code, p.code, "") as product_code'),
+                DB::raw('COALESCE(si.cost_price, p.cost_price, 0) as cost_price'),
+                DB::raw('(si.unit_price - COALESCE(si.cost_price, p.cost_price, 0)) as profit_per_unit'),
+                DB::raw('(si.unit_price - COALESCE(si.cost_price, p.cost_price, 0)) * si.quantity as item_profit'),
             ])
             ->get()
             ->groupBy('sale_id');

@@ -132,7 +132,14 @@ class ProductController extends Controller implements HasMiddleware
 
     public function show(Request $request, Product $product): Response
     {
-        $product->load(['category', 'branchStocks.branch', 'branchStocks.group']);
+        $product->load([
+            'category',
+            'branchStocks.branch',
+            'branchStocks.group',
+            'priceHistories' => function ($query) {
+                $query->with(['branch:id,name,code', 'changedBy:id,name'])->limit(100);
+            },
+        ]);
 
         return Inertia::render('Product/show', [
             'product' => $product,
@@ -157,10 +164,29 @@ class ProductController extends Controller implements HasMiddleware
         $data = $request->validated();
         $data['updated_by'] = Auth::id();
 
+        $oldProductCost = $product->cost_price;
+        $oldProductSelling = $product->selling_price;
+
         $product->update($data);
 
+        // Record history for product base price change
+        $priceHistoryService = app(\App\Services\PriceHistoryService::class);
+        $newCost = isset($data['cost_price']) ? (float) $data['cost_price'] : (float) $product->cost_price;
+        $newSelling = isset($data['selling_price']) ? (float) $data['selling_price'] : (float) $product->selling_price;
+
+        $priceHistoryService->recordChange(
+            productId: $product->id,
+            branchId: null,
+            oldCostPrice: $oldProductCost !== null ? (float) $oldProductCost : null,
+            newCostPrice: $newCost,
+            oldSellingPrice: $oldProductSelling !== null ? (float) $oldProductSelling : null,
+            newSellingPrice: $newSelling,
+            changeType: 'product_edit',
+            reason: 'Product Base Price Edit',
+            userId: Auth::id()
+        );
+
         // Update branch stocks with new group and prices if they exist in the request
-        // We accumulate the updates array to allow updating group and prices simultaneously across accessible branches
         $branchStockUpdates = [];
         if ($request->has('group_id')) {
             $branchStockUpdates['group_id'] = $data['group_id'];
@@ -176,12 +202,42 @@ class ProductController extends Controller implements HasMiddleware
             $user = Auth::user();
             if ($user && !$user->is_super_admin && $user->branch_id) {
                 // If it is a branch-scoped user, ensure the stock record exists and update it
+                $branchStock = $product->branchStocks()->where('branch_id', $user->branch_id)->first();
+                $oldBranchCost = $branchStock?->cost_price;
+                $oldBranchSelling = $branchStock?->selling_price;
+
                 $product->branchStocks()->updateOrCreate(
                     ['branch_id' => $user->branch_id],
                     $branchStockUpdates
                 );
+
+                $priceHistoryService->recordChange(
+                    productId: $product->id,
+                    branchId: (int) $user->branch_id,
+                    oldCostPrice: $oldBranchCost !== null ? (float) $oldBranchCost : null,
+                    newCostPrice: isset($branchStockUpdates['cost_price']) ? (float) $branchStockUpdates['cost_price'] : ($oldBranchCost !== null ? (float) $oldBranchCost : null),
+                    oldSellingPrice: $oldBranchSelling !== null ? (float) $oldBranchSelling : null,
+                    newSellingPrice: isset($branchStockUpdates['selling_price']) ? (float) $branchStockUpdates['selling_price'] : ($oldBranchSelling !== null ? (float) $oldBranchSelling : null),
+                    changeType: 'product_edit',
+                    reason: 'Branch Price Sync from Product Edit',
+                    userId: Auth::id()
+                );
             } else {
                 // For super admins, update existing branch stock records
+                $branchStocks = $product->branchStocks()->get();
+                foreach ($branchStocks as $bs) {
+                    $priceHistoryService->recordChange(
+                        productId: $product->id,
+                        branchId: (int) $bs->branch_id,
+                        oldCostPrice: $bs->cost_price !== null ? (float) $bs->cost_price : null,
+                        newCostPrice: isset($branchStockUpdates['cost_price']) ? (float) $branchStockUpdates['cost_price'] : ($bs->cost_price !== null ? (float) $bs->cost_price : null),
+                        oldSellingPrice: $bs->selling_price !== null ? (float) $bs->selling_price : null,
+                        newSellingPrice: isset($branchStockUpdates['selling_price']) ? (float) $branchStockUpdates['selling_price'] : ($bs->selling_price !== null ? (float) $bs->selling_price : null),
+                        changeType: 'product_edit',
+                        reason: 'Branch Price Sync from Product Edit',
+                        userId: Auth::id()
+                    );
+                }
                 $product->branchStocks()->update($branchStockUpdates);
             }
         }

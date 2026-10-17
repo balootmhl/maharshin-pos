@@ -132,21 +132,29 @@ class SaleController extends Controller implements HasMiddleware
 
             // Create sale items and update stock
             foreach ($validated['items'] as $item) {
-                SaleItem::create([
-                    'sale_id' => $sale->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'tax_rate' => $item['tax_rate'],
-                    'tax_amount' => $item['tax_amount'],
-                    'subtotal' => $item['subtotal'],
-                ]);
+                $product = Product::find($item['product_id']);
 
                 // Update branch stock
                 $branchStock = BranchStock::withoutGlobalScopes()->firstOrCreate(
                     ['branch_id' => $validated['branch_id'], 'product_id' => $item['product_id']],
                     ['quantity' => 0]
                 );
+
+                $costPrice = $branchStock->cost_price ?? $product?->cost_price ?? 0;
+
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $item['product_id'],
+                    'product_name' => $product?->name,
+                    'product_code' => $product?->code,
+                    'unit' => $product?->unit ?? 'pcs',
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'cost_price' => $costPrice,
+                    'tax_rate' => $item['tax_rate'],
+                    'tax_amount' => $item['tax_amount'],
+                    'subtotal' => $item['subtotal'],
+                ]);
 
                 $oldQuantity = $branchStock->quantity;
                 $branchStock->decrement('quantity', $item['quantity']);
@@ -328,21 +336,29 @@ class SaleController extends Controller implements HasMiddleware
 
             // Create new sale items and update stock
             foreach ($validated['items'] as $item) {
-                SaleItem::create([
-                    'sale_id' => $sale->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'tax_rate' => $item['tax_rate'],
-                    'tax_amount' => $item['tax_amount'],
-                    'subtotal' => $item['subtotal'],
-                ]);
+                $product = Product::find($item['product_id']);
 
                 // Update branch stock (deduct)
                 $branchStock = BranchStock::withoutGlobalScopes()->firstOrCreate(
                     ['branch_id' => $validated['branch_id'], 'product_id' => $item['product_id']],
                     ['quantity' => 0]
                 );
+
+                $costPrice = $branchStock->cost_price ?? $product?->cost_price ?? 0;
+
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $item['product_id'],
+                    'product_name' => $product?->name,
+                    'product_code' => $product?->code,
+                    'unit' => $product?->unit ?? 'pcs',
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'cost_price' => $costPrice,
+                    'tax_rate' => $item['tax_rate'],
+                    'tax_amount' => $item['tax_amount'],
+                    'subtotal' => $item['subtotal'],
+                ]);
 
                 $oldQuantity = $branchStock->quantity;
                 $branchStock->decrement('quantity', $item['quantity']);

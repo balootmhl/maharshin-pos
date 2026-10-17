@@ -111,12 +111,18 @@ class SaleReturnController extends Controller implements HasMiddleware
 
             // Create return items and update stock
             foreach ($validated['items'] as $item) {
+                $saleItem = SaleItem::find($item['sale_item_id']);
+                $product = $saleItem?->product ?? Product::find($item['product_id']);
+
                 SaleReturnItem::create([
                     'sale_return_id' => $saleReturn->id,
                     'sale_item_id' => $item['sale_item_id'],
                     'product_id' => $item['product_id'],
+                    'product_name' => $saleItem?->product_name ?? $product?->name,
+                    'product_code' => $saleItem?->product_code ?? $product?->code,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
+                    'cost_price' => $saleItem?->cost_price ?? 0,
                     'subtotal' => $item['subtotal'],
                 ]);
 

@@ -124,9 +124,14 @@ class PurchaseController extends Controller implements HasMiddleware
 
             // Create purchase items and update stock
             foreach ($validated['items'] as $item) {
+                $product = Product::find($item['product_id']);
+
                 PurchaseItem::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $item['product_id'],
+                    'product_name' => $product?->name,
+                    'product_code' => $product?->code,
+                    'unit' => $product?->unit ?? 'pcs',
                     'quantity' => $item['quantity'],
                     'unit_cost' => $item['unit_cost'],
                     'tax_rate' => $item['tax_rate'],
@@ -269,9 +274,14 @@ class PurchaseController extends Controller implements HasMiddleware
             // 3. RE-APPLY PHASE
             // Create new PurchaseItems and add stock
             foreach ($validated['items'] as $item) {
+                $product = Product::find($item['product_id']);
+
                 PurchaseItem::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $item['product_id'],
+                    'product_name' => $product?->name,
+                    'product_code' => $product?->code,
+                    'unit' => $product?->unit ?? 'pcs',
                     'quantity' => $item['quantity'],
                     'unit_cost' => $item['unit_cost'],
                     'tax_rate' => $item['tax_rate'],

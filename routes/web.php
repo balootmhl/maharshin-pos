@@ -140,6 +140,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('groups', GroupController::class);
         Route::get('products/pricing', [ProductPricingController::class, 'index'])->name('products.pricing');
         Route::post('products/pricing', [ProductPricingController::class, 'update'])->name('products.pricing.update');
+        Route::get('products/{product}/price-history', [ProductPricingController::class, 'history'])->name('products.price-history');
         Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
         Route::resource('products', ProductController::class);
         Route::resource('branch-stocks', BranchStockController::class)->only('index');

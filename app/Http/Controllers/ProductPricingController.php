@@ -6,6 +6,8 @@ use App\Models\Branch;
 use App\Models\BranchStock;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\PriceHistoryService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,10 +17,14 @@ use Illuminate\Routing\Controllers\Middleware;
 
 class ProductPricingController extends Controller implements HasMiddleware
 {
+    public function __construct(
+        protected PriceHistoryService $priceHistoryService
+    ) {}
+
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:products.view', only: ['index']),
+            new Middleware('permission:products.view', only: ['index', 'history']),
             new Middleware('permission:products.edit', only: ['update']),
         ];
     }
@@ -93,16 +99,77 @@ class ProductPricingController extends Controller implements HasMiddleware
             ? $request->input('branch_id')
             : $request->user()->branch_id;
 
+        $userId = $request->user()->id;
+
         foreach ($request->input('prices') as $priceData) {
-            BranchStock::withoutGlobalScopes()
+            $branchStock = BranchStock::withoutGlobalScopes()
                 ->where('product_id', $priceData['product_id'])
                 ->where('branch_id', $branchId)
-                ->update([
-                    'cost_price' => $priceData['cost_price'],
-                    'selling_price' => $priceData['selling_price'],
+                ->first();
+
+            $oldCost = $branchStock?->cost_price;
+            $oldSelling = $branchStock?->selling_price;
+            $newCost = $priceData['cost_price'] !== null ? (float) $priceData['cost_price'] : null;
+            $newSelling = $priceData['selling_price'] !== null ? (float) $priceData['selling_price'] : null;
+
+            if ($branchStock) {
+                $branchStock->update([
+                    'cost_price' => $newCost,
+                    'selling_price' => $newSelling,
                 ]);
+            } else {
+                BranchStock::withoutGlobalScopes()->create([
+                    'product_id' => $priceData['product_id'],
+                    'branch_id' => $branchId,
+                    'cost_price' => $newCost,
+                    'selling_price' => $newSelling,
+                    'quantity' => 0,
+                ]);
+            }
+
+            // Record price history audit log
+            $this->priceHistoryService->recordChange(
+                productId: (int) $priceData['product_id'],
+                branchId: (int) $branchId,
+                oldCostPrice: $oldCost !== null ? (float) $oldCost : null,
+                newCostPrice: $newCost,
+                oldSellingPrice: $oldSelling !== null ? (float) $oldSelling : null,
+                newSellingPrice: $newSelling,
+                changeType: 'branch_pricing',
+                reason: 'Updated in Branch Pricing Table',
+                userId: $userId
+            );
         }
 
         return redirect()->back()->with('success', 'Prices updated successfully.');
+    }
+
+    /**
+     * Get price history audit log for a product.
+     */
+    public function history(Request $request, Product $product): JsonResponse
+    {
+        $branchId = $request->query('branch_id');
+
+        $histories = $product->priceHistories()
+            ->with(['branch:id,name,code', 'changedBy:id,name'])
+            ->when($branchId && $branchId !== 'all', function ($q) use ($branchId) {
+                $q->where(function ($sub) use ($branchId) {
+                    $sub->where('branch_id', $branchId)
+                        ->orWhereNull('branch_id');
+                });
+            })
+            ->limit(100)
+            ->get();
+
+        return response()->json([
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->code,
+                'unit' => $product->unit,
+            ],
+            'histories' => $histories,
+        ]);
     }
 }

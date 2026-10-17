@@ -17,6 +17,9 @@ class PurchaseItem extends BaseModel
     protected $fillable = [
         'purchase_id',
         'product_id',
+        'product_name',
+        'product_code',
+        'unit',
         'quantity',
         'unit_cost',
         'tax_rate',
@@ -38,6 +41,22 @@ class PurchaseItem extends BaseModel
         'tax_amount' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];
+
+    /**
+     * Get display product name (snapshot fallback to product).
+     */
+    public function getDisplayProductNameAttribute(): string
+    {
+        return $this->product_name ?: ($this->product?->name ?? 'Unknown Product');
+    }
+
+    /**
+     * Get display product code (snapshot fallback to product).
+     */
+    public function getDisplayProductCodeAttribute(): string
+    {
+        return $this->product_code ?: ($this->product?->code ?? '');
+    }
 
     public function purchase(): BelongsTo
     {
