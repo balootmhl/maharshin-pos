@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, Branch, Product, SharedData } from '@/types';
+import { getTodayDateString } from '@/lib/utils';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -36,7 +37,7 @@ export default function StockAdjustmentCreate({ branches, products, reasons }: {
     const { data, setData, post, processing, errors } = useForm({
         branch_id: defaultBranchId,
         product_id: '',
-        adjustment_date: new Date().toISOString().split('T')[0],
+        adjustment_date: getTodayDateString(),
         adjustment_type: 'add',
         quantity: '',
         reason: '',

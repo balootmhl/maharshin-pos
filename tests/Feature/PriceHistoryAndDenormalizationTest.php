@@ -215,3 +215,62 @@ test('PriceHistoryService records price change audit logs when prices change', f
         ->and($recorded->reason)->toBe('Supplier price hike')
         ->and($recorded->changed_by)->toBe($user->id);
 });
+
+test('SaleStoreRequest defaults sale_date to current Asia/Yangon date if omitted', function () {
+    $branch = Branch::factory()->create(['is_active' => true]);
+    $user = User::factory()->create([
+        'branch_id' => $branch->id,
+        'email_verified_at' => now(),
+    ]);
+    $user->givePermissionTo(['sales.create', 'sales.view']);
+
+    $category = Category::factory()->create(['is_active' => true]);
+    $product = Product::create([
+        'code' => 'TEST-TZ-1',
+        'barcode' => '111222333',
+        'name' => 'Timezone Test Item',
+        'category_id' => $category->id,
+        'unit' => 'pcs',
+        'cost_price' => 500.00,
+        'selling_price' => 800.00,
+        'is_active' => true,
+    ]);
+
+    BranchStock::withoutGlobalScopes()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'quantity' => 10,
+        'cost_price' => 500.00,
+        'selling_price' => 800.00,
+    ]);
+
+    $response = $this->actingAs($user)->post(route('sales.store'), [
+        'branch_id' => $branch->id,
+        'price_type' => 'selling_price',
+        // sale_date omitted
+        'subtotal' => 800.00,
+        'tax_amount' => 0.00,
+        'discount_amount' => 0.00,
+        'total_amount' => 800.00,
+        'payment_status' => 'paid',
+        'payment_method' => 'cash',
+        'paid_amount' => 800.00,
+        'credit_amount' => 0.00,
+        'items' => [
+            [
+                'product_id' => $product->id,
+                'quantity' => 1,
+                'unit_price' => 800.00,
+                'tax_rate' => 0.00,
+                'tax_amount' => 0.00,
+                'subtotal' => 800.00,
+            ],
+        ],
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    $sale = Sale::latest('id')->first();
+    expect($sale)->not->toBeNull();
+    $expectedYangonDate = now('Asia/Yangon')->toDateString();
+    expect($sale->sale_date->toDateString())->toBe($expectedYangonDate);
+});

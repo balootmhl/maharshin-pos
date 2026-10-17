@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useDirectPrint } from '@/hooks/use-direct-print';
 import { useProductSearch } from '@/hooks/use-product-search';
 import AppLayout from '@/layouts/app-layout';
+import { getTodayDateString } from '@/lib/utils';
 import { type BreadcrumbItem, Branch, Option, Product, SharedData, Supplier } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Barcode, Minus, Package, Plus, Search, Trash2, X } from 'lucide-react';
@@ -101,7 +102,7 @@ export default function PurchaseCreate({ branches, suppliers, purchaseNo }: { br
         }
     }, [flash?.completedPurchase]);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchOpen, setSearchOpen] = useState(false);

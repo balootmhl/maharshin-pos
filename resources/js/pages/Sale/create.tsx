@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useDirectPrint } from '@/hooks/use-direct-print';
 import { useProductSearch } from '@/hooks/use-product-search';
 import AppLayout from '@/layouts/app-layout';
+import { getTodayDateString } from '@/lib/utils';
 import { type BreadcrumbItem, Branch, Customer, Option, Product, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { AlertTriangle, Barcode, Minus, Package, Pause, Play, Plus, Search, ShoppingCart, Trash2, X } from 'lucide-react';
@@ -115,7 +116,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
         }
     }, [flash?.completedSale]);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     const [cart, setCart] = useState<CartItem[]>([]);
     const [discountPercentage, setDiscountPercentage] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -395,10 +396,12 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
+        data.sale_date = getTodayDateString();
         post(route('sales.store'), {
             preserveScroll: true,
             onSuccess: () => {
                 reset();
+                setData('sale_date', getTodayDateString());
                 setCart([]);
             },
         });
@@ -419,6 +422,7 @@ export default function SaleCreate({ branches, customers }: { branches: Branch[]
     // Handle new sale action from success dialog
     const handleNewSale = () => {
         reset();
+        setData('sale_date', getTodayDateString());
         setCart([]);
         setCompletedSale(null);
         searchInputRef.current?.focus();

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { getTodayDateString } from '@/lib/utils';
 import { type BreadcrumbItem, Branch, Customer, SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
@@ -33,7 +34,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 const paymentMethods = ['Cash', 'Bank Transfer', 'Mobile Banking', 'Check', 'Other'];
 
 export default function CustomerPaymentCreate({ customers = [], branches = [] }: { customers: Customer[]; branches: Branch[] }) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
 
     const { auth } = usePage<SharedData>().props;
 

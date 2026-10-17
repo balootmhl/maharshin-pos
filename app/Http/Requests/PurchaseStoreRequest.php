@@ -28,6 +28,10 @@ class PurchaseStoreRequest extends FormRequest
             $this->merge(['branch_id' => $this->user()->branch_id]);
         }
 
+        if (!$this->has('purchase_date') || empty($this->purchase_date)) {
+            $this->merge(['purchase_date' => now('Asia/Yangon')->toDateString()]);
+        }
+
         // Normalize note/notes
         if ($this->has('note') && !$this->has('notes')) {
             $this->merge(['notes' => $this->input('note')]);

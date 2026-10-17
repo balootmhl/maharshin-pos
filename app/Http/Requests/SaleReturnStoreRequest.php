@@ -22,6 +22,10 @@ class SaleReturnStoreRequest extends FormRequest
         if ($this->user() && !$this->user()->is_super_admin) {
             $this->merge(['branch_id' => $this->user()->branch_id]);
         }
+
+        if (!$this->has('return_date') || empty($this->return_date)) {
+            $this->merge(['return_date' => now('Asia/Yangon')->toDateString()]);
+        }
     }
 
     /**

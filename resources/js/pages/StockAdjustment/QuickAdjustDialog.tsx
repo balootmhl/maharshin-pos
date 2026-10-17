@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Product } from '@/types';
+import { getTodayDateString } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -27,7 +28,7 @@ export default function QuickAdjustDialog({ product, branchId, currentStock, rea
     const form = useForm({
         branch_id: branchId,
         product_id: product.id,
-        adjustment_date: new Date().toISOString().split('T')[0],
+        adjustment_date: getTodayDateString(),
         adjustment_type: 'add', // 'add' or 'subtract'
         quantity: '',
         reason: '',
@@ -40,7 +41,7 @@ export default function QuickAdjustDialog({ product, branchId, currentStock, rea
             form.setData({
                 branch_id: branchId,
                 product_id: product.id,
-                adjustment_date: new Date().toISOString().split('T')[0],
+                adjustment_date: getTodayDateString(),
                 adjustment_type: 'add',
                 quantity: '',
                 reason: '',

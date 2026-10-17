@@ -20,12 +20,16 @@ class SaleStoreRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         // Convert 'walk-in' to null for customer_id
-        if ($this->customer_id === 'walk-in' || $this->customer_id === '') {
+        if ($this->customer_id === 'walk-in' || $this->customer_id === '' || !$this->has('customer_id')) {
             $this->merge(['customer_id' => null]);
         }
 
         if ($this->user() && !$this->user()->is_super_admin) {
             $this->merge(['branch_id' => $this->user()->branch_id]);
+        }
+
+        if (!$this->has('sale_date') || empty($this->sale_date)) {
+            $this->merge(['sale_date' => now('Asia/Yangon')->toDateString()]);
         }
 
         // Normalize note/notes

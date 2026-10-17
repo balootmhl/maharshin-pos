@@ -175,7 +175,7 @@ class SaleController extends Controller implements HasMiddleware
             }
 
             // Update customer balance if credit sale
-            if ($validated['customer_id'] && $validated['credit_amount'] > 0) {
+            if (!empty($validated['customer_id']) && ($validated['credit_amount'] ?? 0) > 0) {
                 $customer = Customer::find($validated['customer_id']);
                 $customer->increment('current_balance', $validated['credit_amount']);
 
@@ -379,7 +379,7 @@ class SaleController extends Controller implements HasMiddleware
             }
 
             // Update customer balance if new credit sale
-            if ($validated['customer_id'] && $validated['credit_amount'] > 0) {
+            if (!empty($validated['customer_id']) && ($validated['credit_amount'] ?? 0) > 0) {
                 $customer = Customer::find($validated['customer_id']);
                 $customer->increment('current_balance', $validated['credit_amount']);
 

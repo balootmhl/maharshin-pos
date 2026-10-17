@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { getTodayDateString } from '@/lib/utils';
 import { type BreadcrumbItem, Product, Sale } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { Minus, Plus, Search, Undo2 } from 'lucide-react';
@@ -59,7 +60,7 @@ const formatCurrency = (value: number) => {
 const refundMethods = ['Cash', 'Credit Adjustment', 'Bank Transfer', 'KBZ Pay', 'Wave Money'];
 
 export default function SaleReturnCreate({ sales }: { sales: Sale[] }) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
     const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
