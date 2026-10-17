@@ -1,4 +1,5 @@
 // import { ActionFunction } from '@/types'; // Assuming this is needed or just keep existing imports
+import PriceHistoryDialog from '@/components/Product/PriceHistoryDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,7 +8,7 @@ import AppLayout from '@/layouts/app-layout';
 import QuickAdjustDialog from '@/pages/StockAdjustment/QuickAdjustDialog';
 import { Branch, BreadcrumbItem, Category, Product, SharedData } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Edit2, Save, Search } from 'lucide-react';
+import { Edit2, History, Save, Search } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -49,6 +50,10 @@ export default function ProductPricing({
     // Quick Adjust State
     const [quickAdjustProduct, setQuickAdjustProduct] = useState<Product | null>(null);
     const [quickAdjustOpen, setQuickAdjustOpen] = useState(false);
+
+    // Price History State
+    const [historyProduct, setHistoryProduct] = useState<Product | null>(null);
+    const [historyOpen, setHistoryOpen] = useState(false);
 
     // Debounced filter update
     useEffect(() => {
@@ -238,15 +243,17 @@ export default function ProductPricing({
                                     Cost Price
                                 </TableHead>
                                 <TableHead className="w-[150px] text-right">
-                                    {/* {selectedBranch?.name ?? 'Branch'} Sell */}
                                     Sell Price
+                                </TableHead>
+                                <TableHead className="w-[60px] text-center">
+                                    History
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filteredProducts.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
+                                    <TableCell colSpan={9} className="h-24 text-center">
                                         {!search && categoryFilter === 'all'
                                             ? 'Enter a search term or select a category to view pricing.'
                                             : 'No products found matching your criteria.'}
@@ -311,6 +318,20 @@ export default function ProductPricing({
                                                     className="ml-auto h-8 w-[120px] text-right font-mono text-sm"
                                                 />
                                             </TableCell>
+                                            <TableCell className="text-center">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                                    title="View Price History"
+                                                    onClick={() => {
+                                                        setHistoryProduct(product);
+                                                        setHistoryOpen(true);
+                                                    }}
+                                                >
+                                                    <History className="h-4 w-4" />
+                                                </Button>
+                                            </TableCell>
                                         </TableRow>
                                     );
                                 })
@@ -344,6 +365,19 @@ export default function ProductPricing({
                         onSuccess={handleQuickAdjustSuccess}
                     />
                 )}
+
+                {/* Price History Dialog */}
+                <PriceHistoryDialog
+                    productId={historyProduct?.id ?? null}
+                    productName={historyProduct?.name}
+                    productCode={historyProduct?.code}
+                    branchId={selectedBranchId}
+                    open={historyOpen}
+                    onOpenChange={(open) => {
+                        setHistoryOpen(open);
+                        if (!open) setHistoryProduct(null);
+                    }}
+                />
             </div>
         </AppLayout>
     );

@@ -373,11 +373,10 @@
                 @foreach ($sale->saleItems as $item)
                     <tr>
                         <td>
-                            {{ $item->product?->code ?? '' }}
-                            {{-- <div class="product-code">{{ $item->product?->name ?? 'Unknown Product' }}</div> --}}
+                            {{ $item->product_code ?: ($item->product?->code ?? '') }}
                         </td>
                         <td>
-                            {{ $item->product?->name ?? 'Unknown Product' }}
+                            {{ $item->product_name ?: ($item->product?->name ?? 'Unknown Product') }}
                         </td>
                         <td>{{ $item->product?->branchStocks->where('branch_id', $sale->branch_id)->first()?->group?->name ?? '-' }}</td>
                         <td class="font-mono">{{ number_format($item->unit_price, 0) }}</td>

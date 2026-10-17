@@ -362,10 +362,10 @@ export default function PurchaseShow({ purchase }: { purchase: Purchase }) {
                                                         <TableCell>
                                                             <div className="space-y-0.5">
                                                                 <div className="font-mono font-bold text-xs text-foreground">
-                                                                    {item.product?.code || '-'}
+                                                                    {item.product_code || item.product?.code || '-'}
                                                                 </div>
                                                                 <div className="text-sm font-medium text-foreground">
-                                                                    {item.product?.name || 'Unknown Product'}
+                                                                    {item.product_name || item.product?.name || 'Unknown Product'}
                                                                 </div>
                                                             </div>
                                                         </TableCell>

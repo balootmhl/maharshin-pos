@@ -412,10 +412,10 @@ export default function SaleShow({ sale }: { sale: Sale }) {
                                                         <TableCell>
                                                             <div className="space-y-0.5">
                                                                 <div className="font-mono font-bold text-xs text-foreground">
-                                                                    {item.product?.code || '-'}
+                                                                    {item.product_code || item.product?.code || '-'}
                                                                 </div>
                                                                 <div className="text-sm font-medium text-foreground">
-                                                                    {item.product?.name || 'Unknown Product'}
+                                                                    {item.product_name || item.product?.name || 'Unknown Product'}
                                                                 </div>
                                                             </div>
                                                         </TableCell>
@@ -776,7 +776,7 @@ export default function SaleShow({ sale }: { sale: Sale }) {
                         <div className="divider"></div>
                         {items.map((item, idx) => (
                             <div className="item" key={item.id || idx}>
-                                <div className="item-name">{item.product?.name || 'Item'}</div>
+                                <div className="item-name">{item.product_name || item.product?.name || 'Item'}</div>
                                 <div className="item-detail">
                                     <span>
                                         {item.quantity} x {formatCurrency(item.unit_price)}

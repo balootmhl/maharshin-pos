@@ -165,21 +165,48 @@ export interface Product {
     is_active: boolean;
     stock?: number; // kept for backward compatibility if needed, but preferred to use branch_stocks
     branch_stocks?: BranchStock[];
+    price_histories?: ProductPriceHistory[];
     created_at?: string;
     updated_at?: string;
+}
+
+export interface ProductPriceHistory {
+    id: number;
+    product_id: number;
+    branch_id?: number | null;
+    old_cost_price?: string | number | null;
+    new_cost_price?: string | number | null;
+    old_selling_price?: string | number | null;
+    new_selling_price?: string | number | null;
+    change_type: string;
+    reason?: string | null;
+    changed_by?: number | null;
+    effective_date: string;
+    created_at: string;
+    updated_at: string;
+    branch?: Branch;
+    changed_by_user?: User;
+    changedBy?: User;
+    product?: Product;
 }
 
 export interface SaleItem {
     id: number;
     sale_id: number;
     product_id: number;
-    product?: Product;
+    product_name?: string;
+    product_code?: string;
+    unit?: string;
     quantity: number;
     unit_price: number;
+    cost_price?: number;
+    profit?: number;
+    profit_per_unit?: number;
     discount_amount?: number;
     tax_rate?: number;
     tax_amount: number;
     subtotal: number;
+    product?: Product;
 }
 
 export interface Sale {
@@ -212,6 +239,9 @@ export interface PurchaseItem {
     id: number;
     purchase_id: number;
     product_id: number;
+    product_name?: string;
+    product_code?: string;
+    unit?: string;
     product?: Product;
     quantity: number;
     unit_cost: number;
