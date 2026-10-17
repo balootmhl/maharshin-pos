@@ -15,6 +15,8 @@ use App\Services\ReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\post;
 
 uses(RefreshDatabase::class);
 
@@ -27,6 +29,7 @@ beforeEach(function () {
 
 test('completing a sale stores immutable snapshots of cost_price, product_name, product_code, and unit', function () {
     $branch = Branch::factory()->create(['is_active' => true]);
+    /** @var User $user */
     $user = User::factory()->create([
         'branch_id' => $branch->id,
         'email_verified_at' => now(),
@@ -54,7 +57,7 @@ test('completing a sale stores immutable snapshots of cost_price, product_name, 
         'selling_price' => 1500.00,
     ]);
 
-    $this->actingAs($user);
+    actingAs($user);
 
     $payload = [
         'branch_id' => $branch->id,
@@ -81,7 +84,7 @@ test('completing a sale stores immutable snapshots of cost_price, product_name, 
         ],
     ];
 
-    $response = $this->post(route('sales.store'), $payload);
+    $response = post(route('sales.store'), $payload);
     $response->assertRedirect(route('sales.create'));
 
     $saleItem = SaleItem::latest('id')->first();
@@ -95,6 +98,7 @@ test('completing a sale stores immutable snapshots of cost_price, product_name, 
 
 test('updating product pricing today does NOT retroactively distort past daily profit report', function () {
     $branch = Branch::factory()->create(['is_active' => true]);
+    /** @var User $superAdmin */
     $superAdmin = User::factory()->create([
         'branch_id' => $branch->id,
     ]);
@@ -178,6 +182,7 @@ test('updating product pricing today does NOT retroactively distort past daily p
 
 test('PriceHistoryService records price change audit logs when prices change', function () {
     $branch = Branch::factory()->create();
+    /** @var User $user */
     $user = User::factory()->create();
     $category = Category::factory()->create();
 
@@ -218,6 +223,7 @@ test('PriceHistoryService records price change audit logs when prices change', f
 
 test('SaleStoreRequest defaults sale_date to current Asia/Yangon date if omitted', function () {
     $branch = Branch::factory()->create(['is_active' => true]);
+    /** @var User $user */
     $user = User::factory()->create([
         'branch_id' => $branch->id,
         'email_verified_at' => now(),
@@ -244,7 +250,7 @@ test('SaleStoreRequest defaults sale_date to current Asia/Yangon date if omitted
         'selling_price' => 800.00,
     ]);
 
-    $response = $this->actingAs($user)->post(route('sales.store'), [
+    $response = actingAs($user)->post(route('sales.store'), [
         'branch_id' => $branch->id,
         'price_type' => 'selling_price',
         // sale_date omitted

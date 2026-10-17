@@ -11,12 +11,16 @@ use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\post;
 
 uses(RefreshDatabase::class);
 
 test('recording a purchase executes inventory increment and stock movement logging', function () {
     // 1. Arrange: Setup branch, user, product, and supplier
     $branch = Branch::factory()->create(['is_active' => true]);
+    /** @var User $user */
     $user = User::factory()->create([
         'branch_id' => $branch->id,
         'email_verified_at' => now(),
@@ -52,7 +56,7 @@ test('recording a purchase executes inventory increment and stock movement loggi
     $supplier = Supplier::factory()->create();
 
     // Authenticate as the branch user
-    $this->actingAs($user);
+    actingAs($user);
 
     // Prepare Purchase Store payload
     $payload = [
@@ -78,7 +82,7 @@ test('recording a purchase executes inventory increment and stock movement loggi
     ];
 
     // 2. Act: Send POST store request
-    $response = $this->post(route('purchases.store'), $payload);
+    $response = post(route('purchases.store'), $payload);
 
     // 3. Assert redirects to purchases.create
     $response->assertRedirect(route('purchases.create'));
@@ -90,7 +94,7 @@ test('recording a purchase executes inventory increment and stock movement loggi
     expect($purchase->purchase_no)->toStartWith('PO-');
     expect($purchase->total_amount)->toEqual(18000.00);
 
-    $this->assertDatabaseHas('purchase_items', [
+    assertDatabaseHas('purchase_items', [
         'purchase_id' => $purchase->id,
         'product_id' => $product->id,
         'quantity' => 20,
@@ -104,7 +108,7 @@ test('recording a purchase executes inventory increment and stock movement loggi
     expect($updatedBranchStock->quantity)->toEqual(30);
 
     // 6. Assert Stock Movement is correctly logged with positive quantity
-    $this->assertDatabaseHas('stock_movements', [
+    assertDatabaseHas('stock_movements', [
         'branch_id' => $branch->id,
         'product_id' => $product->id,
         'movement_type' => 'purchase',

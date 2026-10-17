@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @method \App\Models\User create(array $attributes = [], ?\Illuminate\Database\Eloquent\Model $parent = null)
+ * @method \App\Models\User make(array $attributes = [], ?\Illuminate\Database\Eloquent\Model $parent = null)
  */
 class UserFactory extends Factory
 {
