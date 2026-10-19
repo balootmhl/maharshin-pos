@@ -56,6 +56,10 @@ export const navMain: NavGroup[] = [
                 url: route('products.pricing'),
             },
             {
+                title: 'Batch Price Changer',
+                url: route('products.batch-pricing.index'),
+            },
+            {
                 title: 'Categories',
                 url: route('categories.index'),
             },

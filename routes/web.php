@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ProductSearchController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\BatchProductPricingController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BranchStockController;
 use App\Http\Controllers\CategoryController;
@@ -25,6 +25,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\UserController;
 use App\Models\BranchStock;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -140,6 +141,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('groups', GroupController::class);
         Route::get('products/pricing', [ProductPricingController::class, 'index'])->name('products.pricing');
         Route::post('products/pricing', [ProductPricingController::class, 'update'])->name('products.pricing.update');
+        Route::get('products/batch-pricing', [BatchProductPricingController::class, 'index'])->name('products.batch-pricing.index');
+        Route::post('products/batch-pricing/preview', [BatchProductPricingController::class, 'preview'])->name('products.batch-pricing.preview');
+        Route::post('products/batch-pricing/apply', [BatchProductPricingController::class, 'apply'])->name('products.batch-pricing.apply');
         Route::get('products/{product}/price-history', [ProductPricingController::class, 'history'])->name('products.price-history');
         Route::get('products/export', [ProductController::class, 'export'])->name('products.export');
         Route::resource('products', ProductController::class);
